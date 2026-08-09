@@ -57,9 +57,9 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid #d8dde3;font-size:1
 
 <div class="hero">
 <h1>ダブルクリックで起動する、<br>自分の道具箱。</h1>
-<p class="lead">スライド、ダッシュボード、AWS構成図、表計算、ガント、ベジェ描画、3D CAD、スクショ整理。仕事で毎回作っていたものを、HTML1ファイルのキットに削り出した。ビルドなし、サーバーなし、サブスクなし。file://で開けばそのまま動く。</p>
+<p class="lead">スライド、表計算、ベジェ描画、3D CAD、スクショ整理。仕事で毎回作っていたものを、ブラウザで使えるキットに削り出した。ビルドなし、サーバーなし、サブスクなし。file://で開けばそのまま動く。</p>
 <div class="stats">
-<div><b>11</b><span>キット</span></div>
+<div><b>5</b><span>キット</span></div>
 <div><b>0円</b><span>ランニングコスト</span></div>
 <div><b>0秒</b><span>ビルド時間</span></div>
 <div><b>file://</b><span>起動方法</span></div>
@@ -69,19 +69,15 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid #d8dde3;font-size:1
 <h2 id="list">一覧<span class="en">ALL KITS</span></h2>
 <table>
 <tr><th>キット</th><th>ひとこと</th><th>入口</th></tr>
-<tr><td><a href="SlideKit/slide-template.html">SlideKit</a></td><td>スライドをHTMLで作りPPTXに変換。ブラウザ上で直接編集<span class="sub">（移動・色・表・画像⌘V）</span></td><td><a href="SlideKit/pattern-catalog.html">パターン集</a></td></tr>
-<tr><td><a href="DashboardKit/demo.html">DashboardKit</a></td><td>ダッシュボード部品キット。KPI・グラフ・テーブル・テーマ6種</td><td><a href="DashboardKit/gym-demo.html">実例</a> <a href="DashboardKit/palette-map.html">配色</a></td></tr>
-<tr><td><a href="ArchKit/gym-demo.html">ArchitectureKit</a></td><td>ホバー詳細＋フローアニメ付きのAWS構成図。データ差し替えで量産</td><td><a href="ArchKit/fitbase-about.html">題材の説明</a></td></tr>
+<tr><td><a href="SlideKit/slide-template.html">SlideKit</a></td><td>スライドをHTMLで作りPPTXに変換。ブラウザ上で直接編集<span class="sub">（移動・色・表・画像⌘V）</span></td><td><a href="SlideKit/pattern-catalog.html">パターン集</a> </td></tr>
 <tr><td><a href="CadKit/index.html">CadKit</a></td><td>ブラウザ3D CAD。スケッチ拘束→押し出し・回転・有機ボディ</td><td></td></tr>
 <tr><td><a href="BezierKit/index.html">BezierKit</a></td><td>イラレ風ベジェ描画。画像トレース・筆線・可変線幅・うねり効果</td><td><a href="BezierKit/icons.html">アイコン集</a></td></tr>
-<tr><td><a href="GanttKit/index.html">GanttKit</a></td><td>触れるガントチャート。タイムカーソルで「その日の断面」を見る</td><td></td></tr>
-<tr><td><a href="CalcKit/index.html">CalcKit</a></td><td>エクセル相当の表計算。式・関数・複数シート。表をスライドやガントに書き出す</td><td><a href="CalcKit/README.md">仕様</a></td></tr>
+<tr><td><a href="CalcKit/index.html">CalcKit</a></td><td>エクセル相当の表計算。式・関数・複数シート。表をスライド・CSV・Excelに書き出す</td><td><a href="CalcKit/README.md">仕様</a></td></tr>
 <tr><td><a href="CaptureKit/index.html">CaptureKit</a></td><td>Snagit代替。OS標準撮影＋日付カタログ＋検索。独自形式に縛られない</td><td></td></tr>
-<tr><td><a href="DocKit/index.html">DocKit</a></td><td>ワークスペース中の.mdを1つのビューアで。直リンクで共有</td><td></td></tr>
 </table>
 <p class="note">リンクは全部このファイルからの相対パス。このページ自体もHTML1枚で、ワークスペースごと持っていけばそのまま動く。</p>
 
-<h2 id="make">つくる — 資料・可視化<span class="en">SLIDES / DASHBOARDS / DIAGRAMS</span></h2>
+<h2 id="make">つくる — 資料・表計算<span class="en">SLIDES / SPREADSHEETS</span></h2>
 <p class="desc">お客さん・チームに見せるものを作るキット群。共通の考え方は「正本はHTML、成果物は変換で出す」。ブラウザで確認しながら作り、確定したらPPTXやPNGに落とす。</p>
 
 <h3><span class="num">01</span>SlideKit</h3>
@@ -93,54 +89,25 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid #d8dde3;font-size:1
 <li>スクショ用プレースホルダーに⌘Vで画像差し込み。アス比自動フィット</li>
 <li>プレゼン中のポストイットメモ、パターン・図解カタログ同梱</li>
 <li>図解相談: 「案だけコピー」「書き換え依頼をコピー」でKiroへの依頼文を生成する。外部APIへは送らず、クリップボードに置くだけ</li>
-<li>ページ追加メニューから「＋ガント」「＋表(CalcKit)」。別タブでGanttKit／CalcKitが開き、作った表やガントがデッキに1枚入る</li>
+<li>ページ追加メニューから「＋表(CalcKit)」。別タブで作った表をデッキに1枚入れられる</li>
 </ul>
 <p class="links"><a href="SlideKit/slide-template.html">雛形</a><a href="SlideKit/pattern-catalog.html">パターン集</a><a href="SlideKit/diagram-catalog.html">図解カタログ</a><span class="chk">検証: python3 SlideKit/run_check.py 対象.html</span></p>
 
-<h3><span class="num">02</span>DashboardKit</h3>
-<a href="DashboardKit/gym-demo.html"><img class="shot" src="kits-img/dashboardkit.png" alt="DashboardKit ジム会員ダッシュボード実例" loading="lazy"></a>
-<p class="desc">ダッシュボードを毎回ゼロから書かないための部品キット。空divにmountする方式で、KPIカード・グラフ・アラート・テーブル・期間切替・配色パネルが揃う。データはページ側の純関数で整形して渡す（キットは集計しない）。</p>
-<ul class="fx">
-<li>実カレンダー間隔の時間軸、週末帯、目標破線、予測は破線、日付クリック連携</li>
-<li>テーマ6種（seiryoku／pastel／corporate／dark／newspaper／awspurple）。色はCSSカスタムプロパティ経由で、ページ側に色を書かない</li>
-<li>配色パネルでhex直接編集→CSV保存で共有。本体はテスト431件で保護</li>
-</ul>
-<p class="links"><a href="DashboardKit/demo.html">部品カタログ</a><a href="DashboardKit/gym-demo.html">実例（ジム会員ダッシュボード）</a><a href="DashboardKit/palette-map.html">配色マップ</a><span class="chk">検証: cd DashboardKit && npm test</span></p>
-
-<h3><span class="num">03</span>ArchitectureKit</h3>
-<a href="ArchKit/gym-demo.html"><img class="shot" src="kits-img/archkit.png" alt="ArchitectureKit FitBase構成図" loading="lazy"></a>
-<p class="desc">ホバーで役割説明、クリックでデータフローがアニメーションするAWS構成図。エンジンとデータを分離してあり、データファイル1本の差し替えで新しい図が作れる。全ノードに「このシステムでの役割」と試験ポイント（SAA/DEA）を書く規約。</p>
-<ul class="fx">
-<li>実例は架空パーソナルジムFitBase（25サービス・9フロー）。DashboardKitの実例と世界観を共有</li>
-<li>レイアウトは左=入力・中央=AWS・右=出力で固定。スライドにはPNG書き出しで貼る</li>
-</ul>
-<p class="links"><a href="ArchKit/gym-demo.html">実例（FitBase構成図）</a><a href="ArchKit/fitbase-about.html">FitBaseとは</a><a href="ArchKit/blank-demo.html">白紙デモ</a><span class="chk">検証: node ArchKit/archkit-check.js データ.js</span></p>
-
-<h3><span class="num">04</span>GanttKit</h3>
-<a href="GanttKit/index.html"><img class="shot" src="kits-img/ganttkit.png" alt="GanttKit タイムカーソル付きガント" loading="lazy"></a>
-<p class="desc">canvas製の触れるガントチャート。看板機能はタイムカーソルで、カーソルを任意の日付へドラッグすると「その日に何が動いているか」の断面が見える。ArchitectureKitと連動させると、構成図がその時点の状態で色付く。既存版のタイムラインエンジンをキット化した。</p>
-<ul class="fx">
-<li>帯の端点をドラッグして日付を直接動かす。依存矢印は帯の先端から出る。ズームは週/日</li>
-<li>「表(CalcKit)で開く」でガント⇄表を往復できる。表で一気に入力→ガントでドラッグ調整→表に戻して集計</li>
-<li>スライドへ1枚として書き出し。Undo/Redoあり</li>
-</ul>
-<p class="links"><a href="GanttKit/index.html">起動</a><span class="chk">検証: python3 GanttKit/check.py</span></p>
-
-<h3><span class="num">05</span>CalcKit</h3>
+<h3><span class="num">02</span>CalcKit</h3>
 <a href="CalcKit/index.html"><img class="shot" src="kits-img/calckit.png" alt="CalcKit 収支計算シート" loading="lazy"></a>
 <p class="desc">エクセルの代わりに使う表計算。式エンジンは自前パーサで、<code>eval</code>を使わない。セル参照・絶対参照・比較・連結に加えてSUM／IF／VLOOKUP／ROUND／DATEなど20関数。正本は<code>.calc.json</code>なので、保存ファイルをそのままKiroに渡して「この表を◯◯にして」で続きを頼める。</p>
 <ul class="fx">
 <li>フィルハンドル（式は相対シフト・連番・日付は+1日）、日付型はExcel互換シリアル値、列ヘッダ右クリックで並べ替え（行内の式が移動に追従）</li>
 <li>複数シートのタブ。シート間参照は<code>=収支!N21</code>で、シート名を変えると式が自動で追従する</li>
 <li>Excelと⌘C/⌘VでTSV往復。行列の挿入・削除で参照が追従、切れたら#REF!</li>
-<li>書き出しはSlideKitのスライド（表はPPTXで編集可能・グラフはDashboardKitのSVG）／GanttKitのガント／CSV／.xls</li>
+<li>書き出しはSlideKitのスライド（表はPPTXで編集可能）／CSV／.xls</li>
 </ul>
 <p class="links"><a href="CalcKit/index.html">起動</a><a href="CalcKit/README.md">仕様</a><span class="chk">検証: python3 CalcKit/check.py（式・書き出し30項目＋SlideKit往復E2E）</span></p>
 
 <h2 id="build">えがく — 描画・造形<span class="en">DRAWING / MODELING</span></h2>
 <p class="desc">イラレとFusionをやめられるか、を試している系統。まだ全部は置き換わらないが、日常の8割はこちらで済むようになってきた。</p>
 
-<h3><span class="num">06</span>BezierKit</h3>
+<h3><span class="num">03</span>BezierKit</h3>
 <a href="BezierKit/index.html"><img class="shot" src="kits-img/bezierkit.png" alt="BezierKit 描画画面" loading="lazy"></a>
 <p class="desc">ブラウザ製のベジェ描画ツール。ペン・アンカー編集・パス演算・文字のアウトライン化・レイヤーというイラレの基本に加えて、画像トレース（Schneider法の曲線フィット付き）と書道系の線表現を持つ。</p>
 <ul class="fx">
@@ -152,7 +119,7 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid #d8dde3;font-size:1
 </ul>
 <p class="links"><a href="BezierKit/index.html">起動</a><a href="BezierKit/icons.html">アイコンカタログ</a><span class="chk">検証: python3 BezierKit/cdp-check.py（17項目）／python3 BezierKit/icon-check.py</span></p>
 
-<h3><span class="num">07</span>CadKit</h3>
+<h3><span class="num">04</span>CadKit</h3>
 <a href="CadKit/index.html#tinrobot"><img class="shot" src="kits-img/cadkit.png" alt="CadKit ブリキロボ（ゼンマイ・色付き）" loading="lazy"></a>
 <p class="desc">ブラウザで動く3D CAD。スケッチに拘束（水平・垂直・平行・直角・等長・一致）を付けて、押し出し・回転などのフィーチャーで形にする履歴ベースの流儀。背骨＋断面キーで作る有機ボディにも対応し、ゼブラ表示で面の張りを確認できる。</p>
 <ul class="fx">
@@ -164,31 +131,22 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid #d8dde3;font-size:1
 <h2 id="run">まわす — 日々の運用<span class="en">DAILY OPERATIONS</span></h2>
 <p class="desc">派手さはないが毎日触るもの。ファイルがどこにあるか・何だったかを思い出す時間を削る。</p>
 
-<h3><span class="num">08</span>CaptureKit</h3>
+<h3><span class="num">05</span>CaptureKit</h3>
 <a href="CaptureKit/index.html"><img class="shot" src="kits-img/capturekit.png" alt="CaptureKit 日付カタログ" loading="lazy"></a>
 <p class="desc">Snagitの独自形式が使いにくい問題への回答。撮影はmacOS標準のscreencaptureに任せ（常にPNG/MOV）、キットは保存・日付カタログ・検索を担う。撮った画像はクリップボードにも入るので、SlideKitのプレースホルダーへ⌘V直行できる。</p>
 <ul class="fx">
-<li>CaptureKit.appをダブルクリック→撮影/クロップ/録画。範囲選択中スペースでウインドウ認識</li>
+<li><code>build-app.sh</code>でCaptureKit.appを生成すると、撮影・クロップ・録画をまとめて起動できる</li>
 <li>カタログはfile://のビューアで日付順・検索・タグ。Snagit資産の取り込みスクリプトも準備済み</li>
 </ul>
 <p class="links"><a href="CaptureKit/index.html">カタログ</a></p>
 
-<h3><span class="num">09</span>DocKit</h3>
-<a href="DocKit/index.html"><img class="shot" src="kits-img/dockit.png" alt="DocKit ビューア" loading="lazy"></a>
-<p class="desc">ワークスペースに散らばる.mdを1つのビューアで読む。#p=パスの直リンクが作れるので、「あのメモどこ」がリンク1本で済む。カタログは読み取り専用、正本は常に.md側。</p>
-<ul class="fx">
-<li>プロジェクト別一覧・全文検索・関連文書の自動検出。選択した箇所をKiroへの依頼文としてコピーできる</li>
-<li>Kiroのルール（steering）とスキルの専用カタログ付き。参照切れのリンクと、常時読み込みの膨張を検知する</li>
-</ul>
-<p class="links"><a href="DocKit/index.html">ビューア</a><a href="DocKit/skills.html">ルール・スキル一覧</a><span class="chk">検証: python3 DocKit/check.py</span></p>
-
 <h2 id="policy">流儀<span class="en">HOUSE RULES</span></h2>
 <ul class="fx" style="margin-top:16px">
 <li><b>file://で動く。</b>ビルドシステムなし、バンドラーなし、サーバーなし。ダブルクリックが唯一のデプロイ</li>
-<li><b>エンジンとデータを分ける。</b>ArchitectureKit・DashboardKit・GanttKitはデータファイル差し替えで量産する。ロジックをデータ側に書かない</li>
+
 <li><b>変更したら回帰テスト。</b>各キットにチェッカーがあり、機能追加のたびにテストも足す。壊れたまま進めない</li>
 <li><b>見た目は共通ヘッダーで揃える。</b>丸に井桁マーク＋キット名の48pxヘッダー。配色は各キットの文化を残す（雰囲気は揃える、完全には揃えない）</li>
-<li><b>キット同士がつながる。</b>CalcKitの表→SlideKitに1枚として／GanttKitのガントへ。ガント→CalcKitに戻して集計。グラフはDashboardKitが描く。CaptureKitのスクショ→SlideKitに⌘V。BezierKitのアイコン→各キットのUIへ。FitBaseという架空ジムをArchitectureKitとDashboardKitの実例で共有</li>
+<li><b>キット同士がつながる。</b>CalcKitの表とCaptureKitのスクショをSlideKitへ。BezierKitのアイコンを各キットのUIへ渡す</li>
 <li><b>正本は常にプレーンなファイル。</b>HTML・md・JSON・JSのどれかで、独自バイナリ形式を作らない。10年後も開ける</li>
 <li><b>書くのはAI、直すのは人。</b>どのキットもLLMを内蔵していない。代わりに、正本をKiroが読み書きできるテキストにして、規約で書き方を縛り、出来を機械が確認する（各キットのチェッカー・スクリーンショットの自動目視）。AIへの依頼はクリップボード経由で、外部へは何も送らない</li>
 </ul>
@@ -198,9 +156,8 @@ footer{margin-top:80px;padding-top:20px;border-top:1px solid #d8dde3;font-size:1
 <script>
 'use strict';
 const sectionIds=new Map([
-  ['SlideKit','slidekit'],['DashboardKit','dashboardkit'],['ArchitectureKit','archkit'],
-  ['GanttKit','ganttkit'],['CalcKit','calckit'],['BezierKit','bezierkit'],['CadKit','cadkit'],
-  ['CaptureKit','capturekit'],['DocKit','dockit'],['ResearchKit','researchkit'],['ClassroomKit','classroomkit']
+  ['SlideKit','slidekit'],['CalcKit','calckit'],['BezierKit','bezierkit'],
+  ['CadKit','cadkit'],['CaptureKit','capturekit']
 ]);
 document.querySelectorAll('h3').forEach(heading=>{
   const name=[...sectionIds.keys()].find(key=>heading.textContent.includes(key));

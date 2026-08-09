@@ -1,48 +1,30 @@
-# Kits — file://で動く自作ツールキット群
+# なになにKit
 
-ブラウザだけで動く（ビルドなし・サーバ不要・`file://`ダブルクリック起動）ツールキット集。
-入口は **`kits.html`**。各キットの関係はキット間のコピペ（SVG・JSON・HTML片）で緩く繋がる。
+ビルドやサーバーなしで、ブラウザから直接使える5つのローカルツールです。
+入口は **`kits.html`**。まずこのファイルをダブルクリックしてください。
 
-| キット | 何をするか |
+| キット | 用途 |
 |---|---|
-| SlideKit | スライドをHTMLで作りPPTXへ変換。ブラウザ上で直接編集 |
-| DashboardKit | ダッシュボード部品（KPI・グラフ・テーブル・テーマ6種） |
-| ArchKit | ホバー詳細＋フローアニメ付きAWS構成図。データ差し替えで量産 |
-| CadKit | ブラウザ3D CAD（スケッチ拘束→押し出し・回転・STEP入出力） |
-| BezierKit | イラレ風ベジェ描画。画像トレース・筆線・可変線幅 |
-| CaptureKit | スクリーンショットのカタログ＋画像エディタ |
-| DocKit | .md群のカタログビューア＋決定・宿題台帳＋Word書き出し |
-| GanttKit | 触れるガントチャート（タイムカーソル） |
-| CalcKit | 表計算（自前式エンジン・Excel相互コピペ・.xlsx書き出し） |
-| DesignKit | キット共通デザインシステム（ここを変えると全体が変わる） |
+| SlideKit | HTMLスライドの作成・編集・PPTX変換 |
+| CadKit | スケッチ拘束・押し出し・回転・STEP入出力に対応したブラウザ3D CAD |
+| BezierKit | 画像トレース・可変線幅に対応したベジェ描画 |
+| CaptureKit | スクリーンショットの保存・検索・画像編集 |
+| CalcKit | 式・複数シート・Excel相互コピペに対応した表計算 |
 
-## クローン後の初期化
+## 使い方
 
-生成物はリポジトリに含めていない。使う機能に応じて:
+各キットの詳しい入口と検証コマンドは `kits.html` にあります。
+PPTX・Excel変換の一部機能では `python-pptx` と `openpyxl` を使用します。
 
-```bash
-node DocKit/scan.js            # DocKitの文書カタログ生成
-node DocKit/ledger-scan.js     # 決定・宿題台帳
-node DocKit/skills-scan.js     # スキル・ステアリング一覧（Kiro併用時）
-```
-
-PPTX変換等のPython系は `python-pptx` `openpyxl` `python-docx` を使う。
-
-CaptureKit の常駐取り込み（`capturekit-app.applescript` / `*.plist`）内の
-`/PATH/TO/...` は自分の環境のパスに書き換えてから使う（テンプレート化してある）。
+CaptureKit の常駐取り込みを使う場合は、`capturekit-app.applescript` と `*.plist` 内の
+`/PATH/TO/...` を自分の環境のパスへ変更してください。
 
 ## 外部通信
 
-ArchKitはAWSアイコンをjsDelivr、CadKitはThree.js等をunpkg/jsDelivr、
-BezierKitは描画ライブラリと選択フォントをjsDelivrまたはraw.githubusercontent.comから取得する。
-オフライン環境や外部CDNを制限するネットワークでは、一部機能を利用できない。
-
-## 検証
-
-多くのキットに自動テストがある（`check.py` / `cdp-check.py` / `npm test`）。
-ヘッドレス検証はmacOS＋Google Chromeを前提にしている。
+CadKitはThree.js等をunpkg/jsDelivr、BezierKitは描画ライブラリとフォントを
+jsDelivr等のCDNから実行時に読み込みます。CDNを制限する環境では一部機能を利用できません。
 
 ## ライセンス
 
-MIT（`LICENSE`）。ただし CadKit が同梱する OCCT の wasm ビルドは LGPL-2.1 —
-詳細は `THIRD-PARTY-NOTICES.md`。
+MIT（`LICENSE`）。CadKit同梱のOCCT WebAssemblyはLGPL-2.1です。
+詳細は `THIRD-PARTY-NOTICES.md` を参照してください。
