@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16.0000mm" height="28.0000mm" viewBox="-48.0000 -92.0000 16.0000 28.0000" data-unit="mm" data-title="右上腕 背面">
+<g id="outline" fill="#d9dde3" stroke="#172b3a" stroke-width="0.35" fill-rule="evenodd">
+<path data-body-id="13" data-body="二の腕 13" d="M-34.0000 -66.0000L-46.0000 -66.0000L-46.0000 -90.0000L-34.0000 -90.0000Z"/>
+</g>
+<g id="feature" fill="none" stroke="#526979" stroke-width="0.2"></g>
+<g id="hidden" fill="none" stroke="#758795" stroke-width="0.18" stroke-dasharray="1.4 1"></g>
+<g id="axis" fill="none" stroke="#d94841" stroke-width="0.25">
+<path data-joint="右腕ロール" d="M-39.0000 -76.0000L-39.0000 -84.0000"/><path data-joint="右肘" d="M-36.0000 -66.0000L-44.0000 -66.0000"/></g>
+<g id="dimension" font-family="sans-serif" font-size="2.5" fill="#18324a"><text x="-47.0000" y="-89.0000">右上腕 背面 / 1 unit = 1 mm</text></g>
+</svg>

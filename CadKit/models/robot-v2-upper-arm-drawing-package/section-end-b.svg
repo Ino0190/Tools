@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16.0000mm" height="16.0000mm" viewBox="32.0000 -8.0000 16.0000 16.0000" data-unit="mm" data-title="右上腕 section-end-b">
+<defs><pattern id="section-hatch-pattern" width="2" height="2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="2" stroke="#8a9aa6" stroke-width="0.25"/></pattern></defs>
+<g id="hatch" fill="url(#section-hatch-pattern)" stroke="none" fill-rule="evenodd">
+<path data-body-id="13" data-body="二の腕 13" d="M46.0000 -6.0000L41.0000 -6.0000L34.0000 -6.0000L34.0000 -1.0000L34.0000 6.0000L39.0000 6.0000L46.0000 6.0000L46.0000 -1.0000Z"/>
+</g>
+<g id="cut-outline" fill="none" stroke="#172b3a" stroke-width="0.35">
+<path data-body-id="13" d="M46.0000 -6.0000L41.0000 -6.0000L34.0000 -6.0000L34.0000 -1.0000L34.0000 6.0000L39.0000 6.0000L46.0000 6.0000L46.0000 -1.0000Z"/>
+</g>
+<g id="feature" fill="none" stroke="#526979" stroke-width="0.2"></g>
+<g id="hidden" fill="none" stroke="#758795" stroke-width="0.18" stroke-dasharray="1.4 1"></g>
+<g id="axis" fill="none" stroke="#d94841" stroke-width="0.25">
+</g>
+<g id="dimension" font-family="sans-serif" font-size="2.5" fill="#18324a"><text x="33.0000" y="-5.0000">右上腕 section-end-b / 1 unit = 1 mm</text></g>
+</svg>

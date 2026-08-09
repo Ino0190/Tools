@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="18.0000mm" height="18.0000mm" viewBox="31.5000 -75.0000 18.0000 18.0000" data-unit="mm" data-title="右肘 section-long-z">
+<defs><pattern id="section-hatch-pattern" width="2" height="2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="2" stroke="#8a9aa6" stroke-width="0.25"/></pattern></defs>
+<g id="hatch" fill="url(#section-hatch-pattern)" stroke="none" fill-rule="evenodd">
+<path data-body-id="14" data-body="肘 14" d="M33.5000 -73.0000L47.5000 -73.0000L47.5000 -72.9663L47.5000 -72.8987L47.5000 -72.7208L47.5000 -61.6894L47.5000 -59.3371L47.5000 -59.1702L47.5000 -59.0337L47.5000 -59.0000L33.5000 -59.0000L33.5000 -59.0337L33.5000 -59.1702L33.5000 -59.3371L33.5000 -61.6894L33.5000 -72.7208L33.5000 -72.8987L33.5000 -72.9663Z"/>
+</g>
+<g id="cut-outline" fill="none" stroke="#172b3a" stroke-width="0.35">
+<path data-body-id="14" d="M33.5000 -73.0000L47.5000 -73.0000L47.5000 -72.9663L47.5000 -72.8987L47.5000 -72.7208L47.5000 -61.6894L47.5000 -59.3371L47.5000 -59.1702L47.5000 -59.0337L47.5000 -59.0000L33.5000 -59.0000L33.5000 -59.0337L33.5000 -59.1702L33.5000 -59.3371L33.5000 -61.6894L33.5000 -72.7208L33.5000 -72.8987L33.5000 -72.9663Z"/>
+</g>
+<g id="feature" fill="none" stroke="#526979" stroke-width="0.2"></g>
+<g id="hidden" fill="none" stroke="#758795" stroke-width="0.18" stroke-dasharray="1.4 1"></g>
+<g id="axis" fill="none" stroke="#d94841" stroke-width="0.25">
+</g>
+<g id="dimension" font-family="sans-serif" font-size="2.5" fill="#18324a"><text x="32.5000" y="-72.0000">右肘 section-long-z / 1 unit = 1 mm</text></g>
+</svg>

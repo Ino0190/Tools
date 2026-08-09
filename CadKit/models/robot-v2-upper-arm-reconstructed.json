@@ -1,0 +1,254 @@
+{
+  "version": 4,
+  "kernel": "manifold",
+  "poseLibraryId": null,
+  "sketches": [],
+  "ops": [
+    {
+      "type": "importsvgpackage",
+      "package": {
+        "manifest": {
+          "version": 1,
+          "unit": "mm",
+          "component": {
+            "id": "robot-r-upper-arm",
+            "name": "右上腕",
+            "parentId": "robot-r-shoulder",
+            "bodyIds": [
+              13
+            ]
+          },
+          "frame": {
+            "origin": [
+              0,
+              0,
+              0
+            ],
+            "right": [
+              1,
+              0,
+              0
+            ],
+            "up": [
+              0,
+              1,
+              0
+            ],
+            "front": [
+              0,
+              0,
+              1
+            ]
+          },
+          "bounds": {
+            "min": [
+              34,
+              66,
+              -6
+            ],
+            "max": [
+              46,
+              90,
+              6
+            ],
+            "size": [
+              12,
+              24,
+              12
+            ]
+          },
+          "views": {
+            "front": {
+              "file": "front.svg",
+              "width": 16,
+              "height": 28,
+              "outlineCount": 1
+            },
+            "right": {
+              "file": "right.svg",
+              "width": 16,
+              "height": 28,
+              "outlineCount": 1
+            },
+            "rear": {
+              "file": "rear.svg",
+              "width": 16,
+              "height": 28,
+              "outlineCount": 1
+            },
+            "top": {
+              "file": "top.svg",
+              "width": 16,
+              "height": 16,
+              "outlineCount": 1
+            }
+          },
+          "sections": [
+            {
+              "name": "section-long-x",
+              "axis": 0,
+              "value": 40,
+              "file": "section-long-x.svg",
+              "width": 16,
+              "height": 28,
+              "outlineCount": 1
+            },
+            {
+              "name": "section-long-z",
+              "axis": 2,
+              "value": 0,
+              "file": "section-long-z.svg",
+              "width": 16,
+              "height": 28,
+              "outlineCount": 1
+            },
+            {
+              "name": "section-end-a",
+              "axis": 1,
+              "value": 66,
+              "file": "section-end-a.svg",
+              "width": 16,
+              "height": 16,
+              "outlineCount": 1
+            },
+            {
+              "name": "section-middle",
+              "axis": 1,
+              "value": 78,
+              "file": "section-middle.svg",
+              "width": 16,
+              "height": 16,
+              "outlineCount": 1
+            },
+            {
+              "name": "section-end-b",
+              "axis": 1,
+              "value": 80,
+              "file": "section-end-b.svg",
+              "width": 16,
+              "height": 16,
+              "outlineCount": 1
+            }
+          ],
+          "joints": [
+            {
+              "id": null,
+              "name": "右腕ロール",
+              "source": "legacy",
+              "type": "revolute",
+              "parentId": "robot-r-shoulder",
+              "childId": "robot-r-upper-arm",
+              "p": [
+                39,
+                80,
+                0
+              ],
+              "d": [
+                0,
+                1,
+                0
+              ],
+              "min": null,
+              "max": null,
+              "zero": 0
+            },
+            {
+              "id": null,
+              "name": "右肘",
+              "source": "legacy",
+              "type": "revolute",
+              "parentId": "robot-r-upper-arm",
+              "childId": "robot-r-elbow",
+              "p": [
+                40,
+                66,
+                0
+              ],
+              "d": [
+                1,
+                0,
+                0
+              ],
+              "min": null,
+              "max": null,
+              "zero": 0
+            }
+          ]
+        },
+        "files": {
+          "front.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16.0000mm\" height=\"28.0000mm\" viewBox=\"32.0000 -92.0000 16.0000 28.0000\" data-unit=\"mm\" data-title=\"右上腕 正面\">\n<g id=\"outline\" fill=\"#d9dde3\" stroke=\"#172b3a\" stroke-width=\"0.35\" fill-rule=\"evenodd\">\n<path data-body-id=\"13\" data-body=\"二の腕 13\" d=\"M46.0000 -66.0000L34.0000 -66.0000L34.0000 -90.0000L46.0000 -90.0000Z\"/>\n</g>\n<g id=\"feature\" fill=\"none\" stroke=\"#526979\" stroke-width=\"0.2\"></g>\n<g id=\"hidden\" fill=\"none\" stroke=\"#758795\" stroke-width=\"0.18\" stroke-dasharray=\"1.4 1\"></g>\n<g id=\"axis\" fill=\"none\" stroke=\"#d94841\" stroke-width=\"0.25\">\n<path data-joint=\"右腕ロール\" d=\"M39.0000 -76.0000L39.0000 -84.0000\"/><path data-joint=\"右肘\" d=\"M36.0000 -66.0000L44.0000 -66.0000\"/></g>\n<g id=\"dimension\" font-family=\"sans-serif\" font-size=\"2.5\" fill=\"#18324a\"><text x=\"33.0000\" y=\"-89.0000\">右上腕 正面 / 1 unit = 1 mm</text></g>\n</svg>",
+          "right.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16.0000mm\" height=\"28.0000mm\" viewBox=\"-8.0000 -92.0000 16.0000 28.0000\" data-unit=\"mm\" data-title=\"右上腕 右側面\">\n<g id=\"outline\" fill=\"#d9dde3\" stroke=\"#172b3a\" stroke-width=\"0.35\" fill-rule=\"evenodd\">\n<path data-body-id=\"13\" data-body=\"二の腕 13\" d=\"M6.0000 -66.0000L-6.0000 -66.0000L-6.0000 -90.0000L6.0000 -90.0000Z\"/>\n</g>\n<g id=\"feature\" fill=\"none\" stroke=\"#526979\" stroke-width=\"0.2\"></g>\n<g id=\"hidden\" fill=\"none\" stroke=\"#758795\" stroke-width=\"0.18\" stroke-dasharray=\"1.4 1\"></g>\n<g id=\"axis\" fill=\"none\" stroke=\"#d94841\" stroke-width=\"0.25\">\n<path data-joint=\"右腕ロール\" d=\"M0.0000 -76.0000L0.0000 -84.0000\"/><circle data-joint=\"右肘\" cx=\"0.0000\" cy=\"-66.0000\" r=\"1\"/></g>\n<g id=\"dimension\" font-family=\"sans-serif\" font-size=\"2.5\" fill=\"#18324a\"><text x=\"-7.0000\" y=\"-89.0000\">右上腕 右側面 / 1 unit = 1 mm</text></g>\n</svg>",
+          "rear.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16.0000mm\" height=\"28.0000mm\" viewBox=\"-48.0000 -92.0000 16.0000 28.0000\" data-unit=\"mm\" data-title=\"右上腕 背面\">\n<g id=\"outline\" fill=\"#d9dde3\" stroke=\"#172b3a\" stroke-width=\"0.35\" fill-rule=\"evenodd\">\n<path data-body-id=\"13\" data-body=\"二の腕 13\" d=\"M-34.0000 -66.0000L-46.0000 -66.0000L-46.0000 -90.0000L-34.0000 -90.0000Z\"/>\n</g>\n<g id=\"feature\" fill=\"none\" stroke=\"#526979\" stroke-width=\"0.2\"></g>\n<g id=\"hidden\" fill=\"none\" stroke=\"#758795\" stroke-width=\"0.18\" stroke-dasharray=\"1.4 1\"></g>\n<g id=\"axis\" fill=\"none\" stroke=\"#d94841\" stroke-width=\"0.25\">\n<path data-joint=\"右腕ロール\" d=\"M-39.0000 -76.0000L-39.0000 -84.0000\"/><path data-joint=\"右肘\" d=\"M-36.0000 -66.0000L-44.0000 -66.0000\"/></g>\n<g id=\"dimension\" font-family=\"sans-serif\" font-size=\"2.5\" fill=\"#18324a\"><text x=\"-47.0000\" y=\"-89.0000\">右上腕 背面 / 1 unit = 1 mm</text></g>\n</svg>",
+          "top.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16.0000mm\" height=\"16.0000mm\" viewBox=\"32.0000 -8.0000 16.0000 16.0000\" data-unit=\"mm\" data-title=\"右上腕 上面\">\n<g id=\"outline\" fill=\"#d9dde3\" stroke=\"#172b3a\" stroke-width=\"0.35\" fill-rule=\"evenodd\">\n<path data-body-id=\"13\" data-body=\"二の腕 13\" d=\"M34.0000 -6.0000L46.0000 -6.0000L46.0000 6.0000L34.0000 6.0000Z\"/>\n</g>\n<g id=\"feature\" fill=\"none\" stroke=\"#526979\" stroke-width=\"0.2\"></g>\n<g id=\"hidden\" fill=\"none\" stroke=\"#758795\" stroke-width=\"0.18\" stroke-dasharray=\"1.4 1\"></g>\n<g id=\"axis\" fill=\"none\" stroke=\"#d94841\" stroke-width=\"0.25\">\n<circle data-joint=\"右腕ロール\" cx=\"39.0000\" cy=\"0.0000\" r=\"1\"/><path data-joint=\"右肘\" d=\"M36.0000 0.0000L44.0000 0.0000\"/></g>\n<g id=\"dimension\" font-family=\"sans-serif\" font-size=\"2.5\" fill=\"#18324a\"><text x=\"33.0000\" y=\"-5.0000\">右上腕 上面 / 1 unit = 1 mm</text></g>\n</svg>",
+          "section-long-x.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16.0000mm\" height=\"28.0000mm\" viewBox=\"-8.0000 -92.0000 16.0000 28.0000\" data-unit=\"mm\" data-title=\"右上腕 section-long-x\">\n<defs><pattern id=\"section-hatch-pattern\" width=\"2\" height=\"2\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"2\" stroke=\"#8a9aa6\" stroke-width=\"0.25\"/></pattern></defs>\n<g id=\"hatch\" fill=\"url(#section-hatch-pattern)\" stroke=\"none\" fill-rule=\"evenodd\">\n<path data-body-id=\"13\" data-body=\"二の腕 13\" d=\"M0.0000 -66.0000L6.0000 -66.0000L6.0000 -78.0000L6.0000 -90.0000L0.0000 -90.0000L-6.0000 -90.0000L-6.0000 -78.0000L-6.0000 -66.0000Z\"/>\n</g>\n<g id=\"cut-outline\" fill=\"none\" stroke=\"#172b3a\" stroke-width=\"0.35\">\n<path data-body-id=\"13\" d=\"M0.0000 -66.0000L6.0000 -66.0000L6.0000 -78.0000L6.0000 -90.0000L0.0000 -90.0000L-6.0000 -90.0000L-6.0000 -78.0000L-6.0000 -66.0000Z\"/>\n</g>\n<g id=\"feature\" fill=\"none\" stroke=\"#526979\" stroke-width=\"0.2\"></g>\n<g id=\"hidden\" fill=\"none\" stroke=\"#758795\" stroke-width=\"0.18\" stroke-dasharray=\"1.4 1\"></g>\n<g id=\"axis\" fill=\"none\" stroke=\"#d94841\" stroke-width=\"0.25\">\n</g>\n<g id=\"dimension\" font-family=\"sans-serif\" font-size=\"2.5\" fill=\"#18324a\"><text x=\"-7.0000\" y=\"-89.0000\">右上腕 section-long-x / 1 unit = 1 mm</text></g>\n</svg>",
+          "section-long-z.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16.0000mm\" height=\"28.0000mm\" viewBox=\"32.0000 -92.0000 16.0000 28.0000\" data-unit=\"mm\" data-title=\"右上腕 section-long-z\">\n<defs><pattern id=\"section-hatch-pattern\" width=\"2\" height=\"2\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"2\" stroke=\"#8a9aa6\" stroke-width=\"0.25\"/></pattern></defs>\n<g id=\"hatch\" fill=\"url(#section-hatch-pattern)\" stroke=\"none\" fill-rule=\"evenodd\">\n<path data-body-id=\"13\" data-body=\"二の腕 13\" d=\"M40.0000 -66.0000L34.0000 -66.0000L34.0000 -78.0000L34.0000 -90.0000L40.0000 -90.0000L46.0000 -90.0000L46.0000 -78.0000L46.0000 -66.0000Z\"/>\n</g>\n<g id=\"cut-outline\" fill=\"none\" stroke=\"#172b3a\" stroke-width=\"0.35\">\n<path data-body-id=\"13\" d=\"M40.0000 -66.0000L34.0000 -66.0000L34.0000 -78.0000L34.0000 -90.0000L40.0000 -90.0000L46.0000 -90.0000L46.0000 -78.0000L46.0000 -66.0000Z\"/>\n</g>\n<g id=\"feature\" fill=\"none\" stroke=\"#526979\" stroke-width=\"0.2\"></g>\n<g id=\"hidden\" fill=\"none\" stroke=\"#758795\" stroke-width=\"0.18\" stroke-dasharray=\"1.4 1\"></g>\n<g id=\"axis\" fill=\"none\" stroke=\"#d94841\" stroke-width=\"0.25\">\n</g>\n<g id=\"dimension\" font-family=\"sans-serif\" font-size=\"2.5\" fill=\"#18324a\"><text x=\"33.0000\" y=\"-89.0000\">右上腕 section-long-z / 1 unit = 1 mm</text></g>\n</svg>",
+          "section-end-a.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16.0000mm\" height=\"16.0000mm\" viewBox=\"32.0000 -8.0000 16.0000 16.0000\" data-unit=\"mm\" data-title=\"右上腕 section-end-a\">\n<defs><pattern id=\"section-hatch-pattern\" width=\"2\" height=\"2\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"2\" stroke=\"#8a9aa6\" stroke-width=\"0.25\"/></pattern></defs>\n<g id=\"hatch\" fill=\"url(#section-hatch-pattern)\" stroke=\"none\" fill-rule=\"evenodd\">\n<path data-body-id=\"13\" data-body=\"二の腕 13\" d=\"M46.0000 -6.0000L34.0000 -6.0000L34.0000 6.0000L46.0000 6.0000Z\"/>\n</g>\n<g id=\"cut-outline\" fill=\"none\" stroke=\"#172b3a\" stroke-width=\"0.35\">\n<path data-body-id=\"13\" d=\"M46.0000 -6.0000L34.0000 -6.0000L34.0000 6.0000L46.0000 6.0000Z\"/>\n</g>\n<g id=\"feature\" fill=\"none\" stroke=\"#526979\" stroke-width=\"0.2\"></g>\n<g id=\"hidden\" fill=\"none\" stroke=\"#758795\" stroke-width=\"0.18\" stroke-dasharray=\"1.4 1\"></g>\n<g id=\"axis\" fill=\"none\" stroke=\"#d94841\" stroke-width=\"0.25\">\n</g>\n<g id=\"dimension\" font-family=\"sans-serif\" font-size=\"2.5\" fill=\"#18324a\"><text x=\"33.0000\" y=\"-5.0000\">右上腕 section-end-a / 1 unit = 1 mm</text></g>\n</svg>",
+          "section-middle.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16.0000mm\" height=\"16.0000mm\" viewBox=\"32.0000 -8.0000 16.0000 16.0000\" data-unit=\"mm\" data-title=\"右上腕 section-middle\">\n<defs><pattern id=\"section-hatch-pattern\" width=\"2\" height=\"2\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"2\" stroke=\"#8a9aa6\" stroke-width=\"0.25\"/></pattern></defs>\n<g id=\"hatch\" fill=\"url(#section-hatch-pattern)\" stroke=\"none\" fill-rule=\"evenodd\">\n<path data-body-id=\"13\" data-body=\"二の腕 13\" d=\"M46.0000 -6.0000L40.0000 -6.0000L34.0000 -6.0000L34.0000 0.0000L34.0000 6.0000L40.0000 6.0000L46.0000 6.0000L46.0000 0.0000Z\"/>\n</g>\n<g id=\"cut-outline\" fill=\"none\" stroke=\"#172b3a\" stroke-width=\"0.35\">\n<path data-body-id=\"13\" d=\"M46.0000 -6.0000L40.0000 -6.0000L34.0000 -6.0000L34.0000 0.0000L34.0000 6.0000L40.0000 6.0000L46.0000 6.0000L46.0000 0.0000Z\"/>\n</g>\n<g id=\"feature\" fill=\"none\" stroke=\"#526979\" stroke-width=\"0.2\"></g>\n<g id=\"hidden\" fill=\"none\" stroke=\"#758795\" stroke-width=\"0.18\" stroke-dasharray=\"1.4 1\"></g>\n<g id=\"axis\" fill=\"none\" stroke=\"#d94841\" stroke-width=\"0.25\">\n</g>\n<g id=\"dimension\" font-family=\"sans-serif\" font-size=\"2.5\" fill=\"#18324a\"><text x=\"33.0000\" y=\"-5.0000\">右上腕 section-middle / 1 unit = 1 mm</text></g>\n</svg>",
+          "section-end-b.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16.0000mm\" height=\"16.0000mm\" viewBox=\"32.0000 -8.0000 16.0000 16.0000\" data-unit=\"mm\" data-title=\"右上腕 section-end-b\">\n<defs><pattern id=\"section-hatch-pattern\" width=\"2\" height=\"2\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"2\" stroke=\"#8a9aa6\" stroke-width=\"0.25\"/></pattern></defs>\n<g id=\"hatch\" fill=\"url(#section-hatch-pattern)\" stroke=\"none\" fill-rule=\"evenodd\">\n<path data-body-id=\"13\" data-body=\"二の腕 13\" d=\"M46.0000 -6.0000L41.0000 -6.0000L34.0000 -6.0000L34.0000 -1.0000L34.0000 6.0000L39.0000 6.0000L46.0000 6.0000L46.0000 -1.0000Z\"/>\n</g>\n<g id=\"cut-outline\" fill=\"none\" stroke=\"#172b3a\" stroke-width=\"0.35\">\n<path data-body-id=\"13\" d=\"M46.0000 -6.0000L41.0000 -6.0000L34.0000 -6.0000L34.0000 -1.0000L34.0000 6.0000L39.0000 6.0000L46.0000 6.0000L46.0000 -1.0000Z\"/>\n</g>\n<g id=\"feature\" fill=\"none\" stroke=\"#526979\" stroke-width=\"0.2\"></g>\n<g id=\"hidden\" fill=\"none\" stroke=\"#758795\" stroke-width=\"0.18\" stroke-dasharray=\"1.4 1\"></g>\n<g id=\"axis\" fill=\"none\" stroke=\"#d94841\" stroke-width=\"0.25\">\n</g>\n<g id=\"dimension\" font-family=\"sans-serif\" font-size=\"2.5\" fill=\"#18324a\"><text x=\"33.0000\" y=\"-5.0000\">右上腕 section-end-b / 1 unit = 1 mm</text></g>\n</svg>"
+        }
+      },
+      "label": "SVG再構築 右上腕"
+    }
+  ],
+  "groups": [],
+  "bodyColors": {
+    "1": "#8695a3"
+  },
+  "bodyGlows": {},
+  "joints": [],
+  "poses": [],
+  "seq": 2,
+  "components": [
+    {
+      "id": "svg-import-robot-r-upper-arm",
+      "name": "SVG再構築 右上腕",
+      "parentId": null,
+      "idxs": [
+        1
+      ],
+      "visible": true,
+      "locked": false,
+      "frame": {
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "front": [
+          0,
+          0,
+          1
+        ]
+      },
+      "sourcePackage": {
+        "version": 1,
+        "format": "cadkit-svg-package",
+        "componentId": "robot-r-upper-arm",
+        "componentName": "右上腕",
+        "sourceBodyIds": [
+          13
+        ],
+        "files": [
+          "front.svg",
+          "right.svg",
+          "rear.svg",
+          "top.svg",
+          "section-long-x.svg",
+          "section-long-z.svg",
+          "section-end-a.svg",
+          "section-middle.svg",
+          "section-end-b.svg"
+        ]
+      }
+    }
+  ],
+  "assemblyJoints": [],
+  "jointLinks": [],
+  "bodyMaterials": {},
+  "decals": []
+}

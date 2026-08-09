@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>CadKit OCCTカーネル検証機</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='414 291 285 285'%3E%3Cpath fill='%23fafafa' fill-rule='evenodd' d='M557.82 294.27C633.96 294.27 695.68 355.99 695.68 432.13C695.68 508.27 633.96 569.99 557.82 569.99C481.68 569.99 419.96 508.27 419.96 432.13C419.96 355.99 481.68 294.27 557.82 294.27ZM447.11 432.13C447.11 493.27 496.68 542.84 557.82 542.84C618.96 542.84 668.52 493.27 668.52 432.13C668.52 370.99 618.96 321.43 557.82 321.43C496.68 321.43 447.11 370.99 447.11 432.13Z'/%3E%3Cpath fill='%23fafafa' d='M586.49 351.44h29.07v224.03h-29.07ZM497.43 291.45h29.07v224.03h-29.07ZM414.48 489.87V460.8h224.03v29.07ZM474.47 403.46V374.4h224.04v29.06Z'/%3E%3C/svg%3E">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Yu Gothic',sans-serif;background:#dfe2e6;color:#1e2328;display:flex}
+#viewport{flex:1;position:relative}
+#side{width:400px;background:#e9ebee;border-left:1px solid #b7bec6;padding:14px;overflow-y:auto}
+h1{font-size:16px;margin-bottom:10px}
+#log{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.7;white-space:pre-wrap}
+.ok{color:#1a7a3c}.ng{color:#b02a1a}.t{color:#96690f}
+button{font-family:inherit;font-size:14px;padding:6px 12px;background:#d7dbdf;border:1px solid #a9b1b9;cursor:pointer;margin:2px}
+</style>
+<script type="importmap">
+{"imports":{
+"three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+"three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="viewport"></div>
+<div id="side">
+<h1>OCCT B-repカーネル検証</h1>
+<div><button id="btnStep">STEPをダウンロード</button></div>
+<div id="log">読み込み中…</div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+// ローカル（開発・要http.server or --allow-file-access-from-files）→ CDNの順で試す
+const OCCT_CDN='https://cdn.jsdelivr.net/npm/opencascade.js@2.0.0-beta.b5ff984/dist/';
+async function loadOCCT(){
+ try{
+  const m=await import('./occt/opencascade.full.js');
+  const oc=await m.default({locateFile:f=>'./occt/'+f});
+  return{oc,src:'ローカル'};
+ }catch(e){
+  const m=await import(OCCT_CDN+'opencascade.full.js');
+  const oc=await m.default({locateFile:f=>OCCT_CDN+f});
+  return{oc,src:'CDN'};
+ }
+}
+
+const logEl=document.getElementById('log');
+let logBuf=[];
+function log(msg,cls){
+ logBuf.push(cls?'<span class="'+cls+'">'+msg+'</span>':msg);
+ logEl.innerHTML=logBuf.join('\n');
+ console.log('OCCTLAB '+msg);
+}
+const t0=performance.now();
+const ms=t=>(performance.now()-t).toFixed(0)+'ms';
+
+// three.js表示
+const vp=document.getElementById('viewport');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+vp.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0xdadde2);
+const camera=new THREE.PerspectiveCamera(45,1,0.1,5000);
+camera.position.set(140,110,160);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;
+scene.add(new THREE.HemisphereLight(0xffffff,0x667788,1.1));
+const dl=new THREE.DirectionalLight(0xffffff,1.2);
+dl.position.set(120,220,160);scene.add(dl);
+function resize(){
+ const w=vp.clientWidth,h=vp.clientHeight;
+ renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+addEventListener('resize',resize);resize();
+(function anim(){requestAnimationFrame(anim);controls.update();renderer.render(scene,camera);})();
+
+// OCCT形状 → three.js BufferGeometry（表示用三角形化）
+function shapeToGeometry(oc,shape,defl=0.15){
+ new oc.BRepMesh_IncrementalMesh_2(shape,defl,false,0.3,false);
+ const pos=[],idx=[];
+ const expl=new oc.TopExp_Explorer_2(shape,oc.TopAbs_ShapeEnum.TopAbs_FACE,oc.TopAbs_ShapeEnum.TopAbs_SHAPE);
+ while(expl.More()){
+  const face=oc.TopoDS.Face_1(expl.Current());
+  const loc=new oc.TopLoc_Location_1();
+  const triH=oc.BRep_Tool.Triangulation(face,loc,0);
+  if(!triH.IsNull()){
+   const tri=triH.get();
+   const trsf=loc.Transformation();
+   const off=pos.length/3;
+   const n=tri.NbNodes();
+   for(let i=1;i<=n;i++){
+    const p=tri.Node(i).Transformed(trsf);
+    pos.push(p.X(),p.Y(),p.Z());
+   }
+   const rev=face.Orientation_1()===oc.TopAbs_Orientation.TopAbs_REVERSED;
+   const nt=tri.NbTriangles();
+   for(let i=1;i<=nt;i++){
+    const t=tri.Triangle(i);
+    let a=t.Value(1),b=t.Value(2),c=t.Value(3);
+    if(rev){const tmp=b;b=c;c=tmp;}
+    idx.push(off+a-1,off+b-1,off+c-1);
+   }
+  }
+  expl.Next();
+ }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ g.setIndex(idx);
+ g.computeVertexNormals();
+ return g;
+}
+function addShape(oc,shape,color,x){
+ const g=shapeToGeometry(oc,shape);
+ const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color,metalness:.1,roughness:.65}));
+ m.position.x=x||0;
+ m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g,25),
+  new THREE.LineBasicMaterial({color:0x2a3138})));
+ scene.add(m);
+ return g;
+}
+
+let stepText=null;
+document.getElementById('btnStep').onclick=()=>{
+ if(!stepText){alert('まだ生成されていない');return;}
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([stepText],{type:'text/plain'}));
+ a.download='occt-lab.step';
+ a.click();
+};
+
+async function main(){
+ // 1) WASM読み込み
+ let t=performance.now();
+ const{oc,src}=await loadOCCT();
+ log('WASM初期化: '+ms(t)+'（48MB・'+src+'）','t');
+
+ // 2) 素体: 板 100×60×12 ＋ 円筒 r14 h25（ロボの板サンプル相当）
+ t=performance.now();
+ const box=new oc.BRepPrimAPI_MakeBox_2(100,12,60).Shape();
+ const axis=new oc.gp_Ax2_3(new oc.gp_Pnt_3(30,12,30),new oc.gp_Dir_4(0,1,0));
+ const cyl=new oc.BRepPrimAPI_MakeCylinder_3(axis,14,25).Shape();
+ log('プリミティブ生成: '+ms(t),'t');
+
+ // 3) ブーリアン結合（板＋円筒）
+ t=performance.now();
+ const fuseOp=new oc.BRepAlgoAPI_Fuse_3(box,cyl,new oc.Message_ProgressRange_1());
+ fuseOp.Build(new oc.Message_ProgressRange_1());
+ const fused=fuseOp.Shape();
+ log('ブーリアン結合: '+ms(t),'t');
+
+ // 4) 貫通穴（円筒カット）
+ t=performance.now();
+ const axis2=new oc.gp_Ax2_3(new oc.gp_Pnt_3(70,-1,30),new oc.gp_Dir_4(0,1,0));
+ const hole=new oc.BRepPrimAPI_MakeCylinder_3(axis2,8,40).Shape();
+ const cutOp=new oc.BRepAlgoAPI_Cut_3(fused,hole,new oc.Message_ProgressRange_1());
+ cutOp.Build(new oc.Message_ProgressRange_1());
+ const cut=cutOp.Shape();
+ log('ブーリアン切削: '+ms(t),'t');
+
+ // 5) フィレット: 全エッジにr3（角の球面ブレンド＋円筒付け根の凹フィレットが本丸）
+ t=performance.now();
+ const fillet=new oc.BRepFilletAPI_MakeFillet(cut,oc.ChFi3d_FilletShape.ChFi3d_Rational);
+ const expl=new oc.TopExp_Explorer_2(cut,oc.TopAbs_ShapeEnum.TopAbs_EDGE,oc.TopAbs_ShapeEnum.TopAbs_SHAPE);
+ let ne=0;
+ while(expl.More()){
+  fillet.Add_2(3,oc.TopoDS.Edge_1(expl.Current()));
+  ne++;expl.Next();
+ }
+ fillet.Build(new oc.Message_ProgressRange_1());
+ const done=fillet.Shape();
+ log('フィレット r3 ×'+ne+'エッジ（付け根の凹・角の球面ブレンド込み）: '+ms(t),'t');
+
+ // 6) 表示メッシュ化
+ t=performance.now();
+ const g=addShape(oc,done,0xb9c2cc,-50);
+ log('三角形化: '+ms(t)+' / △'+(g.index.count/3),'t');
+
+ // 7) STEP書き出し
+ t=performance.now();
+ const writer=new oc.STEPControl_Writer_1();
+ writer.Transfer(done,oc.STEPControl_StepModelType.STEPControl_AsIs,true,new oc.Message_ProgressRange_1());
+ writer.Write('/out.step');
+ stepText=oc.FS.readFile('/out.step',{encoding:'utf8'});
+ log('STEP書き出し: '+ms(t)+' / '+(stepText.length/1024).toFixed(1)+'KB','t');
+
+ log('総所要: '+ms(t0),'ok');
+ log('OCCTLAB_OK edges='+ne+' tris='+(g.index.count/3)+' step='+stepText.length,'ok');
+}
+main().catch(e=>{
+ log('失敗: '+e.message,'ng');
+ console.log('OCCTLAB_FAIL '+e.message+' '+(e.stack||'').split('\n')[1]);
+});
+</script>
+</body>
+</html>

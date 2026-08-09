@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "unit": "mm",
+  "component": {
+    "id": "robot-r-elbow",
+    "name": "右肘",
+    "parentId": "robot-r-upper-arm",
+    "bodyIds": [
+      14
+    ]
+  },
+  "frame": {
+    "origin": [
+      0,
+      0,
+      0
+    ],
+    "right": [
+      1,
+      0,
+      0
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "front": [
+      0,
+      0,
+      1
+    ]
+  },
+  "bounds": {
+    "min": [
+      33.5,
+      59,
+      -7
+    ],
+    "max": [
+      47.5,
+      73,
+      7
+    ],
+    "size": [
+      14,
+      14,
+      14
+    ]
+  },
+  "views": {
+    "front": {
+      "file": "front.svg",
+      "width": 18,
+      "height": 18,
+      "outlineCount": 1
+    },
+    "right": {
+      "file": "right.svg",
+      "width": 18,
+      "height": 18,
+      "outlineCount": 1
+    },
+    "rear": {
+      "file": "rear.svg",
+      "width": 18,
+      "height": 18,
+      "outlineCount": 1
+    },
+    "top": {
+      "file": "top.svg",
+      "width": 18,
+      "height": 18,
+      "outlineCount": 1
+    }
+  },
+  "sections": [
+    {
+      "name": "section-long-y",
+      "axis": 1,
+      "value": 66,
+      "file": "section-long-y.svg",
+      "width": 18,
+      "height": 18,
+      "outlineCount": 1
+    },
+    {
+      "name": "section-long-z",
+      "axis": 2,
+      "value": 0,
+      "file": "section-long-z.svg",
+      "width": 18,
+      "height": 18,
+      "outlineCount": 1
+    },
+    {
+      "name": "section-end-a",
+      "axis": 0,
+      "value": 40,
+      "file": "section-end-a.svg",
+      "width": 18,
+      "height": 18,
+      "outlineCount": 1
+    },
+    {
+      "name": "section-middle",
+      "axis": 0,
+      "value": 40.5,
+      "file": "section-middle.svg",
+      "width": 18,
+      "height": 18,
+      "outlineCount": 1
+    },
+    {
+      "name": "section-end-b",
+      "axis": 0,
+      "value": 46.38,
+      "file": "section-end-b.svg",
+      "width": 18,
+      "height": 18,
+      "outlineCount": 1
+    }
+  ],
+  "joints": [
+    {
+      "id": null,
+      "name": "右肘",
+      "source": "legacy",
+      "type": "revolute",
+      "parentId": "robot-r-upper-arm",
+      "childId": "robot-r-elbow",
+      "p": [
+        40,
+        66,
+        0
+      ],
+      "d": [
+        1,
+        0,
+        0
+      ],
+      "min": null,
+      "max": null,
+      "zero": 0
+    }
+  ]
+}

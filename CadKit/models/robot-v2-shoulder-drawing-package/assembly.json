@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "unit": "mm",
+  "component": {
+    "id": "robot-r-shoulder",
+    "name": "右肩",
+    "parentId": "robot-r-arm",
+    "bodyIds": [
+      11,
+      12
+    ]
+  },
+  "frame": {
+    "origin": [
+      0,
+      0,
+      0
+    ],
+    "right": [
+      1,
+      0,
+      0
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "front": [
+      0,
+      0,
+      1
+    ]
+  },
+  "bounds": {
+    "min": [
+      24,
+      86,
+      -12
+    ],
+    "max": [
+      48,
+      106,
+      12
+    ],
+    "size": [
+      24,
+      20,
+      24
+    ]
+  },
+  "views": {
+    "front": {
+      "file": "front.svg",
+      "width": 28,
+      "height": 24,
+      "outlineCount": 2
+    },
+    "right": {
+      "file": "right.svg",
+      "width": 28,
+      "height": 24,
+      "outlineCount": 2
+    },
+    "rear": {
+      "file": "rear.svg",
+      "width": 28,
+      "height": 24,
+      "outlineCount": 2
+    },
+    "top": {
+      "file": "top.svg",
+      "width": 28,
+      "height": 28,
+      "outlineCount": 2
+    }
+  },
+  "sections": [
+    {
+      "name": "section-long-y",
+      "axis": 1,
+      "value": 96,
+      "file": "section-long-y.svg",
+      "width": 28,
+      "height": 28,
+      "outlineCount": 2
+    },
+    {
+      "name": "section-long-z",
+      "axis": 2,
+      "value": 0,
+      "file": "section-long-z.svg",
+      "width": 28,
+      "height": 24,
+      "outlineCount": 2
+    },
+    {
+      "name": "section-end-a",
+      "axis": 0,
+      "value": 30,
+      "file": "section-end-a.svg",
+      "width": 28,
+      "height": 24,
+      "outlineCount": 2
+    },
+    {
+      "name": "section-middle",
+      "axis": 0,
+      "value": 36,
+      "file": "section-middle.svg",
+      "width": 28,
+      "height": 24,
+      "outlineCount": 2
+    },
+    {
+      "name": "section-end-b",
+      "axis": 0,
+      "value": 46.08,
+      "file": "section-end-b.svg",
+      "width": 28,
+      "height": 20.92,
+      "outlineCount": 1
+    }
+  ],
+  "joints": [
+    {
+      "id": null,
+      "name": "右肩振り",
+      "source": "legacy",
+      "type": "revolute",
+      "parentId": "robot-upper",
+      "childId": "robot-r-arm",
+      "p": [
+        30,
+        96,
+        0
+      ],
+      "d": [
+        1,
+        0,
+        0
+      ],
+      "min": null,
+      "max": null,
+      "zero": 0
+    },
+    {
+      "id": null,
+      "name": "右肩開き",
+      "source": "legacy",
+      "type": "revolute",
+      "parentId": "robot-upper",
+      "childId": "robot-r-arm",
+      "p": [
+        30,
+        96,
+        0
+      ],
+      "d": [
+        0,
+        0,
+        1
+      ],
+      "min": null,
+      "max": null,
+      "zero": 0
+    },
+    {
+      "id": null,
+      "name": "右肩旋回",
+      "source": "legacy",
+      "type": "revolute",
+      "parentId": "robot-upper",
+      "childId": "robot-r-arm",
+      "p": [
+        30,
+        96,
+        0
+      ],
+      "d": [
+        0,
+        1,
+        0
+      ],
+      "min": null,
+      "max": null,
+      "zero": 0
+    }
+  ]
+}
