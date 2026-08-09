@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>SlideKit 図解パターンカタログ</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='414 291 285 285'%3E%3Cpath fill='%23fafafa' fill-rule='evenodd' d='M557.82 294.27C633.96 294.27 695.68 355.99 695.68 432.13C695.68 508.27 633.96 569.99 557.82 569.99C481.68 569.99 419.96 508.27 419.96 432.13C419.96 355.99 481.68 294.27 557.82 294.27ZM447.11 432.13C447.11 493.27 496.68 542.84 557.82 542.84C618.96 542.84 668.52 493.27 668.52 432.13C668.52 370.99 618.96 321.43 557.82 321.43C496.68 321.43 447.11 370.99 447.11 432.13Z'/%3E%3Cpath fill='%23fafafa' d='M586.49 351.44h29.07v224.03h-29.07ZM497.43 291.45h29.07v224.03h-29.07ZM414.48 489.87V460.8h224.03v29.07ZM474.47 403.46V374.4h224.04v29.06Z'/%3E%3C/svg%3E">
+<!--
+ ═══════════════════════════════════════════════════════════════
+ SlideKit 図解パターンカタログ v0.1
+ ═══════════════════════════════════════════════════════════════
+ 目的: 文字と表に寄りがちなAI生成スライドに「図解」の選択肢を与える見本帳。
+    Kiroはこの中のパターンを選んで文言を差し替える。
+    座標は計算済み＝空間配置の発明は不要。全パターンPPTXネイティブ変換対応
+    （SVG不使用。曲線・3D・グラフだけ最終スライドのSVG方式を使う）。
+
+ パターン一覧:
+  D01 判定フロー（Yes/No分岐）   D02 層スタック（3層アーキテクチャ）
+  D03 循環サイクル（改善ループ）  D04 4象限マトリクス（優先度）
+  D05 ロードマップ（フェーズ＋マイルストーン）
+  D06 簡易ガント（スケジュール帯） D07 相互依存図（中心＋周辺）
+  D08 課題整理（課題→本質→方針）  D09 棒グラフ（図形のみ・編集可）
+  D10 境界図（共通/固有の重なり）  SVG系の案内（曲線・3D・折れ線）
+
+ 幾何・色トークンは pattern-catalog.html と共通
+ （バッジx64y40 w200h34 / 見出しy81 fs34 / リードy150 fs20 / 本文y170〜660）
+ ink #121212 / title #21537f / navy #162a42 / card #eef3f8 /
+ line #d4dde7 / sub #9fc0dd / muted #718096 / accent #c62828（多用禁止）
+ ═══════════════════════════════════════════════════════════════
+-->
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Meiryo UI','Yu Gothic','游ゴシック','Noto Sans JP',sans-serif;background:#3a4756;display:flex;flex-direction:column;align-items:center;padding:20px 0 60px;font-weight:400}
+.slide{width:1280px;height:720px;position:relative;overflow:hidden;margin:12px 0;box-shadow:0 4px 24px rgba(0,0,0,.2)}
+.tb{position:absolute;overflow:hidden;line-height:1.5}
+.rect{position:absolute;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.rect>.tb{position:static;left:auto;top:auto;width:auto;height:auto;padding:3px;overflow:visible;text-align:center}
+.flow{position:absolute;display:flex;flex-direction:column;justify-content:flex-start;border-radius:8px;padding:12px 16px}
+.flow>.tb{position:static;left:auto;top:auto;width:auto;height:auto;padding:2px;overflow:visible}
+table{border-collapse:collapse}
+</style>
+</head>
+<body>
+
+<!-- SLIDE: D01 判定フロー（Yes/No分岐） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D01 判定フロー</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">条件で分岐して方式を決める</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">質問をYes/Noで辿ると結論に到達する判定フロー。方式選定・適用判断の説明に使う。</div>
+ <!-- 質問列（左） -->
+ <div class="rect" data-x="64" data-y="230" data-w="300" data-h="76" data-fill="#162a42" data-radius="8"
+    style="left:64px;top:230px;width:300px;height:76px;background:#162a42;border-radius:8px">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:19px;font-weight:700;color:#fafafa;text-align:center">Q1. API連携が可能か</div>
+ </div>
+ <div class="rect" data-x="64" data-y="380" data-w="300" data-h="76" data-fill="#162a42" data-radius="8"
+    style="left:64px;top:380px;width:300px;height:76px;background:#162a42;border-radius:8px">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:19px;font-weight:700;color:#fafafa;text-align:center">Q2. 自動収集が可能か</div>
+ </div>
+ <div class="rect" data-x="64" data-y="530" data-w="300" data-h="76" data-fill="#162a42" data-radius="8"
+    style="left:64px;top:530px;width:300px;height:76px;background:#162a42;border-radius:8px">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:19px;font-weight:700;color:#fafafa;text-align:center">Q3. 費用対効果が見合うか</div>
+ </div>
+ <!-- Q1→Q2, Q2→Q3 の縦線（No側） -->
+ <div class="rect" data-x="212" data-y="306" data-w="4" data-h="74" data-fill="#d4dde7" data-shape="line"
+    style="left:212px;top:306px;width:4px;height:74px;background:#d4dde7"></div>
+ <div class="rect" data-x="212" data-y="456" data-w="4" data-h="74" data-fill="#d4dde7" data-shape="line"
+    style="left:212px;top:456px;width:4px;height:74px;background:#d4dde7"></div>
+ <div class="tb" data-x="224" data-y="326" data-w="60" data-h="30" data-font-size="17" data-bold="1" data-color="#c62828"
+    style="left:224px;top:326px;width:60px;height:30px;font-size:17px;font-weight:700;color:#c62828">No</div>
+ <div class="tb" data-x="224" data-y="476" data-w="60" data-h="30" data-font-size="17" data-bold="1" data-color="#c62828"
+    style="left:224px;top:476px;width:60px;height:30px;font-size:17px;font-weight:700;color:#c62828">No</div>
+ <!-- Yes矢印（右向き） -->
+ <div class="rect" data-x="380" data-y="252" data-w="120" data-h="32" data-fill="#9fc0dd" data-shape="arrow" data-at="0.45" data-ah="0.32"
+    style="left:380px;top:252px;width:120px;height:32px;background:#9fc0dd;clip-path:polygon(0 28%,68% 28%,68% 0,100% 50%,68% 100%,68% 72%,0 72%)"></div>
+ <div class="rect" data-x="380" data-y="402" data-w="120" data-h="32" data-fill="#9fc0dd" data-shape="arrow" data-at="0.45" data-ah="0.32"
+    style="left:380px;top:402px;width:120px;height:32px;background:#9fc0dd;clip-path:polygon(0 28%,68% 28%,68% 0,100% 50%,68% 100%,68% 72%,0 72%)"></div>
+ <div class="rect" data-x="380" data-y="552" data-w="120" data-h="32" data-fill="#9fc0dd" data-shape="arrow" data-at="0.45" data-ah="0.32"
+    style="left:380px;top:552px;width:120px;height:32px;background:#9fc0dd;clip-path:polygon(0 28%,68% 28%,68% 0,100% 50%,68% 100%,68% 72%,0 72%)"></div>
+ <div class="tb" data-x="410" data-y="222" data-w="70" data-h="28" data-font-size="17" data-bold="1" data-color="#21537f"
+    style="left:410px;top:222px;width:70px;height:28px;font-size:17px;font-weight:700;color:#21537f">Yes</div>
+ <div class="tb" data-x="410" data-y="372" data-w="70" data-h="28" data-font-size="17" data-bold="1" data-color="#21537f"
+    style="left:410px;top:372px;width:70px;height:28px;font-size:17px;font-weight:700;color:#21537f">Yes</div>
+ <div class="tb" data-x="410" data-y="522" data-w="70" data-h="28" data-font-size="17" data-bold="1" data-color="#21537f"
+    style="left:410px;top:522px;width:70px;height:28px;font-size:17px;font-weight:700;color:#21537f">Yes</div>
+ <!-- 結論列（右） -->
+ <div class="flow" data-x="520" data-y="222" data-w="480" data-h="92" data-fill="#eef3f8"
+    style="left:520px;top:222px;width:480px;height:92px;background:#eef3f8">
+  <div class="tb" data-font-size="20" data-bold="1" data-color="#21537f" style="font-size:20px;font-weight:700;color:#21537f">方式① API連携</div>
+  <div class="tb" data-font-size="17" data-color="#121212" style="font-size:17px;color:#121212">API経由で取得しデータレイクへ保存。5分以内反映</div>
+ </div>
+ <div class="flow" data-x="520" data-y="372" data-w="480" data-h="92" data-fill="#eef3f8"
+    style="left:520px;top:372px;width:480px;height:92px;background:#eef3f8">
+  <div class="tb" data-font-size="20" data-bold="1" data-color="#21537f" style="font-size:20px;font-weight:700;color:#21537f">方式② 自動転送</div>
+  <div class="tb" data-font-size="17" data-color="#121212" style="font-size:17px;color:#121212">サーバ保存ファイルを継続転送。定期連携も可</div>
+ </div>
+ <div class="flow" data-x="520" data-y="522" data-w="480" data-h="92" data-fill="#eef3f8"
+    style="left:520px;top:522px;width:480px;height:92px;background:#eef3f8">
+  <div class="tb" data-font-size="20" data-bold="1" data-color="#21537f" style="font-size:20px;font-weight:700;color:#21537f">方式③ 機器更新</div>
+  <div class="tb" data-font-size="17" data-color="#121212" style="font-size:17px;color:#121212">対応機器への更新を比較検討して置き換える</div>
+ </div>
+ <!-- 最後のNo→フォールバック -->
+ <div class="rect" data-x="212" data-y="606" data-w="4" data-h="40" data-fill="#d4dde7" data-shape="line"
+    style="left:212px;top:606px;width:4px;height:40px;background:#d4dde7"></div>
+ <div class="flow" data-x="64" data-y="646" data-w="300" data-h="50" data-fill="#f4f4ef"
+    style="left:64px;top:646px;width:300px;height:50px;background:#f4f4ef;justify-content:center">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#7a471a" style="font-size:18px;font-weight:700;color:#7a471a">No → 手動取込（暫定運用）</div>
+ </div>
+ <div class="tb" data-x="520" data-y="646" data-w="696" data-h="50" data-font-size="15" data-color="#718096"
+    style="left:520px;top:646px;width:696px;height:50px;font-size:15px;color:#718096">使い方: 質問は3個まで。結論カードは.flow。矢印はdata-shape="arrow"、縦の線はdata-shape="line"。Yes/Noラベルは矢印・線の脇に置く。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D02 層スタック（3層アーキテクチャ） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D02 層スタック</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">3層で全体構成を示す</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">上から利用者に近い順に層を積む。層の間は▼▲テキストでデータの流れを示す。</div>
+ <!-- 層1 UI -->
+ <div class="rect" data-x="64" data-y="210" data-w="180" data-h="120" data-fill="#162a42" data-radius="8"
+    style="left:64px;top:210px;width:180px;height:120px;background:#162a42;border-radius:8px">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:19px;font-weight:700;color:#fafafa;text-align:center">UI層</div>
+ </div>
+ <div class="flow" data-x="260" data-y="210" data-w="300" data-h="120" data-fill="#eef3f8"
+    style="left:260px;top:210px;width:300px;height:120px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">ダッシュボード</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">状態・負荷・測定結果の可視化</div>
+ </div>
+ <div class="flow" data-x="576" data-y="210" data-w="300" data-h="120" data-fill="#eef3f8"
+    style="left:576px;top:210px;width:300px;height:120px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">AIチャット</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">自然言語で質問・提案を取得</div>
+ </div>
+ <div class="flow" data-x="892" data-y="210" data-w="324" data-h="120" data-fill="#eef3f8"
+    style="left:892px;top:210px;width:324px;height:120px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">モバイルアプリ</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">入力・通知・アラート</div>
+ </div>
+ <div class="tb" data-x="64" data-y="336" data-w="1152" data-h="28" data-font-size="16" data-bold="1" data-color="#718096" data-align="center"
+    style="left:64px;top:336px;width:1152px;height:28px;font-size:16px;font-weight:700;color:#718096;text-align:center">▼ 質問・操作　　▲ 回答・表示</div>
+ <!-- 層2 ロジック -->
+ <div class="rect" data-x="64" data-y="368" data-w="180" data-h="120" data-fill="#21537f" data-radius="8"
+    style="left:64px;top:368px;width:180px;height:120px;background:#21537f;border-radius:8px">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:19px;font-weight:700;color:#fafafa;text-align:center">ロジック層</div>
+ </div>
+ <div class="flow" data-x="260" data-y="368" data-w="300" data-h="120" data-fill="#eef3f8"
+    style="left:260px;top:368px;width:300px;height:120px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">検索・分析</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">横断検索＋統計分析</div>
+ </div>
+ <div class="flow" data-x="576" data-y="368" data-w="300" data-h="120" data-fill="#eef3f8"
+    style="left:576px;top:368px;width:300px;height:120px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">アラート生成</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">予防・超過検知</div>
+ </div>
+ <div class="flow" data-x="892" data-y="368" data-w="324" data-h="120" data-fill="#eef3f8"
+    style="left:892px;top:368px;width:324px;height:120px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">レポート自動作成</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">帳票・測定レポート</div>
+ </div>
+ <div class="tb" data-x="64" data-y="494" data-w="1152" data-h="28" data-font-size="16" data-bold="1" data-color="#718096" data-align="center"
+    style="left:64px;top:494px;width:1152px;height:28px;font-size:16px;font-weight:700;color:#718096;text-align:center">▼▲ データ取得・書込み</div>
+ <!-- 層3 データ -->
+ <div class="rect" data-x="64" data-y="526" data-w="180" data-h="120" data-fill="#5c728a" data-radius="8"
+    style="left:64px;top:526px;width:180px;height:120px;background:#5c728a;border-radius:8px">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:19px;font-weight:700;color:#fafafa;text-align:center">データ層</div>
+ </div>
+ <div class="flow" data-x="260" data-y="526" data-w="300" data-h="120" data-fill="#eef3f8"
+    style="left:260px;top:526px;width:300px;height:120px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">データレイク</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">原本保存・再分析</div>
+ </div>
+ <div class="flow" data-x="576" data-y="526" data-w="300" data-h="120" data-fill="#eef3f8"
+    style="left:576px;top:526px;width:300px;height:120px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">データカタログ</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">所在の検索</div>
+ </div>
+ <div class="flow" data-x="892" data-y="526" data-w="324" data-h="120" data-fill="#eef3f8"
+    style="left:892px;top:526px;width:324px;height:120px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">品質・ガバナンス</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">標準化・アクセス制御</div>
+ </div>
+ <div class="tb" data-x="64" data-y="660" data-w="1152" data-h="40" data-font-size="15" data-color="#718096"
+    style="left:64px;top:660px;width:1152px;height:40px;font-size:15px;color:#718096">使い方: 左端の縦ラベルは層ごとに色を変える（濃紺→青→灰青）。行内カードは同じ高さで揃え、層間は▼▲テキスト1行。カードは1層3個まで。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D03 循環サイクル（改善ループ4ステップ） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D03 循環サイクル</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">現場で回す即時改善のサイクル</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">4ステップを時計回りに配置し、矢印テキストで循環を示す。反復・アジャイル・PDCAの説明に使う。</div>
+ <!-- 上 -->
+ <div class="flow" data-x="470" data-y="210" data-w="340" data-h="100" data-fill="#eef3f8"
+    style="left:470px;top:210px;width:340px;height:100px;background:#eef3f8">
+  <div class="tb" data-font-size="20" data-bold="1" data-color="#21537f" style="font-size:20px;font-weight:700;color:#21537f">① 帯同・観察</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">現場に帯同し、業務と運用を現地で確認</div>
+ </div>
+ <!-- 右 -->
+ <div class="flow" data-x="860" data-y="380" data-w="340" data-h="100" data-fill="#eef3f8"
+    style="left:860px;top:380px;width:340px;height:100px;background:#eef3f8">
+  <div class="tb" data-font-size="20" data-bold="1" data-color="#21537f" style="font-size:20px;font-weight:700;color:#21537f">② 仮説合意</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">「何が見えると嬉しいか」を聞き取り合意</div>
+ </div>
+ <!-- 下 -->
+ <div class="flow" data-x="470" data-y="560" data-w="340" data-h="100" data-fill="#eef3f8"
+    style="left:470px;top:560px;width:340px;height:100px;background:#eef3f8">
+  <div class="tb" data-font-size="20" data-bold="1" data-color="#21537f" style="font-size:20px;font-weight:700;color:#21537f">③ 計測・即時可視化</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">合意項目を計測し、その場で画面に反映</div>
+ </div>
+ <!-- 左 -->
+ <div class="flow" data-x="80" data-y="380" data-w="340" data-h="100" data-fill="#eef3f8"
+    style="left:80px;top:380px;width:340px;height:100px;background:#eef3f8">
+  <div class="tb" data-font-size="20" data-bold="1" data-color="#21537f" style="font-size:20px;font-weight:700;color:#21537f">④ 活用・修正</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">使われ方を見極め、次の帯同へ反映</div>
+ </div>
+ <!-- 循環矢印（テキスト・PPTX安全） -->
+ <div class="tb" data-x="820" data-y="300" data-w="80" data-h="60" data-font-size="34" data-bold="1" data-color="#9fc0dd"
+    style="left:820px;top:300px;width:80px;height:60px;font-size:34px;font-weight:700;color:#9fc0dd;line-height:1.2">↘</div>
+ <div class="tb" data-x="820" data-y="500" data-w="80" data-h="60" data-font-size="34" data-bold="1" data-color="#9fc0dd"
+    style="left:820px;top:500px;width:80px;height:60px;font-size:34px;font-weight:700;color:#9fc0dd;line-height:1.2">↙</div>
+ <div class="tb" data-x="390" data-y="500" data-w="80" data-h="60" data-font-size="34" data-bold="1" data-color="#9fc0dd"
+    style="left:390px;top:500px;width:80px;height:60px;font-size:34px;font-weight:700;color:#9fc0dd;line-height:1.2">↖</div>
+ <div class="tb" data-x="390" data-y="300" data-w="80" data-h="60" data-font-size="34" data-bold="1" data-color="#9fc0dd"
+    style="left:390px;top:300px;width:80px;height:60px;font-size:34px;font-weight:700;color:#9fc0dd;line-height:1.2">↗</div>
+ <!-- 中央ラベル -->
+ <div class="rect" data-x="540" data-y="395" data-w="200" data-h="70" data-fill="#162a42" data-shape="circle"
+    style="left:540px;top:395px;width:200px;height:70px;background:#162a42;border-radius:50%">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center">週次で反復</div>
+ </div>
+ <div class="tb" data-x="64" data-y="672" data-w="1152" data-h="32" data-font-size="15" data-color="#718096"
+    style="left:64px;top:672px;width:1152px;height:32px;font-size:15px;color:#718096">使い方: ステップは4個固定（上→右→下→左）。循環は↘↙↖↗の文字矢印（PPTXで崩れない）。中央の楕円に周期や合言葉を置く。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D04 4象限マトリクス（優先度マッピング） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D04 4象限</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">2軸で評価して優先度を決める</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">価値×影響の2軸に対象を配置する。移行優先度・施策の取捨選択の説明に使う。</div>
+ <!-- 象限（2×2のflowカード） -->
+ <div class="flow" data-x="250" data-y="200" data-w="380" data-h="200" data-fill="#edf2f4"
+    style="left:250px;top:200px;width:380px;height:200px;background:#edf2f4">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">計画的に移行</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">価値高 × 影響大：価値は高いが慎重に</div>
+ </div>
+ <div class="flow" data-x="646" data-y="200" data-w="380" data-h="200" data-fill="#f7f2f2"
+    style="left:646px;top:200px;width:380px;height:200px;background:#f7f2f2">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#d81616" style="font-size:19px;font-weight:700;color:#d81616">優先的に移行</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">価値高 × 影響小：早期に効果、リスク小</div>
+ </div>
+ <div class="flow" data-x="250" data-y="416" data-w="380" data-h="200" data-fill="#f4f4ef"
+    style="left:250px;top:416px;width:380px;height:200px;background:#f4f4ef">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#7a471a" style="font-size:19px;font-weight:700;color:#7a471a">慎重に検討</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">価値低 × 影響大：現行継続も選択肢</div>
+ </div>
+ <div class="flow" data-x="646" data-y="416" data-w="380" data-h="200" data-fill="#eef3f8"
+    style="left:646px;top:416px;width:380px;height:200px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">順次移行</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">価値低 × 影響小：効率よく段階的に</div>
+ </div>
+ <!-- 軸ラベル -->
+ <div class="tb" data-x="250" data-y="628" data-w="776" data-h="30" data-font-size="17" data-bold="1" data-color="#718096" data-align="center"
+    style="left:250px;top:628px;width:776px;height:30px;font-size:17px;font-weight:700;color:#718096;text-align:center">← 低　　ビジネス価値　　高 →</div>
+ <div class="tb" data-x="64" data-y="290" data-w="170" data-h="130" data-font-size="17" data-bold="1" data-color="#718096"
+    style="left:64px;top:290px;width:170px;height:130px;font-size:17px;font-weight:700;color:#718096;line-height:1.7">↑ 影響小<br><br>業務影響度<br><br>↓ 影響大</div>
+ <!-- 配置対象の例（小バッジ） -->
+ <div class="rect" data-x="880" data-y="250" data-w="110" data-h="34" data-fill="#b01212" data-radius="17"
+    style="left:880px;top:250px;width:110px;height:34px;background:#b01212;border-radius:17px">
+  <div class="tb" data-font-size="16" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:16px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">システムA</div>
+ </div>
+ <div class="rect" data-x="460" data-y="320" data-w="110" data-h="34" data-fill="#162a42" data-radius="17"
+    style="left:460px;top:320px;width:110px;height:34px;background:#162a42;border-radius:17px">
+  <div class="tb" data-font-size="16" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:16px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">システムB</div>
+ </div>
+ <div class="rect" data-x="760" data-y="500" data-w="110" data-h="34" data-fill="#5c728a" data-radius="17"
+    style="left:760px;top:500px;width:110px;height:34px;background:#5c728a;border-radius:17px">
+  <div class="tb" data-font-size="16" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:16px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">システムC</div>
+ </div>
+ <div class="tb" data-x="64" data-y="668" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:668px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: 象限は2×2のflowカード（gap16px）。右上＝最優先だけ赤系背景で目を引かせる。対象は小バッジ（pill）で象限内に置く。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D05 ロードマップ（フェーズ帯＋マイルストーン） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D05 ロードマップ</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">3フェーズで段階的に到達する</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">帯矢印（chevron）でフェーズを並べ、下に各フェーズの中身、上に年度とマイルストーンを置く。</div>
+ <!-- 年度目盛り -->
+ <div class="tb" data-x="64" data-y="210" data-w="384" data-h="30" data-font-size="18" data-bold="1" data-color="#718096" data-align="center"
+    style="left:64px;top:210px;width:384px;height:30px;font-size:18px;font-weight:700;color:#718096;text-align:center">2026年度（第1期前半）</div>
+ <div class="tb" data-x="448" data-y="210" data-w="384" data-h="30" data-font-size="18" data-bold="1" data-color="#718096" data-align="center"
+    style="left:448px;top:210px;width:384px;height:30px;font-size:18px;font-weight:700;color:#718096;text-align:center">2027-28年度（第1期後半-10）</div>
+ <div class="tb" data-x="832" data-y="210" data-w="384" data-h="30" data-font-size="18" data-bold="1" data-color="#718096" data-align="center"
+    style="left:832px;top:210px;width:384px;height:30px;font-size:18px;font-weight:700;color:#718096;text-align:center">2029年度以降（第2期後半-）</div>
+ <!-- フェーズ帯（chevron） -->
+ <div class="rect" data-x="64" data-y="250" data-w="380" data-h="80" data-fill="#5c728a" data-shape="chevron" data-cv="0.14"
+    style="left:64px;top:250px;width:380px;height:80px;background:#5c728a;clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%)">
+  <div class="tb" data-font-size="22" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:22px;font-weight:700;color:#fafafa;text-align:center">Phase 1　基盤固め</div>
+ </div>
+ <div class="rect" data-x="450" data-y="250" data-w="380" data-h="80" data-fill="#21537f" data-shape="chevron" data-cv="0.14"
+    style="left:450px;top:250px;width:380px;height:80px;background:#21537f;clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%)">
+  <div class="tb" data-font-size="22" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:22px;font-weight:700;color:#fafafa;text-align:center">Phase 2　本格展開</div>
+ </div>
+ <div class="rect" data-x="836" data-y="250" data-w="380" data-h="80" data-fill="#162a42" data-shape="chevron" data-cv="0.14"
+    style="left:836px;top:250px;width:380px;height:80px;background:#162a42;clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%)">
+  <div class="tb" data-font-size="22" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:22px;font-weight:700;color:#fafafa;text-align:center">Phase 3　知見の展開</div>
+ </div>
+ <!-- 各フェーズの中身 -->
+ <div class="flow" data-x="64" data-y="350" data-w="380" data-h="180" data-fill="#eef3f8"
+    style="left:64px;top:350px;width:380px;height:180px;background:#eef3f8">
+  <div class="tb" data-font-size="17" data-color="#121212" data-bullet="disc" style="font-size:17px;color:#121212;line-height:1.9">共通基盤・データ基盤要件定義<br>クラウド移行計画策定<br>現場協働の検証（4施策検証）</div>
+ </div>
+ <div class="flow" data-x="450" data-y="350" data-w="380" data-h="180" data-fill="#eef3f8"
+    style="left:450px;top:350px;width:380px;height:180px;background:#eef3f8">
+  <div class="tb" data-font-size="17" data-color="#121212" data-bullet="disc" style="font-size:17px;color:#121212;line-height:1.9">クラウド移行完了<br>データ基盤完成<br>現場向け本格展開</div>
+ </div>
+ <div class="flow" data-x="836" data-y="350" data-w="380" data-h="180" data-fill="#eef3f8"
+    style="left:836px;top:350px;width:380px;height:180px;background:#eef3f8">
+  <div class="tb" data-font-size="17" data-color="#121212" data-bullet="disc" style="font-size:17px;color:#121212;line-height:1.9">知見公開ポータル<br>外部データ連携<br>データ一元化の拡張</div>
+ </div>
+ <!-- マイルストーン（丸＋ラベル） -->
+ <div class="rect" data-x="230" data-y="556" data-w="22" data-h="22" data-fill="#c62828" data-shape="circle"
+    style="left:230px;top:556px;width:22px;height:22px;background:#c62828;border-radius:50%"></div>
+ <div class="tb" data-x="140" data-y="586" data-w="220" data-h="52" data-font-size="16" data-bold="1" data-color="#121212" data-align="center"
+    style="left:140px;top:586px;width:220px;height:52px;font-size:16px;font-weight:700;color:#121212;text-align:center">★ 本件＝Phase 1<br>検証完了 2027/03</div>
+ <div class="rect" data-x="620" data-y="556" data-w="22" data-h="22" data-fill="#162a42" data-shape="circle"
+    style="left:620px;top:556px;width:22px;height:22px;background:#162a42;border-radius:50%"></div>
+ <div class="tb" data-x="530" data-y="586" data-w="220" data-h="52" data-font-size="16" data-color="#121212" data-align="center"
+    style="left:530px;top:586px;width:220px;height:52px;font-size:16px;color:#121212;text-align:center">2028年<br>大型イベントA</div>
+ <div class="rect" data-x="1010" data-y="556" data-w="22" data-h="22" data-fill="#162a42" data-shape="circle"
+    style="left:1010px;top:556px;width:22px;height:22px;background:#162a42;border-radius:50%"></div>
+ <div class="tb" data-x="920" data-y="586" data-w="220" data-h="52" data-font-size="16" data-color="#121212" data-align="center"
+    style="left:920px;top:586px;width:220px;height:52px;font-size:16px;color:#121212;text-align:center">2032年<br>大型イベントC</div>
+ <!-- 基準線 -->
+ <div class="rect" data-x="64" data-y="565" data-w="1152" data-h="3" data-fill="#d4dde7" data-shape="line"
+    style="left:64px;top:565px;width:1152px;height:3px;background:#d4dde7"></div>
+ <div class="tb" data-x="64" data-y="660" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:660px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: フェーズはdata-shape="chevron"（3〜4個・左から濃度を上げる）。時間線はdata-shape="line"＋楕円のマイルストーン。強調する節目だけ赤。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D06 簡易ガント（スケジュール帯） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D06 簡易ガント</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">実施スケジュール（8ヶ月）</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">月列（8列）×タスク行。帯はrect、マイルストーンは◆テキスト。列幅112px・月境界に薄線。</div>
+ <!-- 月ヘッダー: x=320起点, 列幅112 -->
+ <div class="tb" data-x="320" data-y="204" data-w="112" data-h="28" data-font-size="17" data-bold="1" data-color="#718096" data-align="center" style="left:320px;top:204px;width:112px;height:28px;font-size:17px;font-weight:700;color:#718096;text-align:center">8月</div>
+ <div class="tb" data-x="432" data-y="204" data-w="112" data-h="28" data-font-size="17" data-bold="1" data-color="#718096" data-align="center" style="left:432px;top:204px;width:112px;height:28px;font-size:17px;font-weight:700;color:#718096;text-align:center">9月</div>
+ <div class="tb" data-x="544" data-y="204" data-w="112" data-h="28" data-font-size="17" data-bold="1" data-color="#718096" data-align="center" style="left:544px;top:204px;width:112px;height:28px;font-size:17px;font-weight:700;color:#718096;text-align:center">10月</div>
+ <div class="tb" data-x="656" data-y="204" data-w="112" data-h="28" data-font-size="17" data-bold="1" data-color="#718096" data-align="center" style="left:656px;top:204px;width:112px;height:28px;font-size:17px;font-weight:700;color:#718096;text-align:center">11月</div>
+ <div class="tb" data-x="768" data-y="204" data-w="112" data-h="28" data-font-size="17" data-bold="1" data-color="#718096" data-align="center" style="left:768px;top:204px;width:112px;height:28px;font-size:17px;font-weight:700;color:#718096;text-align:center">12月</div>
+ <div class="tb" data-x="880" data-y="204" data-w="112" data-h="28" data-font-size="17" data-bold="1" data-color="#718096" data-align="center" style="left:880px;top:204px;width:112px;height:28px;font-size:17px;font-weight:700;color:#718096;text-align:center">1月</div>
+ <div class="tb" data-x="992" data-y="204" data-w="112" data-h="28" data-font-size="17" data-bold="1" data-color="#718096" data-align="center" style="left:992px;top:204px;width:112px;height:28px;font-size:17px;font-weight:700;color:#718096;text-align:center">2月</div>
+ <div class="tb" data-x="1104" data-y="204" data-w="112" data-h="28" data-font-size="17" data-bold="1" data-color="#718096" data-align="center" style="left:1104px;top:204px;width:112px;height:28px;font-size:17px;font-weight:700;color:#718096;text-align:center">3月</div>
+ <!-- 月境界の縦線（8列: x=320..1216） -->
+ <div class="rect" data-x="320" data-y="236" data-w="2" data-h="404" data-fill="#d4dde7" data-shape="line" style="left:320px;top:236px;width:2px;height:404px;background:#d4dde7"></div>
+ <div class="rect" data-x="432" data-y="236" data-w="2" data-h="404" data-fill="#d4dde7" data-shape="line" style="left:432px;top:236px;width:2px;height:404px;background:#d4dde7"></div>
+ <div class="rect" data-x="544" data-y="236" data-w="2" data-h="404" data-fill="#d4dde7" data-shape="line" style="left:544px;top:236px;width:2px;height:404px;background:#d4dde7"></div>
+ <div class="rect" data-x="656" data-y="236" data-w="2" data-h="404" data-fill="#d4dde7" data-shape="line" style="left:656px;top:236px;width:2px;height:404px;background:#d4dde7"></div>
+ <div class="rect" data-x="768" data-y="236" data-w="2" data-h="404" data-fill="#d4dde7" data-shape="line" style="left:768px;top:236px;width:2px;height:404px;background:#d4dde7"></div>
+ <div class="rect" data-x="880" data-y="236" data-w="2" data-h="404" data-fill="#d4dde7" data-shape="line" style="left:880px;top:236px;width:2px;height:404px;background:#d4dde7"></div>
+ <div class="rect" data-x="992" data-y="236" data-w="2" data-h="404" data-fill="#d4dde7" data-shape="line" style="left:992px;top:236px;width:2px;height:404px;background:#d4dde7"></div>
+ <div class="rect" data-x="1104" data-y="236" data-w="2" data-h="404" data-fill="#d4dde7" data-shape="line" style="left:1104px;top:236px;width:2px;height:404px;background:#d4dde7"></div>
+ <div class="rect" data-x="1216" data-y="236" data-w="2" data-h="404" data-fill="#d4dde7" data-shape="line" style="left:1216px;top:236px;width:2px;height:404px;background:#d4dde7"></div>
+ <!-- タスク行: ラベル x64 w240, 行高64, y=248から -->
+ <div class="tb" data-x="64" data-y="252" data-w="240" data-h="32" data-font-size="17" data-bold="1" data-color="#121212" style="left:64px;top:252px;width:240px;height:32px;font-size:17px;font-weight:700;color:#121212">現状把握</div>
+ <div class="rect" data-x="320" data-y="250" data-w="224" data-h="36" data-fill="#5c728a" data-radius="6" style="left:320px;top:250px;width:224px;height:36px;background:#5c728a;border-radius:6px"></div>
+ <div class="tb" data-x="64" data-y="316" data-w="240" data-h="32" data-font-size="17" data-bold="1" data-color="#121212" style="left:64px;top:316px;width:240px;height:32px;font-size:17px;font-weight:700;color:#121212">要件定義</div>
+ <div class="rect" data-x="432" data-y="314" data-w="336" data-h="36" data-fill="#21537f" data-radius="6" style="left:432px;top:314px;width:336px;height:36px;background:#21537f;border-radius:6px"></div>
+ <div class="tb" data-x="64" data-y="380" data-w="240" data-h="32" data-font-size="17" data-bold="1" data-color="#121212" style="left:64px;top:380px;width:240px;height:32px;font-size:17px;font-weight:700;color:#121212">アーキテクチャ策定</div>
+ <div class="rect" data-x="656" data-y="378" data-w="224" data-h="36" data-fill="#21537f" data-radius="6" style="left:656px;top:378px;width:224px;height:36px;background:#21537f;border-radius:6px"></div>
+ <div class="tb" data-x="64" data-y="444" data-w="240" data-h="32" data-font-size="17" data-bold="1" data-color="#121212" style="left:64px;top:444px;width:240px;height:32px;font-size:17px;font-weight:700;color:#121212">移行計画策定</div>
+ <div class="rect" data-x="768" data-y="442" data-w="336" data-h="36" data-fill="#5c728a" data-radius="6" style="left:768px;top:442px;width:336px;height:36px;background:#5c728a;border-radius:6px"></div>
+ <div class="tb" data-x="64" data-y="508" data-w="240" data-h="32" data-font-size="17" data-bold="1" data-color="#121212" style="left:64px;top:508px;width:240px;height:32px;font-size:17px;font-weight:700;color:#121212">プロト開発・検証</div>
+ <div class="rect" data-x="544" data-y="506" data-w="560" data-h="36" data-fill="#162a42" data-radius="6" style="left:544px;top:506px;width:560px;height:36px;background:#162a42;border-radius:6px"></div>
+ <div class="tb" data-x="64" data-y="572" data-w="240" data-h="32" data-font-size="17" data-bold="1" data-color="#121212" style="left:64px;top:572px;width:240px;height:32px;font-size:17px;font-weight:700;color:#121212">評価・最終報告</div>
+ <div class="rect" data-x="1104" data-y="570" data-w="112" data-h="36" data-fill="#b01212" data-radius="6" style="left:1104px;top:570px;width:112px;height:36px;background:#b01212;border-radius:6px"></div>
+ <!-- マイルストーン◆ -->
+ <div class="tb" data-x="528" data-y="608" data-w="140" data-h="30" data-font-size="17" data-bold="1" data-color="#c62828" style="left:528px;top:608px;width:140px;height:30px;font-size:17px;font-weight:700;color:#c62828">◆ 中間提出</div>
+ <div class="tb" data-x="1120" data-y="608" data-w="140" data-h="30" data-font-size="17" data-bold="1" data-color="#c62828" style="left:1120px;top:608px;width:140px;height:30px;font-size:17px;font-weight:700;color:#c62828">◆ 検収</div>
+ <div class="tb" data-x="64" data-y="660" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:660px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: 帯＝rect（角丸6px・開始月x=320+112×n・幅=112×月数）。行高64px・タスクは6行まで。◆はテキストで帯の下に。詳細な工程表は表（table）でやる。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D07 相互依存図（中心＋周辺） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D07 相互依存図</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">4つの対象を一体で推進する</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">中心に目的、周囲に構成要素を置き、線で結ぶ。「バラバラでなく一体」を見せる時の型。</div>
+ <!-- 接続線（中心から4方向） -->
+ <div class="rect" data-x="420" data-y="330" data-w="130" data-h="4" data-fill="#d4dde7" data-shape="line" style="left:420px;top:330px;width:130px;height:4px;background:#d4dde7"></div>
+ <div class="rect" data-x="730" data-y="330" data-w="130" data-h="4" data-fill="#d4dde7" data-shape="line" style="left:730px;top:330px;width:130px;height:4px;background:#d4dde7"></div>
+ <div class="rect" data-x="420" data-y="510" data-w="130" data-h="4" data-fill="#d4dde7" data-shape="line" style="left:420px;top:510px;width:130px;height:4px;background:#d4dde7"></div>
+ <div class="rect" data-x="730" data-y="510" data-w="130" data-h="4" data-fill="#d4dde7" data-shape="line" style="left:730px;top:510px;width:130px;height:4px;background:#d4dde7"></div>
+ <!-- 中心（楕円・目的） -->
+ <div class="rect" data-x="540" data-y="360" data-w="200" data-h="130" data-fill="#162a42" data-shape="circle"
+    style="left:540px;top:360px;width:200px;height:130px;background:#162a42;border-radius:50%">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:19px;font-weight:700;color:#fafafa;text-align:center">全体最適<br>手戻りゼロ</div>
+ </div>
+ <!-- 周辺4ノード -->
+ <div class="flow" data-x="120" data-y="260" data-w="300" data-h="140" data-fill="#eef3f8"
+    style="left:120px;top:260px;width:300px;height:140px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">共通基盤</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">全施策の土台。基盤設計が移行方式・順序を規定する</div>
+ </div>
+ <div class="flow" data-x="860" data-y="260" data-w="300" data-h="140" data-fill="#eef3f8"
+    style="left:860px;top:260px;width:300px;height:140px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">データ基盤</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">中核。移行データの実態が設計に反映される</div>
+ </div>
+ <div class="flow" data-x="120" data-y="440" data-w="300" data-h="140" data-fill="#eef3f8"
+    style="left:120px;top:440px;width:300px;height:140px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">クラウド移行計画</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">基盤設計と整合し、検証で難所を検証しながら順序を最適化</div>
+ </div>
+ <div class="flow" data-x="860" data-y="440" data-w="300" data-h="140" data-fill="#eef3f8"
+    style="left:860px;top:440px;width:300px;height:140px;background:#eef3f8">
+  <div class="tb" data-font-size="19" data-bold="1" data-color="#21537f" style="font-size:19px;font-weight:700;color:#21537f">検証</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">検証結果が基盤・データ基盤の要件を精緻化する</div>
+ </div>
+ <div class="tb" data-x="64" data-y="640" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:640px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: 中心は楕円（data-shape="circle"）に目的を1語で。周辺は4個まで（多いと線が交差して破綻する）。線はdata-shape="line"の水平線のみ＝斜め線は使わない。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D08 課題整理（課題→本質→方針） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D08 課題整理</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">個別課題の奥にある構造を捉える</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">左＝表面的な課題、中央＝共通の構造的本質、右＝対応方針。課題の列挙で終わらせない型。</div>
+ <!-- 列見出し -->
+ <div class="tb" data-x="64" data-y="204" data-w="340" data-h="30" data-font-size="18" data-bold="1" data-color="#718096" data-align="center" style="left:64px;top:204px;width:340px;height:30px;font-size:18px;font-weight:700;color:#718096;text-align:center">見えている課題</div>
+ <div class="tb" data-x="470" data-y="204" data-w="340" data-h="30" data-font-size="18" data-bold="1" data-color="#718096" data-align="center" style="left:470px;top:204px;width:340px;height:30px;font-size:18px;font-weight:700;color:#718096;text-align:center">構造的な本質</div>
+ <div class="tb" data-x="876" data-y="204" data-w="340" data-h="30" data-font-size="18" data-bold="1" data-color="#718096" data-align="center" style="left:876px;top:204px;width:340px;height:30px;font-size:18px;font-weight:700;color:#718096;text-align:center">対応方針</div>
+ <!-- 左列: 課題3つ -->
+ <div class="flow" data-x="64" data-y="244" data-w="340" data-h="110" data-fill="#f7f2f2"
+    style="left:64px;top:244px;width:340px;height:110px;background:#f7f2f2">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#d81616" style="font-size:18px;font-weight:700;color:#d81616">課題A</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">システム・個人PC・紙に散在し横断参照できない</div>
+ </div>
+ <div class="flow" data-x="64" data-y="374" data-w="340" data-h="110" data-fill="#f7f2f2"
+    style="left:64px;top:374px;width:340px;height:110px;background:#f7f2f2">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#d81616" style="font-size:18px;font-weight:700;color:#d81616">課題B</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">部門ごとの個別最適でシステムがサイロ化</div>
+ </div>
+ <div class="flow" data-x="64" data-y="504" data-w="340" data-h="110" data-fill="#f7f2f2"
+    style="left:64px;top:504px;width:340px;height:110px;background:#f7f2f2">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#d81616" style="font-size:18px;font-weight:700;color:#d81616">課題C</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">問い合わせ対応と保守で改善の余力がない</div>
+ </div>
+ <!-- 収束矢印 -->
+ <div class="rect" data-x="416" data-y="412" data-w="42" data-h="32" data-fill="#9fc0dd" data-shape="arrow" data-at="0.45" data-ah="0.5"
+    style="left:416px;top:412px;width:42px;height:32px;background:#9fc0dd;clip-path:polygon(0 28%,50% 28%,50% 0,100% 50%,50% 100%,50% 72%,0 72%)"></div>
+ <!-- 中央: 本質1つ（大きい箱） -->
+ <div class="rect" data-x="470" data-y="244" data-w="340" data-h="370" data-fill="#162a42" data-radius="8"
+    style="left:470px;top:244px;width:340px;height:370px;background:#162a42;border-radius:8px">
+  <div class="tb" data-font-size="21" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:21px;font-weight:700;color:#fafafa;text-align:center;line-height:1.8">共通の構造＝<br>データが、必要とする<br>本人と支援者の手元に<br>届いていない</div>
+ </div>
+ <!-- 展開矢印 -->
+ <div class="rect" data-x="822" data-y="412" data-w="42" data-h="32" data-fill="#9fc0dd" data-shape="arrow" data-at="0.45" data-ah="0.5"
+    style="left:822px;top:412px;width:42px;height:32px;background:#9fc0dd;clip-path:polygon(0 28%,50% 28%,50% 0,100% 50%,50% 100%,50% 72%,0 72%)"></div>
+ <!-- 右列: 方針3つ -->
+ <div class="flow" data-x="876" data-y="244" data-w="340" data-h="110" data-fill="#edf2f4"
+    style="left:876px;top:244px;width:340px;height:110px;background:#edf2f4">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#21537f" style="font-size:18px;font-weight:700;color:#21537f">一元集約</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">データ基盤とカタログで横断活用</div>
+ </div>
+ <div class="flow" data-x="876" data-y="374" data-w="340" data-h="110" data-fill="#edf2f4"
+    style="left:876px;top:374px;width:340px;height:110px;background:#edf2f4">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#21537f" style="font-size:18px;font-weight:700;color:#21537f">届け方の再設計</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">役割別ダッシュボードとAIで手元に届ける</div>
+ </div>
+ <div class="flow" data-x="876" data-y="504" data-w="340" data-h="110" data-fill="#edf2f4"
+    style="left:876px;top:504px;width:340px;height:110px;background:#edf2f4">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#21537f" style="font-size:18px;font-weight:700;color:#21537f">余力の創出</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">クラウド移行で課題Cを軽減し改善に回す</div>
+ </div>
+ <div class="tb" data-x="64" data-y="644" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:644px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: 左＝赤系カード（課題）、中央＝濃紺の大箱1個（本質は必ず1つに絞る）、右＝青系カード（方針）。左右は3個ずつまで。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D09 棒グラフ（図形のみ・PPTXで編集可） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D09 棒グラフ</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">5年総コストの比較（イメージ）</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">棒＝rect＝PPTXでそのまま編集できる。高さは値に比例させる（基準線y=580・最大値の棒を高さ340pxに）。</div>
+ <!-- 基準線 -->
+ <div class="rect" data-x="160" data-y="580" data-w="960" data-h="3" data-fill="#718096" data-shape="line"
+    style="left:160px;top:580px;width:960px;height:3px;background:#718096"></div>
+ <!-- 棒1: 現行 100% h=340 → y=240 -->
+ <div class="rect" data-x="280" data-y="240" data-w="140" data-h="340" data-fill="#5c728a"
+    style="left:280px;top:240px;width:140px;height:340px;background:#5c728a"></div>
+ <div class="tb" data-x="250" data-y="200" data-w="200" data-h="34" data-font-size="22" data-bold="1" data-color="#121212" data-align="center"
+    style="left:250px;top:200px;width:200px;height:34px;font-size:22px;font-weight:700;color:#121212;text-align:center">100</div>
+ <div class="tb" data-x="230" data-y="592" data-w="240" data-h="56" data-font-size="18" data-bold="1" data-color="#121212" data-align="center"
+    style="left:230px;top:592px;width:240px;height:56px;font-size:18px;font-weight:700;color:#121212;text-align:center">現行オンプレ<br>（維持・更改）</div>
+ <!-- 棒2: 移行後 72% h=245 → y=335（初期費用を上乗せ2色） -->
+ <div class="rect" data-x="580" data-y="335" data-w="140" data-h="70" data-fill="#9fc0dd"
+    style="left:580px;top:335px;width:140px;height:70px;background:#9fc0dd"></div>
+ <div class="rect" data-x="580" data-y="405" data-w="140" data-h="175" data-fill="#21537f"
+    style="left:580px;top:405px;width:140px;height:175px;background:#21537f"></div>
+ <div class="tb" data-x="550" data-y="295" data-w="200" data-h="34" data-font-size="22" data-bold="1" data-color="#21537f" data-align="center"
+    style="left:550px;top:295px;width:200px;height:34px;font-size:22px;font-weight:700;color:#21537f;text-align:center">72</div>
+ <div class="tb" data-x="530" data-y="592" data-w="240" data-h="56" data-font-size="18" data-bold="1" data-color="#121212" data-align="center"
+    style="left:530px;top:592px;width:240px;height:56px;font-size:18px;font-weight:700;color:#121212;text-align:center">クラウド移行後<br>（初期＋5年運用）</div>
+ <!-- 棒3: 最適化後 55% h=187 → y=393 -->
+ <div class="rect" data-x="880" data-y="393" data-w="140" data-h="187" data-fill="#162a42"
+    style="left:880px;top:393px;width:140px;height:187px;background:#162a42"></div>
+ <div class="tb" data-x="850" data-y="353" data-w="200" data-h="34" data-font-size="22" data-bold="1" data-color="#162a42" data-align="center"
+    style="left:850px;top:353px;width:200px;height:34px;font-size:22px;font-weight:700;color:#162a42;text-align:center">55</div>
+ <div class="tb" data-x="830" data-y="592" data-w="240" data-h="56" data-font-size="18" data-bold="1" data-color="#121212" data-align="center"
+    style="left:830px;top:592px;width:240px;height:56px;font-size:18px;font-weight:700;color:#121212;text-align:center">最適化後<br>（サーバレス活用）</div>
+ <!-- 凡例 -->
+ <div class="rect" data-x="960" data-y="210" data-w="20" data-h="20" data-fill="#9fc0dd" style="left:960px;top:210px;width:20px;height:20px;background:#9fc0dd"></div>
+ <div class="tb" data-x="988" data-y="206" data-w="180" data-h="28" data-font-size="16" data-color="#121212" style="left:988px;top:206px;width:180px;height:28px;font-size:16px;color:#121212">初期費用</div>
+ <div class="rect" data-x="960" data-y="242" data-w="20" data-h="20" data-fill="#21537f" style="left:960px;top:242px;width:20px;height:20px;background:#21537f"></div>
+ <div class="tb" data-x="988" data-y="238" data-w="180" data-h="28" data-font-size="16" data-color="#121212" style="left:988px;top:238px;width:180px;height:28px;font-size:16px;color:#121212">5年ランニング</div>
+ <div class="tb" data-x="64" data-y="660" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:660px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: 棒は3〜4本まで。値ラベルは棒の真上に太字。積み上げは同じ棒を2色のrectに分割。相対比較のイメージ図に使い、精密なグラフはExcel/SVGで。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D10 境界図（共通/固有の重なり） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D10 境界図</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">共通と固有の境界を定める</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">下の帯＝全体共通の土台、上の箱＝領域ごとの固有部分。責務分離・標準化と自由度の両立を見せる型。</div>
+ <!-- 固有領域（上・3箱） -->
+ <div class="tb" data-x="64" data-y="210" data-w="1152" data-h="30" data-font-size="18" data-bold="1" data-color="#718096"
+    style="left:64px;top:210px;width:1152px;height:30px;font-size:18px;font-weight:700;color:#718096">競技固有データ（各現場が競技特性に合わせて柔軟に管理）</div>
+ <div class="flow" data-x="64" data-y="248" data-w="368" data-h="180" data-fill="#f7f2f2"
+    style="left:64px;top:248px;width:368px;height:180px;background:#f7f2f2">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#d81616" style="font-size:18px;font-weight:700;color:#d81616">用途A系</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">計測値1・計測値2・累積量・回数</div>
+ </div>
+ <div class="flow" data-x="456" data-y="248" data-w="368" data-h="180" data-fill="#f4f4ef"
+    style="left:456px;top:248px;width:368px;height:180px;background:#f4f4ef">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#7a471a" style="font-size:18px;font-weight:700;color:#7a471a">用途B系</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">位置情報・移動距離・回数集計</div>
+ </div>
+ <div class="flow" data-x="848" data-y="248" data-w="368" data-h="180" data-fill="#edf2f4"
+    style="left:848px;top:248px;width:368px;height:180px;background:#edf2f4">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#21537f" style="font-size:18px;font-weight:700;color:#21537f">用途C系</div>
+  <div class="tb" data-font-size="16" data-color="#121212" style="font-size:16px;color:#121212">試行回数・成功率・技術評価・映像分析</div>
+ </div>
+ <!-- 接続（▼を3つ） -->
+ <div class="tb" data-x="64" data-y="432" data-w="1152" data-h="30" data-font-size="18" data-bold="1" data-color="#9fc0dd" data-align="center"
+    style="left:64px;top:432px;width:1152px;height:30px;font-size:18px;font-weight:700;color:#9fc0dd;text-align:center">▼　　　　　　　　　　　　▼　　　　　　　　　　　　▼</div>
+ <!-- 共通の土台（下・全幅帯） -->
+ <div class="rect" data-x="64" data-y="468" data-w="1152" data-h="150" data-fill="#162a42" data-radius="8"
+    style="left:64px;top:468px;width:1152px;height:150px;background:#162a42;border-radius:8px">
+  <div class="tb" data-font-size="21" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:21px;font-weight:700;color:#fafafa;text-align:center">競技横断データ（が標準化・集中管理する土台）</div>
+  <div class="tb" data-font-size="17" data-color="#9fc0dd" data-align="center"
+     style="font-size:17px;color:#9fc0dd;text-align:center">基本情報｜カテゴリ1｜カテゴリ2｜業務データ｜状態データ｜機微データ</div>
+ </div>
+ <div class="tb" data-x="64" data-y="644" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:644px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: 土台は全幅の濃紺帯1個、固有は上に3〜4箱（カード背景色で領域を区別）。接続は▼テキスト。ベン図の代わりに「土台＋上物」で重なりを表現する。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D12 評価ポイント対応表（提案書の各分類冒頭に置く型） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="240" data-h="34" data-fill="#b01212" data-radius="18"
+    style="left:64px;top:40px;width:240px;height:34px;background:#b01212;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D12 評価ポイント対応表</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="30" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:30px;font-weight:700;color:#21537f">分類N ○○○○ ― 評価のポイントと提案</div>
+ <!-- 左: 評価Noバッジ×3 -->
+ <div class="rect" data-x="64" data-y="160" data-w="176" data-h="90" data-fill="#0f1f3d" data-radius="6"
+    style="left:64px;top:160px;width:176px;height:90px;background:#0f1f3d;border-radius:6px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;line-height:1.5">評価No1<br>（配点50）</div>
+ </div>
+ <div class="flow" data-x="248" data-y="160" data-w="464" data-h="90" data-fill="#eeeeee"
+    style="left:248px;top:160px;width:464px;height:90px;background:#eeeeee;justify-content:center">
+  <div class="tb" data-font-size="15" data-color="#121212" style="font-size:15px;color:#121212;line-height:1.55">本件の調達目的や業務概要等を踏まえた実施方針が示されているか。背景・目的・Phase1の位置づけ、現行課題、後続工程を見据えた遂行方針が問われる。</div>
+ </div>
+ <div class="rect" data-x="64" data-y="260" data-w="176" data-h="90" data-fill="#0f1f3d" data-radius="6"
+    style="left:64px;top:260px;width:176px;height:90px;background:#0f1f3d;border-radius:6px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;line-height:1.5">評価No2<br>（配点40）</div>
+ </div>
+ <div class="flow" data-x="248" data-y="260" data-w="464" data-h="90" data-fill="#eeeeee"
+    style="left:248px;top:260px;width:464px;height:90px;background:#eeeeee;justify-content:center">
+  <div class="tb" data-font-size="15" data-color="#121212" style="font-size:15px;color:#121212;line-height:1.55">専門支援の特性と/の役割を理解した実施方針が示されているか。</div>
+ </div>
+ <div class="rect" data-x="64" data-y="360" data-w="176" data-h="90" data-fill="#0f1f3d" data-radius="6"
+    style="left:64px;top:360px;width:176px;height:90px;background:#0f1f3d;border-radius:6px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;line-height:1.5">評価No3<br>（配点40）</div>
+ </div>
+ <div class="flow" data-x="248" data-y="360" data-w="464" data-h="90" data-fill="#eeeeee"
+    style="left:248px;top:360px;width:464px;height:90px;background:#eeeeee;justify-content:center">
+  <div class="tb" data-font-size="15" data-color="#121212" style="font-size:15px;color:#121212;line-height:1.55">現行課題（課題A・課題B・課題C・横断分析不足）が構造的に整理されているか。</div>
+ </div>
+ <!-- 右: 弊社提案ブロック -->
+ <div class="rect" data-x="720" data-y="160" data-w="496" data-h="60" data-fill="#2e5bba" data-radius="6"
+    style="left:720px;top:160px;width:496px;height:60px;background:#2e5bba;border-radius:6px">
+  <div class="tb" data-font-size="22" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:22px;font-weight:700;color:#fafafa;text-align:center">弊社提案</div>
+ </div>
+ <div class="flow" data-x="720" data-y="228" data-w="496" data-h="422" data-fill="#d6e4f7"
+    style="left:720px;top:228px;width:496px;height:422px;background:#d6e4f7">
+  <div class="tb" data-font-size="15" data-color="#121212" data-bullet="disc" style="font-size:15px;color:#121212;line-height:1.85">全体構想の背景・3つの重要課題と、本件がPhase1「基盤固め」に当たる位置づけを、前工程のご支援を通じた理解に基づき整理する<br>共通基盤・データ基盤・移行計画・検証を個別最適ではなく一体で推進し、手戻りを防ぐ<br>後続工程・令和9年度以降の本格展開を見据え、成果物を再利用しやすい粒度で残す<br>の意思決定・レビューの周期を進め方に織り込み、契約後すみやかに走り出せる現実的な進め方を提案する</div>
+ </div>
+ <div class="tb" data-x="64" data-y="670" data-w="1152" data-h="30" data-font-size="15" data-color="#718096"
+    style="left:64px;top:670px;width:1152px;height:30px;font-size:15px;color:#718096">使い方: 分類1〜9の冒頭に置く固定型。バッジは紺#0f1f3d・設問は薄灰#eeeeee・提案は青#2e5bba＋#d6e4f7。評価Noは3〜4個まで、多いなら2枚に分割する。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D13 マルチステップ横フロー（4段階＋各段階の成果物） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D13 マルチステップ</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">4段階で一体推進する</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">上に段階見出し（chevron帯）、中に各段階の中身、下に成果物（付箋型）を並べる。段階数は3〜4個・成果物は各1〜2個まで。</div>
+ <!-- 4段階見出し（chevron帯・4等分） -->
+ <div class="rect" data-x="64" data-y="205" data-w="282" data-h="42" data-fill="#5c728a" data-shape="chevron" data-cv="0.10"
+    style="left:64px;top:205px;width:282px;height:42px;background:#5c728a;clip-path:polygon(0 0,90% 0,100% 50%,90% 100%,0 100%)">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:17px;font-weight:700;color:#fafafa;text-align:center">① 現状把握</div>
+ </div>
+ <div class="rect" data-x="352" data-y="205" data-w="282" data-h="42" data-fill="#21537f" data-shape="chevron" data-cv="0.10"
+    style="left:352px;top:205px;width:282px;height:42px;background:#21537f;clip-path:polygon(0 0,90% 0,100% 50%,90% 100%,0 100%)">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:17px;font-weight:700;color:#fafafa;text-align:center">② 要件定義</div>
+ </div>
+ <div class="rect" data-x="640" data-y="205" data-w="282" data-h="42" data-fill="#21537f" data-shape="chevron" data-cv="0.10"
+    style="left:640px;top:205px;width:282px;height:42px;background:#21537f;clip-path:polygon(0 0,90% 0,100% 50%,90% 100%,0 100%)">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:17px;font-weight:700;color:#fafafa;text-align:center">③ アーキ策定</div>
+ </div>
+ <div class="rect" data-x="928" data-y="205" data-w="288" data-h="42" data-fill="#162a42" data-shape="chevron" data-cv="0.10"
+    style="left:928px;top:205px;width:288px;height:42px;background:#162a42;clip-path:polygon(0 0,90% 0,100% 50%,90% 100%,0 100%)">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:17px;font-weight:700;color:#fafafa;text-align:center">④ 移行計画・検証</div>
+ </div>
+ <!-- 各段階の中身カード -->
+ <div class="flow" data-x="64" data-y="263" data-w="282" data-h="270" data-fill="#eef3f8"
+    style="left:64px;top:263px;width:282px;height:270px;background:#eef3f8">
+  <div class="tb" data-font-size="16" data-color="#121212" data-bullet="disc" style="font-size:16px;color:#121212;line-height:1.75">現行環境の把握<br>制約・課題の整理<br>データ棚卸し<br>利用者ニーズヒアリング</div>
+ </div>
+ <div class="flow" data-x="352" data-y="263" data-w="282" data-h="270" data-fill="#eef3f8"
+    style="left:352px;top:263px;width:282px;height:270px;background:#eef3f8">
+  <div class="tb" data-font-size="16" data-color="#121212" data-bullet="disc" style="font-size:16px;color:#121212;line-height:1.75">共通基盤の要件定義<br>データ基盤の要件定義<br>セキュリティ要件<br>運用要件</div>
+ </div>
+ <div class="flow" data-x="640" data-y="263" data-w="282" data-h="270" data-fill="#eef3f8"
+    style="left:640px;top:263px;width:282px;height:270px;background:#eef3f8">
+  <div class="tb" data-font-size="16" data-color="#121212" data-bullet="disc" style="font-size:16px;color:#121212;line-height:1.75">構築方針の検討<br>共通機能の検討<br>複数案比較<br>推奨案の策定</div>
+ </div>
+ <div class="flow" data-x="928" data-y="263" data-w="288" data-h="270" data-fill="#eef3f8"
+    style="left:928px;top:263px;width:288px;height:270px;background:#eef3f8">
+  <div class="tb" data-font-size="16" data-color="#121212" data-bullet="disc" style="font-size:16px;color:#121212;line-height:1.75">優先順位の検討<br>移行計画策定<br>費用対効果分析<br>検証実施計画</div>
+ </div>
+ <!-- 成果物ラベル＋付箋 -->
+ <div class="tb" data-x="64" data-y="548" data-w="1152" data-h="24" data-font-size="14" data-bold="1" data-color="#718096"
+    style="left:64px;top:548px;width:1152px;height:24px;font-size:14px;font-weight:700;color:#718096">▼ 各段階の成果物</div>
+ <div class="rect" data-x="64" data-y="578" data-w="140" data-h="46" data-fill="#fff5d9" data-border="1,#d4c47a" data-radius="0"
+    style="left:64px;top:578px;width:140px;height:46px;background:#fff5d9;border:1px solid #d4c47a">
+  <div class="tb" data-font-size="14" data-bold="1" data-color="#7a471a" data-align="center"
+     style="font-size:14px;font-weight:700;color:#7a471a;text-align:center;line-height:1.35">現状整理表<br>課題一覧</div>
+ </div>
+ <div class="rect" data-x="216" data-y="578" data-w="120" data-h="46" data-fill="#fff5d9" data-border="1,#d4c47a" data-radius="0"
+    style="left:216px;top:578px;width:120px;height:46px;background:#fff5d9;border:1px solid #d4c47a">
+  <div class="tb" data-font-size="14" data-bold="1" data-color="#7a471a" data-align="center"
+     style="font-size:14px;font-weight:700;color:#7a471a;text-align:center;line-height:1.35">データ<br>カタログ</div>
+ </div>
+ <div class="rect" data-x="352" data-y="578" data-w="140" data-h="46" data-fill="#fff5d9" data-border="1,#d4c47a" data-radius="0"
+    style="left:352px;top:578px;width:140px;height:46px;background:#fff5d9;border:1px solid #d4c47a">
+  <div class="tb" data-font-size="14" data-bold="1" data-color="#7a471a" data-align="center"
+     style="font-size:14px;font-weight:700;color:#7a471a;text-align:center;line-height:1.35">共通基盤<br>要件定義書</div>
+ </div>
+ <div class="rect" data-x="504" data-y="578" data-w="130" data-h="46" data-fill="#fff5d9" data-border="1,#d4c47a" data-radius="0"
+    style="left:504px;top:578px;width:130px;height:46px;background:#fff5d9;border:1px solid #d4c47a">
+  <div class="tb" data-font-size="14" data-bold="1" data-color="#7a471a" data-align="center"
+     style="font-size:14px;font-weight:700;color:#7a471a;text-align:center;line-height:1.35">データ基盤<br>要件定義書</div>
+ </div>
+ <div class="rect" data-x="640" data-y="578" data-w="130" data-h="46" data-fill="#fff5d9" data-border="1,#d4c47a" data-radius="0"
+    style="left:640px;top:578px;width:130px;height:46px;background:#fff5d9;border:1px solid #d4c47a">
+  <div class="tb" data-font-size="14" data-bold="1" data-color="#7a471a" data-align="center"
+     style="font-size:14px;font-weight:700;color:#7a471a;text-align:center;line-height:1.35">アーキ<br>設計書</div>
+ </div>
+ <div class="rect" data-x="782" data-y="578" data-w="140" data-h="46" data-fill="#fff5d9" data-border="1,#d4c47a" data-radius="0"
+    style="left:782px;top:578px;width:140px;height:46px;background:#fff5d9;border:1px solid #d4c47a">
+  <div class="tb" data-font-size="14" data-bold="1" data-color="#7a471a" data-align="center"
+     style="font-size:14px;font-weight:700;color:#7a471a;text-align:center;line-height:1.35">複数案比較<br>推奨案</div>
+ </div>
+ <div class="rect" data-x="928" data-y="578" data-w="140" data-h="46" data-fill="#fff5d9" data-border="1,#d4c47a" data-radius="0"
+    style="left:928px;top:578px;width:140px;height:46px;background:#fff5d9;border:1px solid #d4c47a">
+  <div class="tb" data-font-size="14" data-bold="1" data-color="#7a471a" data-align="center"
+     style="font-size:14px;font-weight:700;color:#7a471a;text-align:center;line-height:1.35">移行<br>ロードマップ</div>
+ </div>
+ <div class="rect" data-x="1080" data-y="578" data-w="136" data-h="46" data-fill="#fff5d9" data-border="1,#d4c47a" data-radius="0"
+    style="left:1080px;top:578px;width:136px;height:46px;background:#fff5d9;border:1px solid #d4c47a">
+  <div class="tb" data-font-size="14" data-bold="1" data-color="#7a471a" data-align="center"
+     style="font-size:14px;font-weight:700;color:#7a471a;text-align:center;line-height:1.35">検証<br>計画書</div>
+ </div>
+ <div class="tb" data-x="64" data-y="644" data-w="1152" data-h="52" data-font-size="15" data-color="#121212"
+    style="left:64px;top:644px;width:1152px;height:52px;font-size:15px;color:#121212;line-height:1.6"><b>切れ目のない実装</b> ― 前工程で現状を把握済しているため、調査からやり直さず本題に入り、各段階の成果物を入口／出口として明確化して発注者様のレビューを挟んで段階的に前進する。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D14 データ境界整理（円環サイクル+4ステップ） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D14 境界整理の進め方</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">初期案→レビュー→検証→改善で境界を確定</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">5ノードのステップを chevron 矢印で連結し、下部に「改善」から先頭へ戻る循環矢印を置く。データ境界・スキーマ定義など「反復して確定させる」プロセスの説明に使う。</div>
+ <!-- 5ステップ（横一列・chevron矢印つき） -->
+ <div class="flow" data-x="64" data-y="230" data-w="218" data-h="150" data-fill="#eef3f8"
+    style="left:64px;top:230px;width:218px;height:150px;background:#eef3f8">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#21537f" style="font-size:18px;font-weight:700;color:#21537f">① 初期案の定義</div>
+  <div class="tb" data-font-size="14" data-color="#121212" style="font-size:14px;color:#121212;line-height:1.55">既存計測項目＋他国先進事例から初期案を作成</div>
+ </div>
+ <div class="rect" data-x="290" data-y="290" data-w="32" data-h="30" data-fill="#1a365d" data-shape="chevron" data-cv="0.32"
+    style="left:290px;top:290px;width:32px;height:30px;background:#1a365d;clip-path:polygon(0 0,68% 0,100% 50%,68% 100%,0 100%)"></div>
+ <div class="flow" data-x="330" data-y="230" data-w="218" data-h="150" data-fill="#eef3f8"
+    style="left:330px;top:230px;width:218px;height:150px;background:#eef3f8">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#21537f" style="font-size:18px;font-weight:700;color:#21537f">② データカタログ化</div>
+  <div class="tb" data-font-size="14" data-color="#121212" style="font-size:14px;color:#121212;line-height:1.55">項目・責務などをデータカタログとして定義</div>
+ </div>
+ <div class="rect" data-x="556" data-y="290" data-w="32" data-h="30" data-fill="#1a365d" data-shape="chevron" data-cv="0.32"
+    style="left:556px;top:290px;width:32px;height:30px;background:#1a365d;clip-path:polygon(0 0,68% 0,100% 50%,68% 100%,0 100%)"></div>
+ <div class="flow" data-x="596" data-y="230" data-w="218" data-h="150" data-fill="#eef3f8"
+    style="left:596px;top:230px;width:218px;height:150px;background:#eef3f8">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#21537f" style="font-size:18px;font-weight:700;color:#21537f">③ 有識者レビュー</div>
+  <div class="tb" data-font-size="14" data-color="#121212" style="font-size:14px;color:#121212;line-height:1.55">・現場有識者による机上レビュー</div>
+ </div>
+ <div class="rect" data-x="822" data-y="290" data-w="32" data-h="30" data-fill="#1a365d" data-shape="chevron" data-cv="0.32"
+    style="left:822px;top:290px;width:32px;height:30px;background:#1a365d;clip-path:polygon(0 0,68% 0,100% 50%,68% 100%,0 100%)"></div>
+ <div class="flow" data-x="862" data-y="230" data-w="218" data-h="150" data-fill="#eef3f8"
+    style="left:862px;top:230px;width:218px;height:150px;background:#eef3f8">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#21537f" style="font-size:18px;font-weight:700;color:#21537f">④ 検証</div>
+  <div class="tb" data-font-size="14" data-color="#121212" style="font-size:14px;color:#121212;line-height:1.55">現場でのリアルな活用を通して妥当性を確認</div>
+ </div>
+ <div class="rect" data-x="1088" data-y="290" data-w="32" data-h="30" data-fill="#c62828" data-shape="chevron" data-cv="0.32"
+    style="left:1088px;top:290px;width:32px;height:30px;background:#c62828;clip-path:polygon(0 0,68% 0,100% 50%,68% 100%,0 100%)"></div>
+ <div class="flow" data-x="1128" data-y="230" data-w="88" data-h="150" data-fill="#fff5f5"
+    style="left:1128px;top:230px;width:88px;height:150px;background:#fff5f5;justify-content:center">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#c62828" data-align="center" style="font-size:18px;font-weight:700;color:#c62828;text-align:center">⑤ 改善</div>
+  <div class="tb" data-font-size="13" data-color="#121212" data-align="center" style="font-size:13px;color:#121212;text-align:center;line-height:1.5">FBを即時反映</div>
+ </div>
+ <!-- 循環（下: ⑤→① 逆矢印） -->
+ <div class="rect" data-x="106" data-y="410" data-w="1066" data-h="3" data-fill="#c62828" data-shape="line"
+    style="left:106px;top:410px;width:1066px;height:3px;background:#c62828"></div>
+ <div class="rect" data-x="106" data-y="380" data-w="3" data-h="30" data-fill="#c62828" data-shape="line"
+    style="left:106px;top:380px;width:3px;height:30px;background:#c62828"></div>
+ <div class="rect" data-x="1170" data-y="380" data-w="3" data-h="30" data-fill="#c62828" data-shape="line"
+    style="left:1170px;top:380px;width:3px;height:30px;background:#c62828"></div>
+ <div class="tb" data-x="86" data-y="382" data-w="40" data-h="30" data-font-size="24" data-bold="1" data-color="#c62828" data-align="center"
+    style="left:86px;top:382px;width:40px;height:30px;font-size:24px;font-weight:700;color:#c62828;text-align:center">◀</div>
+ <div class="tb" data-x="440" data-y="418" data-w="400" data-h="30" data-font-size="15" data-bold="1" data-color="#c62828" data-align="center"
+    style="left:440px;top:418px;width:400px;height:30px;font-size:15px;font-weight:700;color:#c62828;text-align:center">改善結果を初期案へ反映（フィードバックループ）</div>
+ <!-- 循環運用の効用（下・4カード） -->
+ <div class="tb" data-x="64" data-y="470" data-w="1152" data-h="24" data-font-size="14" data-bold="1" data-color="#718096"
+    style="left:64px;top:470px;width:1152px;height:24px;font-size:14px;font-weight:700;color:#718096">サイクルを回すことで得られるもの</div>
+ <div class="flow" data-x="64" data-y="500" data-w="282" data-h="130" data-fill="#f4f4ef"
+    style="left:64px;top:500px;width:282px;height:130px;background:#f4f4ef">
+  <div class="tb" data-font-size="16" data-bold="1" data-color="#7a471a" style="font-size:16px;font-weight:700;color:#7a471a">課題Cの適正化</div>
+  <div class="tb" data-font-size="13" data-color="#121212" style="font-size:13px;color:#121212;line-height:1.55">が標準化と品質管理を過度に抱え込まない</div>
+ </div>
+ <div class="flow" data-x="352" data-y="500" data-w="282" data-h="130" data-fill="#f4f4ef"
+    style="left:352px;top:500px;width:282px;height:130px;background:#f4f4ef">
+  <div class="tb" data-font-size="16" data-bold="1" data-color="#7a471a" style="font-size:16px;font-weight:700;color:#7a471a">現場の自由度確保</div>
+  <div class="tb" data-font-size="13" data-color="#121212" style="font-size:13px;color:#121212;line-height:1.55">競技特性に合わせた固有データを柔軟に管理できる</div>
+ </div>
+ <div class="flow" data-x="640" data-y="500" data-w="282" data-h="130" data-fill="#f4f4ef"
+    style="left:640px;top:500px;width:282px;height:130px;background:#f4f4ef">
+  <div class="tb" data-font-size="16" data-bold="1" data-color="#7a471a" style="font-size:16px;font-weight:700;color:#7a471a">データ品質の一貫性</div>
+  <div class="tb" data-font-size="13" data-color="#121212" style="font-size:13px;color:#121212;line-height:1.55">競技横断で比較・分析できる基準が揃う</div>
+ </div>
+ <div class="flow" data-x="928" data-y="500" data-w="288" data-h="130" data-fill="#f4f4ef"
+    style="left:928px;top:500px;width:288px;height:130px;background:#f4f4ef">
+  <div class="tb" data-font-size="16" data-bold="1" data-color="#7a471a" style="font-size:16px;font-weight:700;color:#7a471a">段階的な合意形成</div>
+  <div class="tb" data-font-size="13" data-color="#121212" style="font-size:13px;color:#121212;line-height:1.55">初期案→検証を通じて関係者の合意を得ながら進める</div>
+ </div>
+ <div class="tb" data-x="64" data-y="648" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:648px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: 5ステップは横一列（幅218px・chevron矢印32px）。最後の1個だけ赤で「反復」を強調。下の赤ラインで循環を明示。D03との違い＝終わりに戻る反復（直線＋復路）。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D15 多層防御6ステップ（横一列・番号付き丸角矩形） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D15 多層防御</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">生成AIの誤情報対策（多層防御）</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">単一対策で防ぐのでなく、複数の関門を通す。セキュリティ・品質保証・意思決定など「多層で堅くする」説明の型。</div>
+ <!-- 上の帯（見出し） -->
+ <div class="rect" data-x="64" data-y="196" data-w="1152" data-h="2" data-fill="#21537f" data-shape="line"
+    style="left:64px;top:196px;width:1152px;height:2px;background:#21537f"></div>
+ <!-- 6ステップ（横一列・幅180・gap12） -->
+ <div class="rect" data-x="64" data-y="220" data-w="180" data-h="150" data-fill="#eef3f8" data-radius="8" data-border="1,#9fc0dd"
+    style="left:64px;top:220px;width:180px;height:150px;background:#eef3f8;border-radius:8px;border:1px solid #9fc0dd">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#21537f" data-align="center"
+     style="font-size:17px;font-weight:700;color:#21537f;text-align:center;line-height:1.4">① 権限確認</div>
+  <div class="tb" data-font-size="13" data-color="#121212" data-align="center"
+     style="font-size:13px;color:#121212;text-align:center;line-height:1.55">利用者・範囲を確認</div>
+ </div>
+ <div class="tb" data-x="248" data-y="278" data-w="12" data-h="30" data-font-size="24" data-bold="1" data-color="#9fc0dd" data-align="center"
+    style="left:248px;top:278px;width:12px;height:30px;font-size:24px;font-weight:700;color:#9fc0dd;text-align:center">›</div>
+ <div class="rect" data-x="256" data-y="220" data-w="180" data-h="150" data-fill="#eef3f8" data-radius="8" data-border="1,#9fc0dd"
+    style="left:256px;top:220px;width:180px;height:150px;background:#eef3f8;border-radius:8px;border:1px solid #9fc0dd">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#21537f" data-align="center"
+     style="font-size:17px;font-weight:700;color:#21537f;text-align:center;line-height:1.4">② 根拠検索</div>
+  <div class="tb" data-font-size="13" data-color="#121212" data-align="center"
+     style="font-size:13px;color:#121212;text-align:center;line-height:1.55">承認済み情報のRAG検索</div>
+ </div>
+ <div class="tb" data-x="440" data-y="278" data-w="12" data-h="30" data-font-size="24" data-bold="1" data-color="#9fc0dd" data-align="center"
+    style="left:440px;top:278px;width:12px;height:30px;font-size:24px;font-weight:700;color:#9fc0dd;text-align:center">›</div>
+ <div class="rect" data-x="448" data-y="220" data-w="180" data-h="150" data-fill="#eef3f8" data-radius="8" data-border="1,#9fc0dd"
+    style="left:448px;top:220px;width:180px;height:150px;background:#eef3f8;border-radius:8px;border:1px solid #9fc0dd">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#21537f" data-align="center"
+     style="font-size:17px;font-weight:700;color:#21537f;text-align:center;line-height:1.4">③ 回答生成</div>
+  <div class="tb" data-font-size="13" data-color="#121212" data-align="center"
+     style="font-size:13px;color:#121212;text-align:center;line-height:1.55">根拠の範囲で回答</div>
+ </div>
+ <div class="tb" data-x="632" data-y="278" data-w="12" data-h="30" data-font-size="24" data-bold="1" data-color="#9fc0dd" data-align="center"
+    style="left:632px;top:278px;width:12px;height:30px;font-size:24px;font-weight:700;color:#9fc0dd;text-align:center">›</div>
+ <div class="rect" data-x="640" data-y="220" data-w="180" data-h="150" data-fill="#eef3f8" data-radius="8" data-border="1,#9fc0dd"
+    style="left:640px;top:220px;width:180px;height:150px;background:#eef3f8;border-radius:8px;border:1px solid #9fc0dd">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#21537f" data-align="center"
+     style="font-size:17px;font-weight:700;color:#21537f;text-align:center;line-height:1.4">④ 引用・検証</div>
+  <div class="tb" data-font-size="13" data-color="#121212" data-align="center"
+     style="font-size:13px;color:#121212;text-align:center;line-height:1.55">根拠併記・数値突合</div>
+ </div>
+ <div class="tb" data-x="824" data-y="278" data-w="12" data-h="30" data-font-size="24" data-bold="1" data-color="#9fc0dd" data-align="center"
+    style="left:824px;top:278px;width:12px;height:30px;font-size:24px;font-weight:700;color:#9fc0dd;text-align:center">›</div>
+ <div class="rect" data-x="832" data-y="220" data-w="180" data-h="150" data-fill="#eef3f8" data-radius="8" data-border="1,#9fc0dd"
+    style="left:832px;top:220px;width:180px;height:150px;background:#eef3f8;border-radius:8px;border:1px solid #9fc0dd">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#21537f" data-align="center"
+     style="font-size:17px;font-weight:700;color:#21537f;text-align:center;line-height:1.4">⑤ 人の確認</div>
+  <div class="tb" data-font-size="13" data-color="#121212" data-align="center"
+     style="font-size:13px;color:#121212;text-align:center;line-height:1.55">高影響の回答をレビュー</div>
+ </div>
+ <div class="tb" data-x="1016" data-y="278" data-w="12" data-h="30" data-font-size="24" data-bold="1" data-color="#9fc0dd" data-align="center"
+    style="left:1016px;top:278px;width:12px;height:30px;font-size:24px;font-weight:700;color:#9fc0dd;text-align:center">›</div>
+ <div class="rect" data-x="1024" data-y="220" data-w="192" data-h="150" data-fill="#162a42" data-radius="8"
+    style="left:1024px;top:220px;width:192px;height:150px;background:#162a42;border-radius:8px">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:17px;font-weight:700;color:#fafafa;text-align:center;line-height:1.4">⑥ 監視</div>
+  <div class="tb" data-font-size="13" data-color="#9fc0dd" data-align="center"
+     style="font-size:13px;color:#9fc0dd;text-align:center;line-height:1.55">ログ・継続評価</div>
+ </div>
+ <!-- 下の帯（補足） -->
+ <div class="rect" data-x="64" data-y="392" data-w="1152" data-h="2" data-fill="#21537f" data-shape="line"
+    style="left:64px;top:392px;width:1152px;height:2px;background:#21537f"></div>
+ <div class="flow" data-x="64" data-y="416" data-w="562" data-h="180" data-fill="#eef3f8"
+    style="left:64px;top:416px;width:562px;height:180px;background:#eef3f8">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#21537f" style="font-size:18px;font-weight:700;color:#21537f">単一対策で完全に防止できるとは扱わない</div>
+  <div class="tb" data-font-size="15" data-color="#121212" style="font-size:15px;color:#121212;line-height:1.7">RAGだけで誤情報を防ぐのでなく、6つの関門を通して抑制・検知する。根拠が不足する場合は推測せず、回答を保留して不足を表示する。</div>
+ </div>
+ <div class="flow" data-x="654" data-y="416" data-w="562" data-h="180" data-fill="#f4f4ef"
+    style="left:654px;top:416px;width:562px;height:180px;background:#f4f4ef">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#7a471a" style="font-size:18px;font-weight:700;color:#7a471a">入力データの二次利用防止</div>
+  <div class="tb" data-font-size="15" data-color="#121212" style="font-size:15px;color:#121212;line-height:1.7">「モデル学習への利用禁止」を採用条件とし、技術・契約の両面から確認する。監査ログで継続評価する。</div>
+ </div>
+ <div class="tb" data-x="64" data-y="648" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:648px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: 5〜6ステップまで。最終ステップだけ濃紺で「監視・継続」の位置づけを強調。下の2カードで「なぜ多層か」の補足を置く。矢印は「›」文字（PPTX安全）。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: D16 マイルストーン付きタイムライン（複数レーン） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="240" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:240px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D16 マイルストーン</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="30" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:30px;font-weight:700;color:#21537f">Phase1-3タイムラインとマイルストーン</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+    data-font-size="17" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:36px;font-size:17px;color:#121212">上：フェーズ帯、下：主要マイルストーンをレーン別に。★=本件位置。D05との違い＝マイルストーンが名詞（Phase完了イベント）でなく「大型イベント等の外部イベント＋アウトカム」を併記する提案書スタイル。</div>
+ <!-- 年度目盛り -->
+ <div class="tb" data-x="64" data-y="200" data-w="240" data-h="24" data-font-size="14" data-bold="1" data-color="#718096" data-align="center"
+    style="left:64px;top:200px;width:240px;height:24px;font-size:14px;font-weight:700;color:#718096;text-align:center">2026 第1期前半</div>
+ <div class="tb" data-x="304" data-y="200" data-w="240" data-h="24" data-font-size="14" data-bold="1" data-color="#718096" data-align="center"
+    style="left:304px;top:200px;width:240px;height:24px;font-size:14px;font-weight:700;color:#718096;text-align:center">2027 第1期後半</div>
+ <div class="tb" data-x="544" data-y="200" data-w="240" data-h="24" data-font-size="14" data-bold="1" data-color="#718096" data-align="center"
+    style="left:544px;top:200px;width:240px;height:24px;font-size:14px;font-weight:700;color:#718096;text-align:center">2028 第2期前半</div>
+ <div class="tb" data-x="784" data-y="200" data-w="240" data-h="24" data-font-size="14" data-bold="1" data-color="#718096" data-align="center"
+    style="left:784px;top:200px;width:240px;height:24px;font-size:14px;font-weight:700;color:#718096;text-align:center">2030 第3期</div>
+ <div class="tb" data-x="1024" data-y="200" data-w="192" data-h="24" data-font-size="14" data-bold="1" data-color="#718096" data-align="center"
+    style="left:1024px;top:200px;width:192px;height:24px;font-size:14px;font-weight:700;color:#718096;text-align:center">2032 第3期後半</div>
+ <!-- Phase帯 -->
+ <div class="rect" data-x="64" data-y="234" data-w="480" data-h="52" data-fill="#5c728a" data-shape="chevron" data-cv="0.08"
+    style="left:64px;top:234px;width:480px;height:52px;background:#5c728a;clip-path:polygon(0 0,92% 0,100% 50%,92% 100%,0 100%)">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center">Phase 1　基盤固め</div>
+ </div>
+ <div class="rect" data-x="552" data-y="234" data-w="240" data-h="52" data-fill="#21537f" data-shape="chevron" data-cv="0.08"
+    style="left:552px;top:234px;width:240px;height:52px;background:#21537f;clip-path:polygon(0 0,92% 0,100% 50%,92% 100%,0 100%)">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center">Phase 2　本格展開</div>
+ </div>
+ <div class="rect" data-x="800" data-y="234" data-w="416" data-h="52" data-fill="#162a42" data-shape="chevron" data-cv="0.08"
+    style="left:800px;top:234px;width:416px;height:52px;background:#162a42;clip-path:polygon(0 0,92% 0,100% 50%,92% 100%,0 100%)">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center">Phase 3　知見の展開</div>
+ </div>
+ <!-- 本件★マーク -->
+ <div class="rect" data-x="150" data-y="292" data-w="300" data-h="30" data-fill="#c62828" data-radius="6"
+    style="left:150px;top:292px;width:300px;height:30px;background:#c62828;border-radius:6px">
+  <div class="tb" data-font-size="15" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:15px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">★ 本件＝Phase 1（第1期）</div>
+ </div>
+ <!-- レーン1: 外部イベント -->
+ <div class="tb" data-x="8" data-y="360" data-w="52" data-h="30" data-font-size="13" data-bold="1" data-color="#718096" data-align="right"
+    style="left:8px;top:360px;width:52px;height:30px;font-size:13px;font-weight:700;color:#718096;text-align:right">外部<br>イベント</div>
+ <div class="rect" data-x="64" data-y="352" data-w="1152" data-h="2" data-fill="#d4dde7" data-shape="line"
+    style="left:64px;top:352px;width:1152px;height:2px;background:#d4dde7"></div>
+ <div class="rect" data-x="544" data-y="378" data-w="18" data-h="18" data-fill="#162a42" data-shape="circle"
+    style="left:544px;top:378px;width:18px;height:18px;background:#162a42;border-radius:50%"></div>
+ <div class="tb" data-x="470" data-y="400" data-w="180" data-h="34" data-font-size="14" data-bold="1" data-color="#162a42" data-align="center"
+    style="left:470px;top:400px;width:180px;height:34px;font-size:14px;font-weight:700;color:#162a42;text-align:center;line-height:1.35">2028 夏季<br>大型イベントA</div>
+ <div class="rect" data-x="784" data-y="378" data-w="18" data-h="18" data-fill="#5c728a" data-shape="circle"
+    style="left:784px;top:378px;width:18px;height:18px;background:#5c728a;border-radius:50%"></div>
+ <div class="tb" data-x="710" data-y="400" data-w="180" data-h="34" data-font-size="14" data-color="#162a42" data-align="center"
+    style="left:710px;top:400px;width:180px;height:34px;font-size:14px;color:#162a42;text-align:center;line-height:1.35">2030年<br>大型イベントB</div>
+ <div class="rect" data-x="1024" data-y="378" data-w="18" data-h="18" data-fill="#162a42" data-shape="circle"
+    style="left:1024px;top:378px;width:18px;height:18px;background:#162a42;border-radius:50%"></div>
+ <div class="tb" data-x="950" data-y="400" data-w="180" data-h="34" data-font-size="14" data-bold="1" data-color="#162a42" data-align="center"
+    style="left:950px;top:400px;width:180px;height:34px;font-size:14px;font-weight:700;color:#162a42;text-align:center;line-height:1.35">2032年<br>大型イベントC</div>
+ <!-- レーン2: アウトカム -->
+ <div class="tb" data-x="8" data-y="456" data-w="52" data-h="30" data-font-size="13" data-bold="1" data-color="#718096" data-align="right"
+    style="left:8px;top:456px;width:52px;height:30px;font-size:13px;font-weight:700;color:#718096;text-align:right">アウト<br>カム</div>
+ <div class="rect" data-x="64" data-y="448" data-w="1152" data-h="2" data-fill="#d4dde7" data-shape="line"
+    style="left:64px;top:448px;width:1152px;height:2px;background:#d4dde7"></div>
+ <div class="flow" data-x="80" data-y="466" data-w="440" data-h="130" data-fill="#eef3f8"
+    style="left:80px;top:466px;width:440px;height:130px;background:#eef3f8">
+  <div class="tb" data-font-size="15" data-bold="1" data-color="#21537f" style="font-size:15px;font-weight:700;color:#21537f">Phase 1 主要マイルストーン</div>
+  <div class="tb" data-font-size="13" data-color="#121212" data-bullet="disc" style="font-size:13px;color:#121212;line-height:1.7">共通基盤・データ基盤要件定義<br>クラウド移行計画策定<br>現場協働の検証完了（4施策検証）</div>
+ </div>
+ <div class="flow" data-x="552" data-y="466" data-w="240" data-h="130" data-fill="#eef3f8"
+    style="left:552px;top:466px;width:240px;height:130px;background:#eef3f8">
+  <div class="tb" data-font-size="15" data-bold="1" data-color="#21537f" style="font-size:15px;font-weight:700;color:#21537f">Phase 2</div>
+  <div class="tb" data-font-size="13" data-color="#121212" data-bullet="disc" style="font-size:13px;color:#121212;line-height:1.7">移行完了<br>データ基盤完成<br>現場本格展開</div>
+ </div>
+ <div class="flow" data-x="800" data-y="466" data-w="416" data-h="130" data-fill="#eef3f8"
+    style="left:800px;top:466px;width:416px;height:130px;background:#eef3f8">
+  <div class="tb" data-font-size="15" data-bold="1" data-color="#21537f" style="font-size:15px;font-weight:700;color:#21537f">Phase 3</div>
+  <div class="tb" data-font-size="13" data-color="#121212" data-bullet="disc" style="font-size:13px;color:#121212;line-height:1.7">知見公開ポータル<br>外部データ連携<br>データ一元化の拡張</div>
+ </div>
+ <!-- 差別化3軸（下） -->
+ <div class="rect" data-x="64" data-y="614" data-w="24" data-h="24" data-fill="#c62828" data-shape="circle"
+    style="left:64px;top:614px;width:24px;height:24px;background:#c62828;border-radius:50%">
+  <div class="tb" data-font-size="15" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:15px;font-weight:700;color:#fafafa;text-align:center">①</div>
+ </div>
+ <div class="tb" data-x="96" data-y="614" data-w="290" data-h="30" data-font-size="14" data-bold="1" data-color="#121212"
+    style="left:96px;top:614px;width:290px;height:30px;font-size:14px;font-weight:700;color:#121212">後続工程の土台となる粒度</div>
+ <div class="rect" data-x="424" data-y="614" data-w="24" data-h="24" data-fill="#c62828" data-shape="circle"
+    style="left:424px;top:614px;width:24px;height:24px;background:#c62828;border-radius:50%">
+  <div class="tb" data-font-size="15" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:15px;font-weight:700;color:#fafafa;text-align:center">②</div>
+ </div>
+ <div class="tb" data-x="456" data-y="614" data-w="290" data-h="30" data-font-size="14" data-bold="1" data-color="#121212"
+    style="left:456px;top:614px;width:290px;height:30px;font-size:14px;font-weight:700;color:#121212">再現性の担保（IaC・手順書）</div>
+ <div class="rect" data-x="784" data-y="614" data-w="24" data-h="24" data-fill="#c62828" data-shape="circle"
+    style="left:784px;top:614px;width:24px;height:24px;background:#c62828;border-radius:50%">
+  <div class="tb" data-font-size="15" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:15px;font-weight:700;color:#fafafa;text-align:center">③</div>
+ </div>
+ <div class="tb" data-x="816" data-y="614" data-w="400" data-h="30" data-font-size="14" data-bold="1" data-color="#121212"
+    style="left:816px;top:614px;width:400px;height:30px;font-size:14px;font-weight:700;color:#121212">公平・中立に使える形（囲い込みなし）</div>
+ <div class="tb" data-x="64" data-y="656" data-w="1152" data-h="30" data-font-size="14" data-color="#718096"
+    style="left:64px;top:656px;width:1152px;height:30px;font-size:14px;color:#718096">使い方: 2レーン（外部イベント・アウトカム）＋★本件位置＋下の3軸ボリューム。D05との違い＝外部イベント（大型イベント等）を独立レーンで置ける・複数年度にまたがるPhase帯の幅を年度目盛りに比例させる。</div>
+</div>
+<!-- /SLIDE -->
+
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+ <div class="rect" data-x="64" data-y="40" data-w="240" data-h="34" data-fill="#162a42" data-radius="18"
+    style="left:64px;top:40px;width:240px;height:34px;background:#162a42;border-radius:18px">
+  <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+     style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">D11 図解プレースホルダー</div>
+ </div>
+ <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+    data-font-size="34" data-bold="1" data-color="#21537f"
+    style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">図が要るが型が決まらない時は、この枠を置く</div>
+ <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="60"
+    data-font-size="20" data-color="#121212"
+    style="left:64px;top:150px;width:1152px;height:60px;font-size:20px;color:#121212">文字で埋めて誤魔化さず、「ここは図解」と宣言して枠を置き、作り方の選択肢を書いて相談する。<br>体制図・スイムレーン・大規模アーキ図など、ネイティブ図形で組みにくいものは特にこの枠から始める。</div>
+ <!-- 図解枠本体（点線風の枠＝薄背景＋細ボーダー） -->
+ <div class="rect" data-x="64" data-y="230" data-w="740" data-h="400" data-fill="#f0f5fa" data-border="2,#9fc0dd" data-diagram-placeholder="1"
+    style="left:64px;top:230px;width:740px;height:400px;background:#f0f5fa;border:2px dashed #9fc0dd">
+  <div class="tb" data-font-size="26" data-bold="1" data-color="#21537f" data-align="center"
+     style="font-size:26px;font-weight:700;color:#21537f;text-align:center">📊 ここに図解</div>
+  <div class="tb" data-font-size="19" data-color="#121212" data-align="center"
+     style="font-size:19px;color:#121212;text-align:center;line-height:1.9">伝えたいこと：<br>「4つの対象が相互に依存していて、<br>個別でなく一体で進める必要がある」</div>
+ </div>
+ <!-- 選択肢（右カラム） -->
+ <div class="tb" data-x="836" data-y="230" data-w="380" data-h="30" data-font-size="18" data-bold="1" data-color="#718096"
+    style="left:836px;top:230px;width:380px;height:30px;font-size:18px;font-weight:700;color:#718096">作り方の選択肢（提案を書く）</div>
+ <div class="flow" data-x="836" data-y="268" data-w="380" data-h="86" data-fill="#eef3f8"
+    style="left:836px;top:268px;width:380px;height:86px;background:#eef3f8">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#21537f" style="font-size:17px;font-weight:700;color:#21537f">□ 新規作図</div>
+  <div class="tb" data-font-size="15" data-color="#121212" style="font-size:15px;color:#121212">D01〜D10の型に当てはめる／SVG方式で描く</div>
+ </div>
+ <div class="flow" data-x="836" data-y="362" data-w="380" data-h="86" data-fill="#eef3f8"
+    style="left:836px;top:362px;width:380px;height:86px;background:#eef3f8">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#21537f" style="font-size:17px;font-weight:700;color:#21537f">□ 過去PPTXの図を移植</div>
+  <div class="tb" data-font-size="15" data-color="#121212" style="font-size:15px;color:#121212">候補ファイル名＋ページ番号をここに書く（例: 全体構想最終報告書 p.7 論理アーキ図）</div>
+ </div>
+ <div class="flow" data-x="836" data-y="456" data-w="380" data-h="86" data-fill="#eef3f8"
+    style="left:836px;top:456px;width:380px;height:86px;background:#eef3f8">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#21537f" style="font-size:17px;font-weight:700;color:#21537f">□ スクショを貼る</div>
+  <div class="tb" data-font-size="15" data-color="#121212" style="font-size:15px;color:#121212">類似サービス・実画面。何をどの範囲で撮るかを指示文に書く（⌘Vで差し込み）</div>
+ </div>
+ <div class="flow" data-x="836" data-y="550" data-w="380" data-h="80" data-fill="#f4f4ef"
+    style="left:836px;top:550px;width:380px;height:80px;background:#f4f4ef">
+  <div class="tb" data-font-size="17" data-bold="1" data-color="#7a471a" style="font-size:17px;font-weight:700;color:#7a471a">□ 表で十分</div>
+  <div class="tb" data-font-size="15" data-color="#121212" style="font-size:15px;color:#121212">構造が行×列に収まるなら無理に図解しない</div>
+ </div>
+ <div class="tb" data-x="64" data-y="652" data-w="1152" data-h="36" data-font-size="15" data-color="#718096"
+    style="left:64px;top:652px;width:1152px;height:36px;font-size:15px;color:#718096">使い方: 枠には「伝えたいこと」を必ず1文で書く（これが図の設計仕様になる）。選択肢には推し（Kiroの提案）に印を付けて出す。決まったら枠を消して実体に差し替える。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: SVG系の案内（曲線・3D・折れ線グラフ） [CUSTOM: カタログ内の案内スライド] -->
+<div class="slide" data-bg="#183251" style="background:#183251">
+ <div class="tb" data-x="120" data-y="180" data-w="1040" data-h="60"
+    data-font-size="36" data-bold="1" data-color="#fafafa"
+    style="left:120px;top:180px;width:1040px;height:60px;font-size:36px;font-weight:700;color:#fafafa">ここにない図解＝SVG方式で作る</div>
+ <div class="rect" data-x="120" data-y="166" data-w="120" data-h="4" data-fill="#9fc0dd" data-shape="line"
+    style="left:120px;top:166px;width:120px;height:4px;background:#9fc0dd"></div>
+ <div class="tb" data-x="120" data-y="280" data-w="1040" data-h="300"
+    data-font-size="20" data-color="#fafafa"
+    style="left:120px;top:280px;width:1040px;height:300px;font-size:20px;color:#fafafa;line-height:2.0">D01〜D10はPPTXネイティブ図形のみ＝PowerPointでそのまま編集できる。<br>曲線・ファネル・3D風パイプライン・折れ線グラフ・複雑な依存関係は、<br>SVGで描いて画像として貼る（html_to_pptx.pyがChrome headlessでPNG化）。<br><br>・図形だけSVGで描き、文字は透明の.tbを上に重ねる（文字はPPTXで編集可能に残る）<br>・作例: 新規事業パイプライン（3D風）・ファネル図<br>・詳細は slide-html-to-pptx.md「曲線・ファネル等の作り込み図」の節</div>
+ <div class="tb" data-x="120" data-y="600" data-w="1040" data-h="36"
+    data-font-size="17" data-color="#9fc0dd"
+    style="left:120px;top:600px;width:1040px;height:36px;font-size:17px;color:#9fc0dd">迷ったらまずD01〜D10に当てはめる。当てはまらない時だけSVGに進む。</div>
+</div>
+<!-- /SLIDE -->
+
+<script>
+document.querySelectorAll('.slide').forEach((s,i)=>{
+ const n=document.createElement('div');
+ n.className='tb';
+ n.setAttribute('data-x','1200');n.setAttribute('data-y','688');
+ n.setAttribute('data-w','60');n.setAttribute('data-h','24');
+ n.setAttribute('data-font-size','21');n.setAttribute('data-color','#718096');
+ n.setAttribute('data-align','right');
+ n.style.cssText='position:absolute;left:1200px;top:688px;width:60px;height:24px;font-size:21px;color:#718096;text-align:right';
+ n.textContent=i+1;s.appendChild(n);
+});
+</script>
+<script src="slide-edit.js"></script>
+</body>
+</html>

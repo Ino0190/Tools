@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>CaptureKit</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='414 291 285 285'%3E%3Cpath fill='%23fafafa' fill-rule='evenodd' d='M557.82 294.27C633.96 294.27 695.68 355.99 695.68 432.13C695.68 508.27 633.96 569.99 557.82 569.99C481.68 569.99 419.96 508.27 419.96 432.13C419.96 355.99 481.68 294.27 557.82 294.27ZM447.11 432.13C447.11 493.27 496.68 542.84 557.82 542.84C618.96 542.84 668.52 493.27 668.52 432.13C668.52 370.99 618.96 321.43 557.82 321.43C496.68 321.43 447.11 370.99 447.11 432.13Z'/%3E%3Cpath fill='%23fafafa' d='M586.49 351.44h29.07v224.03h-29.07ZM497.43 291.45h29.07v224.03h-29.07ZM414.48 489.87V460.8h224.03v29.07ZM474.47 403.46V374.4h224.04v29.06Z'/%3E%3C/svg%3E">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Yu Gothic','游ゴシック','Noto Sans JP',sans-serif;background:#fafafa;color:#121212;font-size:16px}
+header{height:48px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid #d8dde3;background:#fff;position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;margin-right:14px;color:#183251;white-space:nowrap}
+.brand .kit-mark{width:22px;height:22px;display:block;flex:none}
+#q{flex:0 1 360px;height:32px;padding:0 12px;font-size:15px;font-family:inherit;border:1px solid #c3ccd5;background:#fafafa;color:#121212}
+#q:focus{outline:2px solid #21537f;outline-offset:-1px}
+#count{margin-left:auto;font-size:14px;color:#5e5e5e;white-space:nowrap}
+#groups{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px 0}
+.chip{font-size:14px;padding:5px 14px;border:1px solid #c3ccd5;background:#fff;color:#183251;cursor:pointer;font-family:inherit}
+.chip.on{background:#162a42;color:#fafafa;border-color:#162a42}
+main{max-width:1400px;margin:0 auto;padding:8px 20px 80px}
+h2.day{font-size:20px;font-weight:700;color:#183251;margin-top:48px;padding-bottom:8px;border-bottom:1px solid #d8dde3}
+h2.day .n{font-size:14px;font-weight:400;color:#5e5e5e;margin-left:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:16px}
+.card{background:#fff;border:1px solid #e2e7ec;cursor:pointer}
+.card:hover{border-color:#21537f}
+.thumb{position:relative;height:160px;background:#edf2f4;overflow:hidden}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .vbadge{position:absolute;right:8px;bottom:8px;background:#121212;color:#fafafa;font-size:14px;padding:2px 10px}
+.meta{padding:10px 12px 12px}
+.meta .name{font-size:15px;font-weight:700;color:#121212;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta .sub{font-size:14px;color:#5e5e5e;margin-top:3px}
+.meta .tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:14px;background:#edf2f4;color:#183251;padding:1px 9px}
+.meta .note{font-size:14px;color:#5e5e5e;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.empty{margin-top:64px;text-align:center;color:#5e5e5e;font-size:16px;line-height:2}
+.empty code{background:#edf2f4;padding:2px 8px;font-size:15px}
+#lb{position:fixed;inset:0;background:rgba(10,14,20,.92);z-index:100;display:flex;flex-direction:column}
+#lb[hidden]{display:none}
+#lbmain{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:20px}
+#lbmain img,#lbmain video{max-width:100%;max-height:100%;display:block}
+#lbbar{background:#fff;padding:14px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+#lbbar .name{font-size:16px;font-weight:700}
+#lbbar .sub{font-size:14px;color:#5e5e5e}
+#lbbar .note{font-size:15px;color:#121212;flex-basis:100%}
+#lbclose{position:absolute;top:10px;right:16px;font-size:28px;color:#fafafa;background:none;border:none;cursor:pointer;font-family:inherit}
+.lbnav{position:absolute;top:50%;transform:translateY(-50%);font-size:32px;color:#fafafa;background:rgba(0,0,0,.35);border:none;cursor:pointer;padding:12px 16px;font-family:inherit}
+#lbprev{left:10px}#lbnext{right:10px}
+</style>
+</head>
+<body>
+<header>
+<div class="brand"><svg class="kit-mark" viewBox="414 291 285 285" aria-hidden="true">
+<path fill="currentColor" fill-rule="evenodd" d="M557.82 294.27C633.96 294.27 695.68 355.99 695.68 432.13C695.68 508.27 633.96 569.99 557.82 569.99C481.68 569.99 419.96 508.27 419.96 432.13C419.96 355.99 481.68 294.27 557.82 294.27ZM447.11 432.13C447.11 493.27 496.68 542.84 557.82 542.84C618.96 542.84 668.52 493.27 668.52 432.13C668.52 370.99 618.96 321.43 557.82 321.43C496.68 321.43 447.11 370.99 447.11 432.13Z"/>
+<path fill="currentColor" d="M586.49 351.44h29.07v224.03h-29.07ZM497.43 291.45h29.07v224.03h-29.07ZM414.48 489.87V460.8h224.03v29.07ZM474.47 403.46V374.4h224.04v29.06Z"/>
+</svg>CaptureKit</div>
+<input id="q" type="search" placeholder="検索（ファイル名・タグ・メモ）" aria-label="検索">
+<a href="edit.html" style="font-size:14px;height:32px;line-height:30px;padding:0 14px;border:1px solid #c3ccd5;background:#fff;color:#183251;text-decoration:none;margin-left:10px;white-space:nowrap" title="クロップ・丸抜き・矢印・モザイク">✎ エディタ</a>
+<span id="count"></span>
+</header>
+<div id="groups"></div>
+<main id="cat"></main>
+
+<div id="lb" hidden>
+<button id="lbclose" aria-label="閉じる">✕</button>
+<button class="lbnav" id="lbprev" aria-label="前へ">‹</button>
+<button class="lbnav" id="lbnext" aria-label="次へ">›</button>
+<div id="lbmain"></div>
+<div id="lbbar"></div>
+</div>
+
+<script src="catalog-data.js"></script>
+<script>
+'use strict';
+const DATA = (window.CATALOG && window.CATALOG.items) || [];
+let query = '';
+let activeGroup = '';
+let visible = [];
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// 絶対パス（Snagit参照等）はfile://で読む。shots内は相対パス
+const srcOf = it => it.file.startsWith('/') ? 'file://' + encodeURI(it.file) : encodeURI(it.file);
+const fmtSize = n => n >= 1048576 ? (n/1048576).toFixed(1)+'MB' : Math.round(n/1024)+'KB';
+const wd = d => '日月火水木金土'[new Date(d+'T00:00:00').getDay()];
+
+function match(it){
+  if (activeGroup && it.group !== activeGroup) return false;
+  if (!query) return true;
+  const hay = (it.file+' '+it.tags.join(' ')+' '+it.group+' '+it.note+' '+(it.ocr||'')).toLowerCase();
+  return query.toLowerCase().split(/\s+/).every(w => hay.includes(w));
+}
+
+function renderGroups(){
+  const groups = [...new Set(DATA.map(i => i.group).filter(Boolean))];
+  const el = document.getElementById('groups');
+  if (!groups.length){ el.innerHTML = ''; return; }
+  el.innerHTML = ['<button class="chip'+(activeGroup?'':' on')+'" data-g="">すべて</button>']
+    .concat(groups.map(g => '<button class="chip'+(g===activeGroup?' on':'')+'" data-g="'+esc(g)+'">'+esc(g)+'</button>')).join('');
+  el.querySelectorAll('.chip').forEach(b => b.onclick = () => { activeGroup = b.dataset.g; render(); });
+}
+
+function cardHTML(it, idx){
+  const name = it.file.split('/').pop();
+  const thumb = it.kind === 'video'
+    ? '<video src="'+esc(srcOf(it))+'" preload="metadata" muted></video><span class="vbadge">▶ 動画</span>'
+    : '<img src="'+esc(srcOf(it))+'" loading="lazy" alt="'+esc(name)+'">';
+  const dims = it.w && it.h ? ' ・ '+it.w+'×'+it.h : '';
+  const tags = it.tags.length ? '<div class="tags">'+it.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>' : '';
+  const note = it.note ? '<div class="note">'+esc(it.note)+'</div>' : '';
+  return '<div class="card" data-i="'+idx+'"><div class="thumb">'+thumb+'</div><div class="meta">'+
+    '<div class="name">'+esc(name)+'</div><div class="sub">'+it.time.slice(0,5)+dims+' ・ '+fmtSize(it.size)+'</div>'+tags+note+'</div></div>';
+}
+
+function render(){
+  renderGroups();
+  visible = DATA.filter(match);
+  const cat = document.getElementById('cat');
+  document.getElementById('count').textContent = visible.length + '件' + (window.CATALOG ? '（更新 '+window.CATALOG.updated+'）' : '');
+  if (!DATA.length){
+    cat.innerHTML = '<div class="empty">まだキャプチャがない。<br><code>capture.sh</code> で撮影するか、画像を <code>shots/日付/</code> に入れて <code>node scan.js</code> を実行する。</div>';
+    return;
+  }
+  if (!visible.length){ cat.innerHTML = '<div class="empty">該当なし</div>'; return; }
+  const byDay = {};
+  visible.forEach((it, i) => { (byDay[it.date] = byDay[it.date] || []).push([it, i]); });
+  cat.innerHTML = Object.keys(byDay).sort().reverse().map(day =>
+    '<h2 class="day">'+day+'（'+wd(day)+'）<span class="n">'+byDay[day].length+'件</span></h2>'+
+    '<div class="grid">'+byDay[day].map(([it,i]) => cardHTML(it,i)).join('')+'</div>'
+  ).join('');
+  cat.querySelectorAll('.card').forEach(c => c.onclick = () => openLB(+c.dataset.i));
+}
+
+// ライトボックス
+let lbIdx = -1;
+const lb = document.getElementById('lb');
+function openLB(i){
+  lbIdx = i;
+  const it = visible[i];
+  if (!it) return;
+  const main = document.getElementById('lbmain');
+  main.innerHTML = it.kind === 'video'
+    ? '<video src="'+esc(srcOf(it))+'" controls autoplay></video>'
+    : '<img src="'+esc(srcOf(it))+'" alt="">';
+  const dims = it.w && it.h ? it.w+'×'+it.h+' ・ ' : '';
+  document.getElementById('lbbar').innerHTML =
+    '<span class="name">'+esc(it.file.split('/').pop())+'</span>'+
+    '<span class="sub">'+it.date+' '+it.time+' ・ '+dims+fmtSize(it.size)+(it.group?' ・ グループ: '+esc(it.group):'')+'</span>'+
+    (it.tags.length?'<span>'+it.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join(' ')+'</span>':'')+
+    (it.note?'<span class="note">'+esc(it.note)+'</span>':'');
+  lb.hidden = false;
+}
+function closeLB(){ lb.hidden = true; document.getElementById('lbmain').innerHTML = ''; }
+function step(d){ if (lbIdx+d >= 0 && lbIdx+d < visible.length) openLB(lbIdx+d); }
+document.getElementById('lbclose').onclick = closeLB;
+document.getElementById('lbprev').onclick = () => step(-1);
+document.getElementById('lbnext').onclick = () => step(1);
+lb.addEventListener('click', e => { if (e.target === lb || e.target.id === 'lbmain') closeLB(); });
+document.addEventListener('keydown', e => {
+  if (lb.hidden) return;
+  if (e.key === 'Escape') closeLB();
+  if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'ArrowRight') step(1);
+});
+document.getElementById('q').addEventListener('input', e => { query = e.target.value.trim(); render(); });
+render();
+</script>
+</body>
+</html>

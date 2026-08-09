@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>SlideKit パターンカタログ</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='414 291 285 285'%3E%3Cpath fill='%23fafafa' fill-rule='evenodd' d='M557.82 294.27C633.96 294.27 695.68 355.99 695.68 432.13C695.68 508.27 633.96 569.99 557.82 569.99C481.68 569.99 419.96 508.27 419.96 432.13C419.96 355.99 481.68 294.27 557.82 294.27ZM447.11 432.13C447.11 493.27 496.68 542.84 557.82 542.84C618.96 542.84 668.52 493.27 668.52 432.13C668.52 370.99 618.96 321.43 557.82 321.43C496.68 321.43 447.11 370.99 447.11 432.13Z'/%3E%3Cpath fill='%23fafafa' d='M586.49 351.44h29.07v224.03h-29.07ZM497.43 291.45h29.07v224.03h-29.07ZM414.48 489.87V460.8h224.03v29.07ZM474.47 403.46V374.4h224.04v29.06Z'/%3E%3C/svg%3E">
+<!--
+  ═══════════════════════════════════════════════════════════════
+  SlideKit パターンカタログ v0.1（叩き台）
+  ═══════════════════════════════════════════════════════════════
+  目的: Kiroにスライドを生成させる際の「唯一の見本帳」。
+        Kiroはこの中のパターンを選んで内容を差し替える。
+        新しいレイアウト・新しい色・新しい座標系の発明は禁止。
+
+  ── 幾何ルール ──
+  キャンバス      : 1280×720 固定
+  余白            : 上下左右 64px
+  バッジ          : x64 y40 w200 h34
+  見出し          : x64 y81 w1152 h52 fs34
+  リード文        : x64 y150 w1152 h36 fs20
+  本文開始        : y170 以降
+  3カラム         : w360 / x = 64, 460, 856（gap36）
+  2カラム         : w560 / x = 64, 656（gap32）
+
+  ── カラートークン ──
+  ink    #121212  本文
+  title  #21537f  見出し・強調数字
+  navy   #162a42  バッジ・濃色図形
+  paper  #fafafa  紙面・白文字
+  sub    #9fc0dd  暗背景のサブテキスト
+  muted  #718096  補足・キャプション
+  card   #eef3f8  カード地
+  line   #d4dde7  罫線・薄い線
+  accent #c62828  警告・強調（多用禁止）
+  darkbg 135,#183251,#21537f  表紙/扉グラデーション
+  ═══════════════════════════════════════════════════════════════
+-->
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Meiryo UI','Yu Gothic','游ゴシック','Noto Sans JP',sans-serif;background:#3a4756;display:flex;flex-direction:column;align-items:center;padding:20px 0 60px;font-weight:400}
+.slide{width:1280px;height:720px;position:relative;overflow:hidden;margin:12px 0;box-shadow:0 4px 24px rgba(0,0,0,.2)}
+.tb{position:absolute;overflow:hidden;line-height:1.5}
+.rect{position:absolute;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.rect>.tb{position:static;left:auto;top:auto;width:auto;height:auto;padding:3px;overflow:visible;text-align:center}
+.flow{position:absolute;display:flex;flex-direction:column;justify-content:flex-start;border-radius:8px}
+.flow>.tb{position:static;left:auto;top:auto;width:auto;height:auto;padding:3px;overflow:visible}
+table{border-collapse:collapse}
+</style>
+</head>
+<body>
+
+<!-- SLIDE: P01 表紙 -->
+<div class="slide" data-bg-gradient="135,#183251,#21537f" style="background:linear-gradient(135deg,#183251,#21537f)">
+  <div class="tb" data-x="120" data-y="250" data-w="1040" data-h="70"
+       data-font-size="42" data-bold="1" data-color="#fafafa" data-align="center"
+       style="left:120px;top:250px;width:1040px;height:70px;font-size:42px;font-weight:700;color:#fafafa;text-align:center">プレゼンテーションのタイトル</div>
+  <div class="tb" data-x="120" data-y="350" data-w="1040" data-h="36"
+       data-font-size="22" data-color="#9fc0dd" data-align="center"
+       style="left:120px;top:350px;width:1040px;height:36px;font-size:22px;color:#9fc0dd;text-align:center">サブタイトル｜2026-07-11｜発表者名</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P02 アジェンダ -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">Agenda</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">本日の流れ</div>
+  <div class="tb" data-x="120" data-y="200" data-w="1040" data-h="400"
+       data-font-size="26" data-color="#121212" data-bullet="decimal"
+       style="left:120px;top:200px;width:1040px;height:400px;font-size:26px;color:#121212;line-height:2.2">背景と課題認識<br>提案の全体像<br>実施ステップとスケジュール<br>体制と費用<br>ネクストステップ</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P03 セクション扉 -->
+<div class="slide" data-bg="#183251" style="background:#183251">
+  <div class="tb" data-x="120" data-y="220" data-w="300" data-h="130"
+       data-font-size="96" data-bold="1" data-color="#9fc0dd"
+       style="left:120px;top:220px;width:300px;height:130px;font-size:96px;font-weight:700;color:#9fc0dd">01</div>
+  <div class="tb" data-x="120" data-y="370" data-w="1040" data-h="66"
+       data-font-size="40" data-bold="1" data-color="#fafafa"
+       style="left:120px;top:370px;width:1040px;height:66px;font-size:40px;font-weight:700;color:#fafafa">背景と課題認識</div>
+  <div class="rect" data-x="120" data-y="356" data-w="120" data-h="4" data-fill="#9fc0dd" data-shape="line"
+       style="left:120px;top:356px;width:120px;height:4px;background:#9fc0dd"></div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P04 標準コンテンツ（バッジ+見出し+リード+箇条書き） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">課題認識</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">スライドの見出しをここに置く</div>
+  <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+       data-font-size="20" data-color="#121212"
+       style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">このスライドで言いたいことを1文で要約するリード文。</div>
+  <div class="tb" data-x="64" data-y="230" data-w="1152" data-h="360"
+       data-font-size="22" data-color="#121212" data-bullet="disc"
+       style="left:64px;top:230px;width:1152px;height:360px;font-size:22px;color:#121212;line-height:2.0">1つめの論点。折り返しても字下げが揃うことを確認する程度の長さで書いてみるとレイアウトの検証になる<br>2つめの論点<br>3つめの論点<br>4つめの論点</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P05 3カラムカード -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">提案概要</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">3つの柱で構成する</div>
+
+  <div class="rect" data-x="64" data-y="190" data-w="360" data-h="420" data-fill="#eef3f8" data-radius="12"
+       style="left:64px;top:190px;width:360px;height:420px;background:#eef3f8;border-radius:12px"></div>
+  <div class="tb" data-x="96" data-y="220" data-w="296" data-h="40"
+       data-font-size="24" data-bold="1" data-color="#21537f"
+       style="left:96px;top:220px;width:296px;height:40px;font-size:24px;font-weight:700;color:#21537f">柱①のタイトル</div>
+  <div class="tb" data-x="96" data-y="280" data-w="296" data-h="300"
+       data-font-size="18" data-color="#121212"
+       style="left:96px;top:280px;width:296px;height:300px;font-size:18px;color:#121212">カードの説明文。3〜4行で要点だけ書く。詳細は別スライドか口頭で補う。</div>
+
+  <div class="rect" data-x="460" data-y="190" data-w="360" data-h="420" data-fill="#eef3f8" data-radius="12"
+       style="left:460px;top:190px;width:360px;height:420px;background:#eef3f8;border-radius:12px"></div>
+  <div class="tb" data-x="492" data-y="220" data-w="296" data-h="40"
+       data-font-size="24" data-bold="1" data-color="#21537f"
+       style="left:492px;top:220px;width:296px;height:40px;font-size:24px;font-weight:700;color:#21537f">柱②のタイトル</div>
+  <div class="tb" data-x="492" data-y="280" data-w="296" data-h="300"
+       data-font-size="18" data-color="#121212"
+       style="left:492px;top:280px;width:296px;height:300px;font-size:18px;color:#121212">カードの説明文。3枚のカードは高さと開始位置を揃える。</div>
+
+  <div class="rect" data-x="856" data-y="190" data-w="360" data-h="420" data-fill="#eef3f8" data-radius="12"
+       style="left:856px;top:190px;width:360px;height:420px;background:#eef3f8;border-radius:12px"></div>
+  <div class="tb" data-x="888" data-y="220" data-w="296" data-h="40"
+       data-font-size="24" data-bold="1" data-color="#21537f"
+       style="left:888px;top:220px;width:296px;height:40px;font-size:24px;font-weight:700;color:#21537f">柱③のタイトル</div>
+  <div class="tb" data-x="888" data-y="280" data-w="296" data-h="300"
+       data-font-size="18" data-color="#121212"
+       style="left:888px;top:280px;width:296px;height:300px;font-size:18px;color:#121212">カードの説明文。文量は3枚でおおよそ揃える。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P06 2カラム比較（Before/After） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">効果</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">導入前後の比較</div>
+
+  <div class="rect" data-x="64" data-y="190" data-w="560" data-h="420" data-fill="#eef3f8" data-radius="12"
+       style="left:64px;top:190px;width:560px;height:420px;background:#eef3f8;border-radius:12px"></div>
+  <div class="rect" data-x="64" data-y="190" data-w="560" data-h="56" data-fill="#718096" data-radius="12"
+       style="left:64px;top:190px;width:560px;height:56px;background:#718096;border-radius:12px">
+    <div class="tb" data-font-size="22" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:22px;font-weight:700;color:#fafafa;text-align:center">Before（現状）</div>
+  </div>
+  <div class="tb" data-x="96" data-y="270" data-w="496" data-h="320"
+       data-font-size="19" data-color="#121212" data-bullet="disc"
+       style="left:96px;top:270px;width:496px;height:320px;font-size:19px;color:#121212;line-height:2.0">現状の課題その1<br>現状の課題その2<br>現状の課題その3</div>
+
+  <div class="rect" data-x="656" data-y="190" data-w="560" data-h="420" data-fill="#eef3f8" data-radius="12"
+       style="left:656px;top:190px;width:560px;height:420px;background:#eef3f8;border-radius:12px"></div>
+  <div class="rect" data-x="656" data-y="190" data-w="560" data-h="56" data-fill="#21537f" data-radius="12"
+       style="left:656px;top:190px;width:560px;height:56px;background:#21537f;border-radius:12px">
+    <div class="tb" data-font-size="22" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:22px;font-weight:700;color:#fafafa;text-align:center">After（導入後）</div>
+  </div>
+  <div class="tb" data-x="688" data-y="270" data-w="496" data-h="320"
+       data-font-size="19" data-color="#121212" data-bullet="disc"
+       style="left:688px;top:270px;width:496px;height:320px;font-size:19px;color:#121212;line-height:2.0">改善ポイントその1<br>改善ポイントその2<br>改善ポイントその3</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P07 比較表 -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">選択肢比較</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">3案の比較評価</div>
+  <table data-x="64" data-y="190" data-w="1152"
+         style="position:absolute;left:64px;top:190px;width:1152px;font-size:18px;color:#121212">
+    <tr style="background:#162a42;color:#fafafa;font-weight:700">
+      <td style="padding:12px 16px;border:1px solid #d4dde7;width:240px">評価軸</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">案A</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">案B</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">案C</td>
+    </tr>
+    <tr>
+      <td style="padding:12px 16px;border:1px solid #d4dde7;background:#eef3f8;font-weight:700">初期コスト</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">◎ 低い</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">○ 中程度</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">△ 高い</td>
+    </tr>
+    <tr>
+      <td style="padding:12px 16px;border:1px solid #d4dde7;background:#eef3f8;font-weight:700">拡張性</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">△</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">○</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">◎</td>
+    </tr>
+    <tr>
+      <td style="padding:12px 16px;border:1px solid #d4dde7;background:#eef3f8;font-weight:700">導入期間</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">2ヶ月</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">4ヶ月</td>
+      <td style="padding:12px 16px;border:1px solid #d4dde7">6ヶ月</td>
+    </tr>
+  </table>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P08 横フロー（4ステップ） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">進め方</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">4ステップで進める</div>
+
+  <div class="flow" data-x="64" data-y="280" data-w="240" data-h="160" data-fill="#21537f"
+       style="left:64px;top:280px;width:240px;height:160px;background:#21537f;padding:16px">
+    <div class="tb" data-font-size="20" data-bold="1" data-color="#fafafa"
+         style="font-size:20px;font-weight:700;color:#fafafa">STEP 1</div>
+    <div class="tb" data-font-size="16" data-color="#fafafa"
+         style="font-size:16px;color:#fafafa">現状調査とヒアリング</div>
+  </div>
+  <div class="rect" data-x="316" data-y="348" data-w="40" data-h="24" data-fill="#9fc0dd" data-shape="arrow"
+       style="left:316px;top:348px;width:40px;height:24px;background:#9fc0dd;clip-path:polygon(0 30%,60% 30%,60% 0,100% 50%,60% 100%,60% 70%,0 70%)"></div>
+  <div class="flow" data-x="368" data-y="280" data-w="240" data-h="160" data-fill="#21537f"
+       style="left:368px;top:280px;width:240px;height:160px;background:#21537f;padding:16px">
+    <div class="tb" data-font-size="20" data-bold="1" data-color="#fafafa"
+         style="font-size:20px;font-weight:700;color:#fafafa">STEP 2</div>
+    <div class="tb" data-font-size="16" data-color="#fafafa"
+         style="font-size:16px;color:#fafafa">要件定義と設計</div>
+  </div>
+  <div class="rect" data-x="620" data-y="348" data-w="40" data-h="24" data-fill="#9fc0dd" data-shape="arrow"
+       style="left:620px;top:348px;width:40px;height:24px;background:#9fc0dd;clip-path:polygon(0 30%,60% 30%,60% 0,100% 50%,60% 100%,60% 70%,0 70%)"></div>
+  <div class="flow" data-x="672" data-y="280" data-w="240" data-h="160" data-fill="#21537f"
+       style="left:672px;top:280px;width:240px;height:160px;background:#21537f;padding:16px">
+    <div class="tb" data-font-size="20" data-bold="1" data-color="#fafafa"
+         style="font-size:20px;font-weight:700;color:#fafafa">STEP 3</div>
+    <div class="tb" data-font-size="16" data-color="#fafafa"
+         style="font-size:16px;color:#fafafa">実装と検証</div>
+  </div>
+  <div class="rect" data-x="924" data-y="348" data-w="40" data-h="24" data-fill="#9fc0dd" data-shape="arrow"
+       style="left:924px;top:348px;width:40px;height:24px;background:#9fc0dd;clip-path:polygon(0 30%,60% 30%,60% 0,100% 50%,60% 100%,60% 70%,0 70%)"></div>
+  <div class="flow" data-x="976" data-y="280" data-w="240" data-h="160" data-fill="#162a42"
+       style="left:976px;top:280px;width:240px;height:160px;background:#162a42;padding:16px">
+    <div class="tb" data-font-size="20" data-bold="1" data-color="#fafafa"
+         style="font-size:20px;font-weight:700;color:#fafafa">STEP 4</div>
+    <div class="tb" data-font-size="16" data-color="#fafafa"
+         style="font-size:16px;color:#fafafa">本番展開と定着化</div>
+  </div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P09 KPIハイライト（数字3つ） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">期待効果</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">数字で見る導入効果</div>
+
+  <div class="tb" data-x="64" data-y="260" data-w="360" data-h="90"
+       data-font-size="64" data-bold="1" data-color="#21537f" data-align="center"
+       style="left:64px;top:260px;width:360px;height:90px;font-size:64px;font-weight:700;color:#21537f;text-align:center">▲40%</div>
+  <div class="tb" data-x="64" data-y="360" data-w="360" data-h="60"
+       data-font-size="19" data-color="#718096" data-align="center"
+       style="left:64px;top:360px;width:360px;height:60px;font-size:19px;color:#718096;text-align:center">作業時間の削減</div>
+
+  <div class="tb" data-x="460" data-y="260" data-w="360" data-h="90"
+       data-font-size="64" data-bold="1" data-color="#21537f" data-align="center"
+       style="left:460px;top:260px;width:360px;height:90px;font-size:64px;font-weight:700;color:#21537f;text-align:center">3.2倍</div>
+  <div class="tb" data-x="460" data-y="360" data-w="360" data-h="60"
+       data-font-size="19" data-color="#718096" data-align="center"
+       style="left:460px;top:360px;width:360px;height:60px;font-size:19px;color:#718096;text-align:center">処理スループット</div>
+
+  <div class="tb" data-x="856" data-y="260" data-w="360" data-h="90"
+       data-font-size="64" data-bold="1" data-color="#21537f" data-align="center"
+       style="left:856px;top:260px;width:360px;height:90px;font-size:64px;font-weight:700;color:#21537f;text-align:center">6ヶ月</div>
+  <div class="tb" data-x="856" data-y="360" data-w="360" data-h="60"
+       data-font-size="19" data-color="#718096" data-align="center"
+       style="left:856px;top:360px;width:360px;height:60px;font-size:19px;color:#718096;text-align:center">投資回収期間</div>
+
+  <div class="tb" data-x="64" data-y="500" data-w="1152" data-h="36"
+       data-font-size="16" data-color="#718096" data-align="center"
+       style="left:64px;top:500px;width:1152px;height:36px;font-size:16px;color:#718096;text-align:center">※ 数値は類似事例に基づく試算値。出典・前提条件を必ず脚注に書く。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P10 タイムライン -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">スケジュール</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">全体スケジュール（6ヶ月）</div>
+
+  <div class="rect" data-x="64" data-y="398" data-w="1152" data-h="4" data-fill="#d4dde7" data-shape="line"
+       style="left:64px;top:398px;width:1152px;height:4px;background:#d4dde7"></div>
+
+  <div class="rect" data-x="150" data-y="388" data-w="24" data-h="24" data-fill="#21537f" data-shape="circle"
+       style="left:150px;top:388px;width:24px;height:24px;background:#21537f;border-radius:50%"></div>
+  <div class="tb" data-x="62" data-y="330" data-w="200" data-h="36"
+       data-font-size="18" data-bold="1" data-color="#21537f" data-align="center"
+       style="left:62px;top:330px;width:200px;height:36px;font-size:18px;font-weight:700;color:#21537f;text-align:center">7月 キックオフ</div>
+  <div class="tb" data-x="62" data-y="430" data-w="200" data-h="60"
+       data-font-size="15" data-color="#718096" data-align="center"
+       style="left:62px;top:430px;width:200px;height:60px;font-size:15px;color:#718096;text-align:center">体制確立・現状調査</div>
+
+  <div class="rect" data-x="470" data-y="388" data-w="24" data-h="24" data-fill="#21537f" data-shape="circle"
+       style="left:470px;top:388px;width:24px;height:24px;background:#21537f;border-radius:50%"></div>
+  <div class="tb" data-x="382" data-y="330" data-w="200" data-h="36"
+       data-font-size="18" data-bold="1" data-color="#21537f" data-align="center"
+       style="left:382px;top:330px;width:200px;height:36px;font-size:18px;font-weight:700;color:#21537f;text-align:center">9月 設計完了</div>
+  <div class="tb" data-x="382" data-y="430" data-w="200" data-h="60"
+       data-font-size="15" data-color="#718096" data-align="center"
+       style="left:382px;top:430px;width:200px;height:60px;font-size:15px;color:#718096;text-align:center">要件確定・設計レビュー</div>
+
+  <div class="rect" data-x="790" data-y="388" data-w="24" data-h="24" data-fill="#21537f" data-shape="circle"
+       style="left:790px;top:388px;width:24px;height:24px;background:#21537f;border-radius:50%"></div>
+  <div class="tb" data-x="702" data-y="330" data-w="200" data-h="36"
+       data-font-size="18" data-bold="1" data-color="#21537f" data-align="center"
+       style="left:702px;top:330px;width:200px;height:36px;font-size:18px;font-weight:700;color:#21537f;text-align:center">11月 検証完了</div>
+  <div class="tb" data-x="702" data-y="430" data-w="200" data-h="60"
+       data-font-size="15" data-color="#718096" data-align="center"
+       style="left:702px;top:430px;width:200px;height:60px;font-size:15px;color:#718096;text-align:center">実装・テスト・受入</div>
+
+  <div class="rect" data-x="1110" data-y="388" data-w="24" data-h="24" data-fill="#c62828" data-shape="circle"
+       style="left:1110px;top:388px;width:24px;height:24px;background:#c62828;border-radius:50%"></div>
+  <div class="tb" data-x="1022" data-y="330" data-w="200" data-h="36"
+       data-font-size="18" data-bold="1" data-color="#c62828" data-align="center"
+       style="left:1022px;top:330px;width:200px;height:36px;font-size:18px;font-weight:700;color:#c62828;text-align:center">12月 本番稼働</div>
+  <div class="tb" data-x="1022" data-y="430" data-w="200" data-h="60"
+       data-font-size="15" data-color="#718096" data-align="center"
+       style="left:1022px;top:430px;width:200px;height:60px;font-size:15px;color:#718096;text-align:center">展開・定着化支援</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P11 画像+テキスト（右画像） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">事例</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">左テキスト+右画像の構成</div>
+  <div class="tb" data-x="64" data-y="200" data-w="560" data-h="400"
+       data-font-size="20" data-color="#121212" data-bullet="disc"
+       style="left:64px;top:200px;width:560px;height:400px;font-size:20px;color:#121212;line-height:2.0">画像の説明ポイント1<br>画像の説明ポイント2<br>画像の説明ポイント3</div>
+  <!-- 画像を使う時はこの rect を <div><img src="相対パス"></div> に差し替える（WebPは事前にJPG変換） -->
+  <div class="rect" data-x="656" data-y="200" data-w="560" data-h="400" data-fill="#d4dde7" data-radius="8"
+       style="left:656px;top:200px;width:560px;height:400px;background:#d4dde7;border-radius:8px">
+    <div class="tb" data-font-size="18" data-color="#718096" data-align="center"
+         style="font-size:18px;color:#718096;text-align:center">画像エリア 560×400<br>（imgタグに差し替え）</div>
+  </div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P12 キーメッセージ -->
+<div class="slide" data-bg-gradient="135,#183251,#21537f" style="background:linear-gradient(135deg,#183251,#21537f)">
+  <div class="tb" data-x="120" data-y="280" data-w="1040" data-h="120"
+       data-font-size="36" data-bold="1" data-color="#fafafa" data-align="center"
+       style="left:120px;top:280px;width:1040px;height:120px;font-size:36px;font-weight:700;color:#fafafa;text-align:center;line-height:1.6">1枚で伝えたい核心メッセージを、<br>この位置に2行以内で置く。</div>
+  <div class="tb" data-x="120" data-y="430" data-w="1040" data-h="36"
+       data-font-size="18" data-color="#9fc0dd" data-align="center"
+       style="left:120px;top:430px;width:1040px;height:36px;font-size:18px;color:#9fc0dd;text-align:center">補足の一言や出典をここに</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P13 まとめ+ネクストステップ -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">Next Step</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">本日のまとめと次のアクション</div>
+  <div class="tb" data-x="64" data-y="170" data-w="1152" data-h="140"
+       data-font-size="22" data-color="#121212" data-bullet="disc"
+       style="left:64px;top:170px;width:1152px;height:140px;font-size:22px;color:#121212;line-height:2.0">結論の再掲その1<br>結論の再掲その2</div>
+  <div class="rect" data-x="64" data-y="360" data-w="1152" data-h="240" data-fill="#eef3f8" data-radius="12" data-border="2,#21537f"
+       style="left:64px;top:360px;width:1152px;height:240px;background:#eef3f8;border-radius:12px;border:2px solid #21537f"></div>
+  <div class="tb" data-x="96" data-y="386" data-w="1088" data-h="36"
+       data-font-size="22" data-bold="1" data-color="#21537f"
+       style="left:96px;top:386px;width:1088px;height:36px;font-size:22px;font-weight:700;color:#21537f">お願いしたいこと</div>
+  <div class="tb" data-x="96" data-y="436" data-w="1088" data-h="140"
+       data-font-size="20" data-color="#121212" data-bullet="decimal"
+       style="left:96px;top:436px;width:1088px;height:140px;font-size:20px;color:#121212;line-height:2.0">次回打合せの日程確定（7月中）<br>関係部署へのヒアリング協力依頼</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P14 Thanks -->
+<div class="slide" data-bg-gradient="135,#183251,#21537f" style="background:linear-gradient(135deg,#183251,#21537f)">
+  <div class="tb" data-x="120" data-y="300" data-w="1040" data-h="80"
+       data-font-size="48" data-bold="1" data-color="#fafafa" data-align="center"
+       style="left:120px;top:300px;width:1040px;height:80px;font-size:48px;font-weight:700;color:#fafafa;text-align:center">Thank you</div>
+  <div class="tb" data-x="120" data-y="400" data-w="1040" data-h="36"
+       data-font-size="20" data-color="#9fc0dd" data-align="center"
+       style="left:120px;top:400px;width:1040px;height:36px;font-size:20px;color:#9fc0dd;text-align:center">お問い合わせ先｜氏名｜メールアドレス</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P15 全面画像+半透明帯（帯は上か下のどちらか） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <!-- 全面画像: コンテナ1280×720固定・object-fit:coverでトリミング（PPTX変換はcropに変換される） -->
+  <!-- 画像を使う時はこの inszone を <div data-x..><img src="..." style="width:100%;height:100%;display:block;object-fit:cover"></div> に差し替え -->
+  <div class="ins inszone" data-x="0" data-y="0" data-w="1280" data-h="720"
+       style="position:absolute;left:0;top:0;width:1280px;height:720px;border:2px dashed #e8821a;background:rgba(232,130,26,.06);display:flex;align-items:center;justify-content:center;color:#e8821a;font-size:16px;text-align:center;overflow:hidden;padding:8px">
+    📎 ここに全面画像（1280×720で見える範囲を想定・object-fit:coverでトリミングされる）
+  </div>
+  <!-- 半透明帯（下配置の例）: 8桁hex #RRGGBBAA の下2桁がアルファ。d9=約85%不透明 -->
+  <!-- 上配置にする時は data-y="0" にして中のtbごと上へ -->
+  <div class="rect" data-x="0" data-y="560" data-w="1280" data-h="160" data-fill="#183251d9"
+       style="left:0;top:560px;width:1280px;height:160px;background:#183251d9;justify-content:center;padding:0 64px;align-items:flex-start">
+    <div class="tb" data-font-size="32" data-bold="1" data-color="#fafafa"
+         style="font-size:32px;font-weight:700;color:#fafafa;text-align:left">画像の上に置くメッセージ</div>
+    <div class="tb" data-font-size="18" data-color="#9fc0dd"
+         style="font-size:18px;color:#9fc0dd;text-align:left;margin-top:8px">補足の一言。帯は#183251d9（紺85%）か#fafafad9（白85%・その時は文字を#121212に）</div>
+  </div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P16 画像+周囲説明（上下左右に説明文） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">画面説明</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">中央の画像を上下左右から説明する</div>
+  <!-- 中央画像（スクショ想定）。プレースホルダーの縦横比は貼る画像に合わせて調整 -->
+  <div class="ins inszone" data-x="340" data-y="180" data-w="600" data-h="380"
+       style="position:absolute;left:340px;top:180px;width:600px;height:380px;border:2px dashed #e8821a;background:rgba(232,130,26,.06);display:flex;align-items:center;justify-content:center;color:#e8821a;font-size:16px;text-align:center;overflow:hidden;padding:8px">
+    📎 ここに対象画面のスクショ
+  </div>
+  <!-- 周囲の説明: 左右は縦中央付近・上下は中央寄せ。使わない側は消してよい。矢印は→←↑↓のテキストで -->
+  <div class="tb" data-x="64" data-y="300" data-w="250" data-h="120"
+       data-font-size="18" data-color="#121212"
+       style="left:64px;top:300px;width:250px;height:120px;font-size:18px;color:#121212;line-height:1.6;text-align:left">← 左側の要素の説明。何がどこにあるかを短く</div>
+  <div class="tb" data-x="966" data-y="300" data-w="250" data-h="120"
+       data-font-size="18" data-color="#121212"
+       style="left:966px;top:300px;width:250px;height:120px;font-size:18px;color:#121212;line-height:1.6;text-align:left">画像の右側にある要素の説明 →</div>
+  <div class="tb" data-x="340" data-y="586" data-w="600" data-h="60"
+       data-font-size="18" data-color="#3f5882" data-align="center"
+       style="left:340px;top:586px;width:600px;height:60px;font-size:18px;color:#3f5882;text-align:center;line-height:1.6">↑ 画像下のキャプション（操作の結果や注目ポイント）</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P17 階層のある箇条書き（PowerPoint形式） -->
+<!-- 使い分け: 階層がある / PowerPointで書き足す資料 → この形（data-bullet="native-*" ＋ .li[data-lvl]）。
+     マーカー文字は本文に書かない（ブラウザはCSS、PPTXは buChar/buAutoNum が描く＝書くと二重になる）。
+     ブラウザ表示用CSSは slide-edit.js が <style id="skListCss"> を注入する。詳細は SPEC.md 5.2.1 -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">検討事項</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">親子関係のある項目を並べる</div>
+  <div class="tb" data-x="64" data-y="150" data-w="1152" data-h="36"
+       data-font-size="20" data-color="#121212"
+       style="left:64px;top:150px;width:1152px;height:36px;font-size:20px;color:#121212">論点の下に条件や補足がぶら下がる時は、カードに分けず階層で見せる。</div>
+  <div class="tb" data-x="64" data-y="220" data-w="1152" data-h="180"
+       data-font-size="22" data-color="#121212" data-bullet="native-disc"
+       style="left:64px;top:220px;width:1152px;height:180px;font-size:22px;color:#121212;line-height:2.0">
+    <div class="li" data-lvl="0">1つめの論点</div>
+    <div class="li" data-lvl="1">その前提になる条件</div>
+    <div class="li" data-lvl="1">確認が必要な点</div>
+    <div class="li" data-lvl="0">2つめの論点</div>
+  </div>
+  <div class="tb" data-x="64" data-y="430" data-w="1152" data-h="36"
+       data-font-size="22" data-bold="1" data-color="#21537f"
+       style="left:64px;top:430px;width:1152px;height:36px;font-size:22px;font-weight:700;color:#21537f">進め方</div>
+  <div class="tb" data-x="64" data-y="472" data-w="1152" data-h="140"
+       data-font-size="22" data-color="#121212" data-bullet="native-decimal"
+       style="left:64px;top:472px;width:1152px;height:140px;font-size:22px;color:#121212;line-height:2.0">
+    <div class="li" data-lvl="0">現状を整理する</div>
+    <div class="li" data-lvl="1">対象範囲を決める</div>
+    <div class="li" data-lvl="0">案を3つ出して比べる</div>
+  </div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: P18 大項目つき表（疑似結合） -->
+<!-- セル結合(rowspan)を使わず、縦の複数セルを同色で塗り外周だけ線を引いて大項目に見せる。
+     先頭セル=top+left+right、中間=left+right、末尾=left+right+bottom。文字は先頭セルにだけ書く。
+     rowspanと違い行の追加・削除・並べ替えで構造が壊れない。PPTX変換はセル辺のCSS borderをそのまま線にする（SPEC.md 付録D 表） -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42" data-radius="18"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">作業一覧</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">フェーズごとの作業を大項目でまとめる</div>
+  <table data-x="64" data-y="180" data-w="1152"
+         style="position:absolute;left:64px;top:180px;width:1152px;font-size:18px;color:#121212">
+    <tr style="background:#162a42;color:#fafafa;font-weight:700">
+      <td style="padding:12px 16px;width:220px">フェーズ</td>
+      <td style="padding:12px 16px">作業</td>
+      <td style="padding:12px 16px;width:180px">担当</td>
+    </tr>
+    <tr>
+      <td style="padding:12px 16px;background:#eef3f8;font-weight:700;color:#21537f;vertical-align:top;border-top:2px solid #21537f;border-left:2px solid #21537f;border-right:2px solid #21537f">設計</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">要件の整理と優先順位づけ</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">全員</td>
+    </tr>
+    <tr>
+      <td style="padding:12px 16px;background:#eef3f8;border-left:2px solid #21537f;border-right:2px solid #21537f"></td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">画面設計</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">担当A</td>
+    </tr>
+    <tr>
+      <td style="padding:12px 16px;background:#eef3f8;border-left:2px solid #21537f;border-right:2px solid #21537f;border-bottom:2px solid #21537f"></td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">データ設計</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">担当B</td>
+    </tr>
+    <tr>
+      <td style="padding:12px 16px;background:#f4f4ef;font-weight:700;color:#7a471a;vertical-align:top;border-top:2px solid #ba8425;border-left:2px solid #ba8425;border-right:2px solid #ba8425">実装</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">共通部品の実装</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">担当A</td>
+    </tr>
+    <tr>
+      <td style="padding:12px 16px;background:#f4f4ef;border-left:2px solid #ba8425;border-right:2px solid #ba8425;border-bottom:2px solid #ba8425"></td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">画面の実装と結合</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #d4dde7">担当B</td>
+    </tr>
+  </table>
+</div>
+<!-- /SLIDE -->
+
+<!-- 編集機能（閲覧が既定／右上✏️でON）。HTMLからの相対パスで指定すること -->
+<script src="../SlideKit/slide-edit.js"></script>
+<script src="../SlideKit/slide-present.js"></script>
+</body>
+</html>

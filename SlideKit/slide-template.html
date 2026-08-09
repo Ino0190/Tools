@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>スライド</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Meiryo UI','Yu Gothic','游ゴシック','Noto Sans JP',sans-serif;background:#3a4756;display:flex;flex-direction:column;align-items:center;padding:20px 0 60px;font-weight:400}
+.slide{width:1280px;height:720px;position:relative;overflow:hidden;margin:12px 0;box-shadow:0 4px 24px rgba(0,0,0,.2)}
+.tb{position:absolute;overflow:hidden;line-height:1.5}
+.rect{position:absolute;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.rect>.tb{position:static;left:auto;top:auto;width:auto;height:auto;padding:3px;overflow:visible;text-align:center}
+.flow{position:absolute;display:flex;flex-direction:column;justify-content:flex-start;border-radius:8px}
+.flow>.tb{position:static;left:auto;top:auto;width:auto;height:auto;padding:3px;overflow:visible}
+</style>
+</head>
+<body>
+
+<!-- SLIDE: 表紙 [P01] -->
+<div class="slide" data-bg-gradient="135,#183251,#21537f" style="background:linear-gradient(135deg,#183251,#21537f)">
+  <div class="tb" data-x="120" data-y="260" data-w="1040" data-h="70"
+       data-font-size="42" data-bold="1" data-color="#fafafa" data-align="center"
+       style="left:120px;top:260px;width:1040px;height:70px;font-size:42px;font-weight:700;color:#fafafa;text-align:center">タイトルをここに</div>
+  <div class="tb" data-x="120" data-y="356" data-w="1040" data-h="36"
+       data-font-size="22" data-color="#9fc0dd" data-align="center"
+       style="left:120px;top:356px;width:1040px;height:36px;font-size:22px;color:#9fc0dd;text-align:center">サブタイトル｜日付｜著者</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- SLIDE: コンテンツ [P04] -->
+<div class="slide" data-bg="#fafafa" style="background:#fafafa">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42"
+       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
+    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">バッジ</div>
+  </div>
+  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
+       data-font-size="34" data-bold="1" data-color="#21537f"
+       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">スライドの見出し</div>
+  <div class="tb" data-x="64" data-y="170" data-w="1152" data-h="40"
+       data-font-size="20" data-color="#121212"
+       style="left:64px;top:170px;width:1152px;height:40px;font-size:20px;color:#121212">本文をここに。編集は右上「✏️ 編集」をONにして要素をクリック。</div>
+</div>
+<!-- /SLIDE -->
+
+<!-- 編集機能（閲覧が既定／右上✏️でON）。HTMLからの相対パスで指定すること -->
+<script src="../SlideKit/slide-edit.js"></script>
+<!-- プレゼン再生（別ウィンドウで開く・Zoom画面共有向け） -->
+<script src="../SlideKit/slide-present.js"></script>
+<!-- A4 縦 PDF エクスポートは必要な時だけ読み込む（普段は不要）
+<script src="../SlideKit/slide-a4export.js"></script>
+-->
+</body>
+</html>

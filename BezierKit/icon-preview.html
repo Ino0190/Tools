@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>アイコンプレビュー</title><style>
+body{margin:0;background:#fff;display:flex;gap:48px;align-items:center;justify-content:center;height:100vh;color:#3b3a4a;font-family:'Yu Gothic',sans-serif}
+.cell{text-align:center}.cell div{font-size:16px;margin-top:8px;color:#5e5e5e}
+svg{display:block;margin:0 auto}
+</style></head><body>
+<script src="icons-data.js"></script>
+<script>
+// #id=kiro で対象を指定（省略時は最後に追加されたアイコン）
+var id=(location.hash.match(/id=([a-z0-9-]+)/)||[])[1];
+var ic=id?window.ICONS.find(function(i){return i.id===id;}):window.ICONS[window.ICONS.length-1];
+if(!ic){var e=document.createElement('div');e.id='err';e.textContent='アイコンが見つからない: '+id;document.body.appendChild(e);}
+else [512,96,32].forEach(function(sz){
+  var ns='http://www.w3.org/2000/svg';
+  var cell=document.createElement('div');cell.className='cell';
+  var s=document.createElementNS(ns,'svg');
+  s.setAttribute('viewBox','0 0 96 96');s.setAttribute('width',sz);s.setAttribute('height',sz);
+  if(sz===512)s.id='main';
+  ic.paths.forEach(function(p){
+    var el=document.createElementNS(ns,'path');
+    el.setAttribute('d',p.d);
+    el.setAttribute('fill',p.fill||'none');
+    el.setAttribute('stroke',p.fill?(p.stroke||'none'):'currentColor');
+    el.setAttribute('stroke-width',p.width||8);
+    el.setAttribute('stroke-linecap','round');
+    el.setAttribute('stroke-linejoin','round');
+    if(p.fr)el.setAttribute('fill-rule',p.fr);
+    if(p.opacity)el.setAttribute('opacity',p.opacity);
+    s.appendChild(el);
+  });
+  cell.appendChild(s);
+  var lab=document.createElement('div');lab.textContent=sz+'px';cell.appendChild(lab);
+  document.body.appendChild(cell);
+});
+</script>
+</body></html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CalcKit — 表計算</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='414 291 285 285'%3E%3Cpath fill='%23fafafa' fill-rule='evenodd' d='M557.82 294.27C633.96 294.27 695.68 355.99 695.68 432.13C695.68 508.27 633.96 569.99 557.82 569.99C481.68 569.99 419.96 508.27 419.96 432.13C419.96 355.99 481.68 294.27 557.82 294.27ZM447.11 432.13C447.11 493.27 496.68 542.84 557.82 542.84C618.96 542.84 668.52 493.27 668.52 432.13C668.52 370.99 618.96 321.43 557.82 321.43C496.68 321.43 447.11 370.99 447.11 432.13Z'/%3E%3Cpath fill='%23fafafa' d='M586.49 351.44h29.07v224.03h-29.07ZM497.43 291.45h29.07v224.03h-29.07ZM414.48 489.87V460.8h224.03v29.07ZM474.47 403.46V374.4h224.04v29.06Z'/%3E%3C/svg%3E">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f8fafc;--card:rgba(15,23,42,.04);--border:#e2e8f0;--text:#1e293b;--muted:#64748b;--accent:#2b6cb0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Hiragino Sans','Noto Sans JP',sans-serif;overflow:hidden;height:100vh}
+/* キット共通ヘッダー（48px・丸に井桁） */
+header{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);background:#ffffff}
+.brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;margin-right:14px;color:var(--text)}
+.brand .kit-mark{width:22px;height:22px;display:block;flex:none}
+.hsub{font-size:14px;color:var(--muted);margin-right:auto;cursor:pointer;padding:4px 8px;border-radius:6px}
+.hsub:hover{background:var(--card)}
+.hsub input{font-size:14px;font-family:inherit;border:1px solid var(--accent);border-radius:4px;padding:2px 6px;width:260px}
+.hbtn,select.hbtn{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 13px;border-radius:15px;cursor:pointer;font-size:13px;margin-left:6px;white-space:nowrap;font-family:inherit}
+.hbtn:hover{border-color:var(--accent);color:var(--accent)}
+#bsave.dirty{background:rgba(231,76,60,.25)!important;border-color:#E74C3C!important;color:#E74C3C!important}
+/* 数式バー＋書式ツールバー */
+.fxbar{position:fixed;top:48px;left:0;right:0;z-index:100;height:42px;background:rgba(255,255,255,.97);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;padding:0 14px}
+#fx-addr{width:76px;text-align:center;font-size:14px;border:1px solid var(--border);border-radius:6px;padding:5px 4px;color:var(--muted);background:#fff;font-family:ui-monospace,Menlo,monospace}
+#fx{flex:1;font-size:15px;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-family:ui-monospace,Menlo,monospace;color:var(--text)}
+#fx:focus{outline:none;border-color:var(--accent)}
+.sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex:none}
+.fbtn{background:#fff;border:1px solid var(--border);color:var(--muted);min-width:34px;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:14px;font-family:inherit;white-space:nowrap}
+.fbtn:hover{border-color:var(--accent);color:var(--accent)}
+/* グリッド */
+#grid-wrap{position:fixed;top:90px;left:0;right:0;bottom:36px;overflow:auto;background:#fff}
+#grid-inner{position:relative;display:inline-block;min-width:100%}
+#grid-t{border-collapse:separate;border-spacing:0;table-layout:fixed}
+#grid-t th,#grid-t td{border-right:1px solid var(--border);border-bottom:1px solid var(--border);font-weight:400}
+#grid-t thead th{position:sticky;top:0;z-index:3;background:#f1f5f9;color:var(--muted);font-size:14px;height:30px;text-align:center;user-select:none}
+#grid-t thead th.corner{position:sticky;left:0;z-index:4;width:48px;min-width:48px}
+#grid-t tbody th.rh{position:sticky;left:0;z-index:2;background:#f1f5f9;color:var(--muted);font-size:14px;width:48px;min-width:48px;text-align:center;user-select:none;cursor:pointer}
+.rowgrip{position:absolute;bottom:-4px;left:0;width:100%;height:8px;cursor:row-resize;z-index:5}
+#grid-t thead th.ch{position:relative;cursor:pointer}
+</style>
+<style>
+#grid-t tbody tr{height:30px}
+#grid-t td{padding:0 8px;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;cursor:cell;background:#fff;vertical-align:middle}
+#grid-t td.num{text-align:right;font-variant-numeric:tabular-nums}
+#grid-t td.bold{font-weight:700}
+#grid-t td.err{color:#c53030;font-size:13px}
+#grid-t td.al{text-align:left}
+#grid-t td.ac{text-align:center}
+#grid-t td.ar{text-align:right}
+#grid-t td.vt{vertical-align:top}
+#grid-t td.vm{vertical-align:middle}
+#grid-t td.vb{vertical-align:bottom}
+#grid-t td.sel{background:rgba(43,108,176,.08)}
+#grid-t td.cur{outline:2px solid var(--accent);outline-offset:-2px;background:#fff}
+#grid-t td.sel.cur{background:#fff}
+#grid-t thead th.hl,#grid-t tbody th.hl{background:#dbe7f3;color:var(--accent);font-weight:700}
+.colgrip{position:absolute;top:0;right:-3px;width:7px;height:100%;cursor:col-resize;z-index:5}
+/* 折り返しセル（行の高さは中身に合わせて伸びる） */
+#grid-t td.wrap{white-space:normal;word-break:break-word;height:auto;min-height:30px;padding:4px 8px;line-height:1.45}
+/* セル編集オーバーレイ */
+#cell-ed{position:absolute;display:none;z-index:10;border:2px solid var(--accent);font-size:15px;padding:0 6px;font-family:inherit;background:#fff;color:var(--text)}
+#cell-ed:focus{outline:none}
+/* 選択枠線＋フィルハンドル */
+#sel-box{position:absolute;display:none;z-index:1;border:2px solid var(--accent);pointer-events:none;box-sizing:border-box}
+#fill-handle{position:absolute;right:-5px;bottom:-5px;width:8px;height:8px;background:var(--accent);border:1px solid #fff;pointer-events:auto;cursor:crosshair}
+#fill-box{position:absolute;display:none;z-index:1;border:2px dashed var(--accent);pointer-events:none;box-sizing:border-box}
+/* プルダウン（選択肢）ボタン */
+#dd-btn{position:absolute;display:none;z-index:7;width:22px;background:#fff;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:11px;padding:0}
+#dd-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* ステータスバー */
+.status{position:fixed;bottom:0;left:0;right:0;height:36px;z-index:100;background:#ffffff;border-top:1px solid var(--border);display:flex;align-items:center;gap:18px;padding:0 16px;font-size:14px;color:var(--muted)}
+.status b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+/* シートタブ */
+#tabs{display:flex;align-items:center;gap:2px;margin-right:8px;max-width:45vw;overflow-x:auto}
+#tabs .tab{border:1px solid var(--border);border-bottom:none;background:#f1f5f9;color:var(--muted);padding:5px 14px;font-size:14px;font-family:inherit;cursor:pointer;white-space:nowrap;border-radius:0}
+#tabs .tab.on{background:#fff;color:var(--text);font-weight:700;border-top:2px solid var(--accent);padding-top:4px}
+#tabs .tab:hover{color:var(--accent)}
+#tabs .tab-add{min-width:32px;font-weight:700}
+.status .hint{margin-left:auto;font-size:12px;color:#94a3b8}
+.status .hint kbd{background:rgba(15,23,42,.06);padding:1px 6px;border-radius:3px;font-size:11px;border:1px solid var(--border)}
+/* モーダル */
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:400;display:none;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;width:520px;max-width:92vw;max-height:84vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.modal h3{font-size:16px;margin-bottom:12px;color:var(--accent)}
+.modal label{display:block;font-size:14px;color:var(--muted);margin:10px 0 3px}
+.modal input,.modal select,.modal textarea{width:100%;background:#fff;border:1px solid var(--border);border-radius:6px;padding:7px 9px;color:var(--text);font-size:14px;font-family:inherit}
+.modal .note{font-size:13px;color:#94a3b8;margin-top:6px;line-height:1.5}
+.modal-btns{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.modal-btns button{padding:7px 18px;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:14px;font-family:inherit}
+.m-save{background:var(--accent);color:#fff;border-color:var(--accent)}
+.m-cancel{background:transparent;color:var(--muted)}
+/* グラフモーダルは広め */
+.modal.wide{width:860px}
+#chart-host{margin-top:10px;min-height:300px}
+/* コンテキストメニュー */
+#ctx{position:fixed;z-index:500;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.15);display:none;min-width:190px;padding:4px 0}
+#ctx button{display:block;width:100%;text-align:left;background:none;border:none;padding:7px 16px;font-size:14px;color:var(--text);cursor:pointer;font-family:inherit}
+#ctx button:hover{background:rgba(43,108,176,.08)}
+#ctx .cx-sep{height:1px;background:var(--border);margin:4px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><svg class="kit-mark" viewBox="414 291 285 285" aria-hidden="true">
+    <path fill="currentColor" fill-rule="evenodd" d="M557.82 294.27C633.96 294.27 695.68 355.99 695.68 432.13C695.68 508.27 633.96 569.99 557.82 569.99C481.68 569.99 419.96 508.27 419.96 432.13C419.96 355.99 481.68 294.27 557.82 294.27ZM447.11 432.13C447.11 493.27 496.68 542.84 557.82 542.84C618.96 542.84 668.52 493.27 668.52 432.13C668.52 370.99 618.96 321.43 557.82 321.43C496.68 321.43 447.11 370.99 447.11 432.13Z"/>
+    <path fill="currentColor" d="M586.49 351.44h29.07v224.03h-29.07ZM497.43 291.45h29.07v224.03h-29.07ZM414.48 489.87V460.8h224.03v29.07ZM474.47 403.46V374.4h224.04v29.06Z"/>
+  </svg>CalcKit</div>
+  <div class="hsub" id="hsub" title="クリックで名前を変更">シート</div>
+  <select class="hbtn" id="btmpl">
+    <option value="">新規/テンプレート…</option>
+    <option value="blank">空白シート</option>
+    <option value="cost">工数計算（レベル別単価）</option>
+    <option value="pl">収支計算（月次PL）</option>
+  </select>
+  <button class="hbtn" id="bopen">開く</button>
+  <button class="hbtn" id="bcsv">CSV</button>
+  <button class="hbtn" id="bxls">Excel</button>
+  <button class="hbtn" id="bchart">グラフ</button>
+  <button class="hbtn" id="bslide">スライド書き出し</button>
+  <button class="hbtn" id="bgantt">ガント書き出し</button>
+  <button class="hbtn" id="bsave" title="初回は保存先を選択。Shift+クリックで別名保存">保存</button>
+  <button class="hbtn" id="breset">初期化</button>
+</header>
+<div class="fxbar">
+  <input id="fx-addr" readonly value="A1">
+  <input id="fx" placeholder="値または =式（=SUM(B2:B9) など）" spellcheck="false" autocomplete="off">
+  <span class="sep"></span>
+  <button class="fbtn" id="fbold" title="太字"><b>B</b></button>
+  <button class="fbtn" id="fnum" title="桁区切り">1,234</button>
+  <button class="fbtn" id="fyen" title="円">¥</button>
+  <button class="fbtn" id="fpct" title="パーセント">%</button>
+  <button class="fbtn" id="fdec" title="小数2桁">.00</button>
+  <button class="fbtn" id="fdate" title="日付表示">日付</button>
+  <button class="fbtn" id="fclr" title="書式クリア（配置含む）">標準</button>
+  <span class="sep"></span>
+  <button class="fbtn" id="fal" title="左揃え">◧</button>
+  <button class="fbtn" id="fac" title="中央揃え">◫</button>
+  <button class="fbtn" id="far" title="右揃え">◨</button>
+  <button class="fbtn" id="fvt" title="上揃え">⍐</button>
+  <button class="fbtn" id="fvm" title="上下中央">⊟</button>
+  <button class="fbtn" id="fvb" title="下揃え">⍗</button>
+  <button class="fbtn" id="fwrap" title="折り返して全体を表示">折返</button>
+  <span class="sep"></span>
+  <button class="fbtn" id="fdd" title="プルダウンの選択肢を設定">選択肢▾</button>
+  <span class="sep"></span>
+  <button class="fbtn" id="frowa" title="行を下に追加">＋行</button>
+  <button class="fbtn" id="fcola" title="列を右に追加">＋列</button>
+</div>
+<div id="grid-wrap"><div id="grid-inner">
+  <table id="grid-t"><thead></thead><tbody></tbody></table>
+  <div id="sel-box"><div id="fill-handle" title="ドラッグでフィル（式コピー・連番・日付）"></div></div>
+  <div id="fill-box"></div>
+  <button id="dd-btn" title="選択肢から選ぶ">▾</button>
+  <input id="cell-ed" spellcheck="false" autocomplete="off">
+</div></div>
+<div class="status">
+  <div id="tabs"></div>
+  <span id="st-sel">A1</span>
+  <span>合計 <b id="st-sum">-</b></span>
+  <span>平均 <b id="st-avg">-</b></span>
+  <span>個数 <b id="st-cnt">-</b></span>
+  <span id="save-status" title="localStorageには自動復旧用データを保存">復旧: ブラウザ内</span>
+  <span class="hint"><kbd>=</kbd> 式　<kbd>⌘C/⌘V</kbd> Excelと相互コピペ　<kbd>右下■ドラッグ</kbd> フィル　<kbd>列ヘッダ右クリック</kbd> 並べ替え/挿入　<kbd>⌘Z</kbd> 戻す</span>
+</div>
+<div id="ctx"></div>
+<div class="modal-bg" id="modal-bg"><div class="modal" id="modal"></div></div>
+<!-- DashboardKit連携（任意）。無い環境でもグラフ以外は全部動く -->
+<script src="../DashboardKit/dashboard-kit.js"></script>
+<script src="calc.js"></script>
+</body>
+</html>

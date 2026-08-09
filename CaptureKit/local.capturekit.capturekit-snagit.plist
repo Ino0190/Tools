@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Snagitフォルダを監視して、新しいキャプチャを自動でCaptureKitギャラリーへ取り込む -->
+  <!-- 正本はここ（CaptureKit/）。インストールは ~/Library/LaunchAgents/ へコピーして launchctl load -->
+  <key>Label</key>
+  <string>local.capturekit.capturekit-snagit</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/PATH/TO/KitsRepo/CaptureKit/import-snagit.js</string>
+  </array>
+  <key>WatchPaths</key>
+  <array>
+    <string>/PATH/TO/Snagit</string>
+  </array>
+  <key>ThrottleInterval</key>
+  <integer>120</integer>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>/PATH/TO/KitsRepo/CaptureKit/import-snagit.log</string>
+  <key>StandardErrorPath</key>
+  <string>/PATH/TO/KitsRepo/CaptureKit/import-snagit.log</string>
+</dict>
+</plist>

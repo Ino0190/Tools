@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>BezierKit アイコンカタログ</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='414 291 285 285'%3E%3Cpath fill='%23fafafa' fill-rule='evenodd' d='M557.82 294.27C633.96 294.27 695.68 355.99 695.68 432.13C695.68 508.27 633.96 569.99 557.82 569.99C481.68 569.99 419.96 508.27 419.96 432.13C419.96 355.99 481.68 294.27 557.82 294.27ZM447.11 432.13C447.11 493.27 496.68 542.84 557.82 542.84C618.96 542.84 668.52 493.27 668.52 432.13C668.52 370.99 618.96 321.43 557.82 321.43C496.68 321.43 447.11 370.99 447.11 432.13Z'/%3E%3Cpath fill='%23fafafa' d='M586.49 351.44h29.07v224.03h-29.07ZM497.43 291.45h29.07v224.03h-29.07ZM414.48 489.87V460.8h224.03v29.07ZM474.47 403.46V374.4h224.04v29.06Z'/%3E%3C/svg%3E">
+<style>
+:root{--navy:#183251;--blue:#21537f;--paper:#fafafa;--ink:#121212;--sub:#5e5e5e;--line:#cbd5e1;--ui:#edf2f4}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Hiragino Sans','Yu Gothic',sans-serif;background:var(--paper);color:var(--ink)}
+header{height:48px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid var(--line);background:#fff}
+.brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;margin-right:14px}
+.brand .kit-mark{width:22px;height:22px;display:block;flex:none}
+header nav{display:flex;gap:4px}
+header nav a{display:flex;align-items:center;height:30px;padding:0 11px;font-size:14px;border-radius:5px;color:inherit;text-decoration:none}
+header nav a:hover{background:#dde5ee}
+header nav a.here{background:var(--ui);font-weight:700}
+#bar{display:flex;align-items:center;gap:14px;padding:14px 20px;flex-wrap:wrap}
+#q{font-size:16px;padding:8px 12px;border:1px solid var(--line);border-radius:5px;width:260px}
+#bar label{font-size:14px;color:var(--sub);display:flex;align-items:center;gap:6px}
+#count{font-size:14px;color:var(--sub);margin-left:auto}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:0 20px 20px}
+.card{background:#fff;border:1px solid var(--line);border-radius:5px;padding:14px 12px 12px;cursor:pointer;position:relative;text-align:center}
+.card:hover{border-color:var(--blue);box-shadow:0 1px 6px rgba(24,50,81,.12)}
+.card.hide{display:none}
+.card .icon{display:flex;justify-content:center;align-items:center;height:64px;margin-bottom:10px}
+.card .icon svg{width:56px;height:56px}
+.card .mini{position:absolute;top:10px;right:10px;opacity:.7}
+.card .mini svg{width:16px;height:16px}
+.card .name{font-size:16px;font-weight:700}
+.card .iid{font-size:14px;color:var(--sub);font-family:ui-monospace,monospace;margin-top:2px}
+.card .edited{position:absolute;top:8px;left:8px;font-size:12px;font-weight:700;color:#7a471a;background:#f4f4ef;padding:2px 7px;border-radius:3px}
+#bar button{font-size:14px;padding:7px 12px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-family:inherit}
+#bar button:hover{background:var(--ui)}
+.card .ops{display:flex;gap:6px;justify-content:center;margin-top:10px}
+.card .ops button{font-size:14px;padding:4px 10px;border:1px solid var(--line);border-radius:3px;background:#fff;cursor:pointer;font-family:inherit}
+.card .ops button:hover{background:var(--ui)}
+body.dark #grid .card{background:#1e293b;border-color:#475569}
+body.dark #grid .card .name{color:#fafafa}
+#hint{padding:20px;font-size:14px;color:var(--sub);border-top:1px solid var(--line);margin-top:28px;line-height:1.9}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:15px;padding:10px 22px;border-radius:5px;opacity:0;transition:opacity .25s;pointer-events:none}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><svg class="kit-mark" viewBox="414 291 285 285" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M557.82 294.27C633.96 294.27 695.68 355.99 695.68 432.13C695.68 508.27 633.96 569.99 557.82 569.99C481.68 569.99 419.96 508.27 419.96 432.13C419.96 355.99 481.68 294.27 557.82 294.27ZM447.11 432.13C447.11 493.27 496.68 542.84 557.82 542.84C618.96 542.84 668.52 493.27 668.52 432.13C668.52 370.99 618.96 321.43 557.82 321.43C496.68 321.43 447.11 370.99 447.11 432.13Z"/><path fill="currentColor" d="M586.49 351.44h29.07v224.03h-29.07ZM497.43 291.45h29.07v224.03h-29.07ZM414.48 489.87V460.8h224.03v29.07ZM474.47 403.46V374.4h224.04v29.06Z"/></svg>BezierKit</div>
+  <nav>
+    <a href="index.html">描画</a>
+    <a href="icons.html" class="here">アイコンカタログ</a>
+  </nav>
+</header>
+<div id="bar">
+  <input id="q" type="search" placeholder="名前・id・タグで検索" aria-label="アイコン検索">
+  <label>色 <input id="tint" type="color" value="#121212"></label>
+  <label><input id="dark" type="checkbox">暗い背景で見る</label>
+  <button id="ovCopy" style="display:none" title="BezierKitで編集した分をicons-data.js形式でコピー。Kiroに貼ると確定される">📋 編集結果をコピー</button>
+  <button id="ovClear" style="display:none" title="未確定の編集結果を捨てて元に戻す">破棄</button>
+  <span id="count"></span>
+</div>
+<div id="grid"></div>
+<div id="hint">
+  ・カードをクリック＝SVGソースをコピー（そのままHTMLに貼れる。色はcurrentColor＝親要素のcolorに従う）<br>
+  ・「✏️ 編集」＝BezierKitで開く（5倍表示・グレー枠が96×96）。編集したら右上「アイコンへ反映」→このカタログに即反映（「編集あり」バッジ付きの未確定状態）<br>
+  ・「📋 編集結果をコピー」＝未確定分をicons-data.js形式でコピー。Kiroに貼ると確定、「破棄」で元に戻る<br>
+  ・「⇩ SVG」＝ファイルとして保存。アイコンを増やしたい時はKiroに「○○のアイコンを追加して」→ icons-data.js に追記される（形のルールは同ファイル先頭コメント）
+</div>
+<div id="toast"></div>
+<script src="icons-data.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+function svgText(ic){
+ const body=ic.paths.map(p=>{
+  const fill=p.fill||'none';
+  const stroke=p.stroke!==undefined?p.stroke:(fill==='none'?'currentColor':'none');
+  const sw=p.width!=null?p.width:8; // 既定線幅8（井桁マーク9.5より一段細く・2026-07-29調整）
+  return `<path d="${p.d}" fill="${fill}" stroke="${stroke}"`+
+   (stroke!=='none'?` stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"`:'')+
+   (p.fr?` fill-rule="${p.fr}"`:'')+
+   (p.opacity?` opacity="${p.opacity}"`:'')+'/>';
+ }).join('');
+ return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">${body}</svg>`;
+}
+let toastTimer=null;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),1800);}
+async function copyText(text,msg){
+ try{await navigator.clipboard.writeText(text);toast(msg);}
+ catch(_){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast(msg);}
+}
+function download(ic){
+ const blob=new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+svgText(ic)],{type:'image/svg+xml'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=ic.id+'.svg';a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),0);
+}
+// BezierKit編集の未確定上書き（localStorage）。「📋 編集結果をコピー」→Kiroが icons-data.js に確定するまでの仮置き
+function getOverrides(){try{return JSON.parse(localStorage.getItem('bkIconOverrides')||'{}');}catch(_){return{};}}
+function mergedIcons(){
+ const ov=getOverrides();
+ return ICONS.map(ic=>ov[ic.id]?{...ic,paths:ov[ic.id].paths,_edited:true}:ic);
+}
+function jsEntry(ic){
+ const ps=ic.paths.map(p=>{
+  let s="{d:'"+p.d.replace(/\\/g,"\\\\").replace(/'/g,"\\'")+"'";
+  if(p.fill)s+=", fill:'currentColor'";
+  if(p.fr)s+=", fr:'"+p.fr+"'";
+  if(p.stroke)s+=", stroke:'currentColor'";
+  if(p.width!=null&&p.width!==6)s+=', width:'+p.width;
+  if(p.opacity)s+=', opacity:'+p.opacity;
+  return s+'}';
+ }).join(',\n  ');
+ return ` {num:${ic.num}, id:'${ic.id}', name:'${ic.name}', tags:[${(ic.tags||[]).map(t=>`'${t}'`).join(',')}], paths:[\n  ${ps}]},`;
+}
+function build(){
+ const grid=$('grid');grid.replaceChildren();
+ const list=mergedIcons();
+ list.forEach(ic=>{
+  const card=document.createElement('div');card.className='card';
+  card.dataset.key=('#'+ic.num+' '+ic.num+' '+ic.id+' '+ic.name+' '+(ic.tags||[]).join(' ')).toLowerCase();
+  const svg=svgText(ic);
+  card.innerHTML=`<div class="icon">${svg}</div><div class="mini" title="16px表示の見え方">${svg}</div>`+
+   (ic._edited?'<div class="edited" title="BezierKitで編集済み（icons-data.js未反映）。上の📋でKiroに渡すと確定">編集あり</div>':'')+
+   `<div class="name">${ic.name}</div><div class="iid">#${ic.num} ${ic.id}</div>`+
+   `<div class="ops"><button data-op="edit" title="BezierKitで開いて編集する。編集後は右上の「アイコンへ反映」">✏️ 編集</button>`+
+   `<button data-op="dl" title="SVGファイルとして保存">⇩ SVG</button></div>`;
+  card.addEventListener('click',e=>{
+   if(e.target.dataset.op==='dl'){download(ic);return;}
+   if(e.target.dataset.op==='edit'){
+    // アイコンデータはURLハッシュで渡す（file://のlocalStorageはブラウザ差があるため補助扱い）
+    const payload={num:ic.num,id:ic.id,name:ic.name,tags:ic.tags||[],paths:ic.paths};
+    try{localStorage.setItem('bkIconEdit',JSON.stringify(payload));}catch(_){}
+    const b64=btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const w=window.open('index.html#editicon='+b64);
+    if(!w)toast('タブを開けなかった。ポップアップブロックを確認して');
+    return;
+   }
+   copyText(svgText(ic),`「${ic.name}」のSVGをコピーした`);
+  });
+  grid.appendChild(card);
+ });
+ syncOverrideBar();
+ filter();
+}
+function syncOverrideBar(){
+ const n=Object.keys(getOverrides()).length;
+ $('ovCopy').style.display=n?'':'none';
+ $('ovClear').style.display=n?'':'none';
+ $('ovCopy').textContent=`📋 編集結果をコピー（${n}件）`;
+}
+$('ovCopy').addEventListener('click',()=>{
+ const ov=getOverrides();
+ const entries=mergedIcons().filter(ic=>ov[ic.id]).map(jsEntry).join('\n');
+ copyText('BezierKit/icons-data.js の該当id のエントリを以下に差し替えて（無ければ追加）:\n\n'+entries,
+  '編集結果をコピーした。Kiroに貼ると icons-data.js に確定される');
+});
+$('ovClear').addEventListener('click',()=>{
+ if(!confirm('BezierKitでの編集結果（未確定分）を捨てて、icons-data.js の内容に戻す？'))return;
+ localStorage.removeItem('bkIconOverrides');build();toast('編集結果を破棄した');
+});
+// BezierKit側の「アイコンへ反映」を即反映（storageは別タブ変更で発火）＋タブ復帰時も再読込
+window.addEventListener('storage',e=>{if(e.key==='bkIconOverrides')build();});
+window.addEventListener('focus',build);
+function filter(){
+ const q=$('q').value.trim().toLowerCase();
+ let shown=0;
+ document.querySelectorAll('.card').forEach(c=>{
+  const hit=!q||c.dataset.key.includes(q);
+  c.classList.toggle('hide',!hit);
+  if(hit)shown++;
+ });
+ $('count').textContent=q?`${shown} / ${ICONS.length}個`:`${ICONS.length}個`;
+}
+$('q').addEventListener('input',filter);
+$('tint').addEventListener('input',()=>{$('grid').style.color=$('tint').value;});
+$('dark').addEventListener('change',()=>{document.body.classList.toggle('dark',$('dark').checked);});
+build();
+</script>
+</body>
+</html>
