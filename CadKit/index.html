@@ -358,7 +358,7 @@ body.heian-walking .heian-game-crosshair{display:block}
 <hr>
 <button id="mSampleV2">板サンプル（OCCT）</button>
 <button id="mTruck">シンプルトラック（箱型・OCCT）</button>
-<button id="mForklift">フォークリフト（OCCT）</button>
+<button id="mForklift">フォークリフト（運転手付き・OCCT）</button>
 <button id="mCarMech">カーメカ（車ロボ・OCCT）</button>
 <button id="mRobotV2">ロボサンプル（OCCT）</button>
 <button id="mMomo">クマ（モモ）</button>
@@ -1259,17 +1259,14 @@ try{
 const OCCT_CDN='https://cdn.jsdelivr.net/npm/opencascade.js@2.0.0-beta.b5ff984/dist/';
 let OCCT=null,OCCT_SOURCE='未読込',OCCT_LOAD=null;
 async function loadOCCT(){
+ if(location.protocol==='file:'&&!new URLSearchParams(location.search).has('allowFileOCCT')){
+  console.warn(OCCT_FILE_HINT);return null;
+ }
  try{
-  const m=await import('./occt/opencascade.full.js');
-  return{oc:await m.default({locateFile:f=>'./occt/'+f}),src:'ローカル'};
- }catch(localError){
-  try{
-   const m=await import(OCCT_CDN+'opencascade.full.js');
-   return{oc:await m.default({locateFile:f=>OCCT_CDN+f}),src:'CDN'};
-  }catch(cdnError){
-   console.warn('OCCTを読み込めないためManifoldで継続',localError,cdnError);
-   return null;
-  }
+  const m=await withTimeout(import(OCCT_CDN+'opencascade.full.js'),15000,'CDN版OCCTの読込');
+  return{oc:await withTimeout(m.default({locateFile:f=>OCCT_CDN+f}),90000,'CDN版OCCTの初期化'),src:'CDN'};
+ }catch(cdnError){
+  console.warn('OCCTを読み込めないためManifoldで継続',cdnError);return null;
  }
 }
 async function ensureOCCT(){
@@ -14208,7 +14205,8 @@ function makeForklift(){
   ];
   restoreUserPoses();
   for(let i=skStart;i<sketches.length;i++)sketches[i].group.visible=false;
-  refreshGroups();refreshJoints();refreshPoses();applyPose();
+  selHistIdx=-1;selBodies=[];selBody=null;historyHLBodies=[];applyBodySel();
+  refreshHistory();refreshGroups();refreshJoints();refreshPoses();applyPose();
   refreshLists();refreshSelects();
   camera.position.set(9000,5800,9000);controls.target.set(500,1500,1200);fitView();
   setStatus('フォークリフト講習コース完成（'+bodies.length+'ボディ・'+joints.length+'ジョイント・'+poses.length+'ポーズ。▶直進荷受け→後輪操舵バック円弧→上段格納→同経路帰還）');
@@ -15938,6 +15936,7 @@ async function runSampleBatched(build,label='サンプルモデルを生成し�
   finally{
    BULKGEN=previous;
    if(!previous){
+    selHistIdx=-1;selBodies=[];selBody=null;applyBodySel();
     refreshHistory();refreshBodySource();refreshGroups();refreshLists();refreshSelects();
     // refreshSelects()がLoft入力スケッチを一時表示するため、サンプル完成後は必ず破棄する。
     setSketchHL([]);clearSketchProfiles();
@@ -15948,7 +15947,7 @@ async function runSampleBatched(build,label='サンプルモデルを生成し�
 // 板サンプル(manifold版)はメニューから外した（#test系は makeSample を直接使う）
 $('mSampleV2').onclick=()=>runSampleBatched(makeSampleV2,'板サンプルを生成しています');
 $('mTruck').onclick=()=>runSampleBatched(makeSimpleTruck,'トラックを生成しています');
-$('mForklift').onclick=()=>runSampleBatched(makeForklift,'フォークリフトを生成しています');
+$('mForklift').onclick=()=>runSampleBatched(makeForkliftOperator,'運転手付きフォークリフトを生成しています');
 $('mCarMech').onclick=()=>runSampleBatched(makeCarMech,'カーメカを生成しています');
 for(const a of HEIAN_ASSETS){
  const b=document.createElement('button');
@@ -16169,6 +16168,7 @@ axisRows();
 function resetPoseToInitial(showStatus=true){
  stopPosePlayback(false);
  joints.forEach(j=>j.angle=0);assemblyJoints.forEach(j=>j.value=0);
+ setPoseScene(poses.find(p=>p.name==='構え')?.name||'');
  evaluateJointLinks();syncJointControls();applyPose();refreshAssemblyJointUI();
  if(showStatus)setStatus('ポーズを初期位置へ戻した');
 }
