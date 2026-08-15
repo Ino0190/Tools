@@ -1,6 +1,15 @@
 # 使い方: python3 cdp-run.py <ハッシュ名 or URL> [-v] [-o ログファイル]
 #   例: python3 cdp-run.py shinden          （index.html#shinden を実行）
 #       python3 cdp-run.py testrobot -v     （全consoleログ表示）
+#       python3 cdp-run.py tinrobot --export-line shots/tinrobot-line.svg
+#       python3 cdp-run.py tinrobot --export-animation shots/tinrobot-jump-animated.svg
+#           --animation-fps 12 --animation-pose 片足ジャンプ
+#       python3 cdp-run.py tinrobot --export-animation shots/tinrobot-waddle-animated.svg
+#           --animation-fps 12 --animation-pose 'ヨチヨチ（左右ループ）' --animation-tracking subject
+#       python3 cdp-run.py forkliftoperator --export-line shots/carry-opposite.svg
+#           --export-pose 後傾 --camera-yaw 180
+#       python3 cdp-run.py forkliftoperator --export-animation shots/forklift-v4.svg
+#           --animation-pose '全ポーズ（順番）' --camera-yaw 180
 #       python3 cdp-run.py daidairi -v -o /tmp/x.log  （ログをファイルへも逐次書き出し。
 #         シェルの > リダイレクト不要＝コマンド承認なしで流せる。tail -f で監視できる）
 # ヘッドレスChromeは無ければ自動起動する（ポート9251専用・使い回し）。
@@ -8,6 +17,8 @@ import base64, json, os, socket, struct, subprocess, sys, time, urllib.request
 from urllib.parse import urlparse
 
 PORT = int(os.environ.get("CDP_PORT", "9251"))
+PROFILE_TAG = "v2"
+PROFILE_DIR = f"/tmp/cadkit-cdp-{PORT}-{PROFILE_TAG}"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 raw = sys.argv[1:]
 LOGFILE = None
@@ -29,6 +40,16 @@ def take_option(name, default=None):
 
 EXPORT_PROJECT = take_option("--export-project")
 EXPORT_PACKAGE = take_option("--export-package")
+EXPORT_LINE = take_option("--export-line")
+EXPORT_ANIMATION = take_option("--export-animation")
+EXPORT_POSE = take_option("--export-pose")
+CAMERA_YAW = max(-360.0, min(360.0, float(take_option("--camera-yaw", "0"))))
+ANIMATION_FRAMES_RAW = take_option("--animation-frames")
+ANIMATION_FRAMES = max(2, min(60, int(ANIMATION_FRAMES_RAW))) if ANIMATION_FRAMES_RAW is not None else None
+ANIMATION_FPS = max(4, min(30, int(take_option("--animation-fps", "12"))))
+ANIMATION_POSE = take_option("--animation-pose", "片足ジャンプ")
+ANIMATION_TRACKING = take_option("--animation-tracking", "world")
+if ANIMATION_TRACKING not in {"world", "subject"}: raise SystemExit("--animation-tracking must be world or subject")
 EXPORT_COMPONENT = take_option("--export-component", "robot-root")
 args = [a for a in raw if a != "-v"]
 VERBOSE = os.environ.get("VERBOSE") or "-v" in sys.argv
@@ -42,7 +63,7 @@ def out(line):
 TARGET = args[0] if args else "test"
 if not TARGET.startswith(("file://", "http://", "https://")):
     here = os.path.dirname(os.path.abspath(__file__))
-    TARGET = "file://" + os.path.join(here, "index.html") + "#" + TARGET.lstrip("#")
+    TARGET = "file://" + os.path.join(here, "index.html") + "?allowFileOCCT=1#" + TARGET.lstrip("#")
 HASH = urlparse(TARGET).fragment
 
 def ensure_chrome():
@@ -54,13 +75,13 @@ def ensure_chrome():
     subprocess.Popen(
         [CHROME, "--headless=new", f"--remote-debugging-port={PORT}",
          "--allow-file-access-from-files", "--window-size=1500,1000",
-         f"--user-data-dir=/tmp/cadkit-cdp-{PORT}",
+         f"--user-data-dir={PROFILE_DIR}",
          "about:blank"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
 
 def kill_chrome():
     # 専用Chrome（このポートのuser-data-dirを持つプロセス）だけを落とす
-    subprocess.run(["pkill", "-f", f"cadkit-cdp-{PORT}"], check=False)
+    subprocess.run(["pkill", "-f", PROFILE_DIR], check=False)
     time.sleep(1.2)
 BASE = {"heiangame": "CADKIT_GAME", "testloft": "CADKIT_LOFT", "testsweep": "CADKIT_SWEEP", "testbool": "CADKIT_BOOL",
         "testxform": "CADKIT_XFORM",
@@ -68,7 +89,9 @@ BASE = {"heiangame": "CADKIT_GAME", "testloft": "CADKIT_LOFT", "testsweep": "CAD
         "testaxis": "CADKIT_AXIS", "testedges": "CADKIT_EDGES", "testauto": "CADKIT_AUTO",
         "testunify": "CADKIT_UNIFY", "testshot": "CADKIT_SHOT", "testcad3": "CADKIT_CAD3",
         "testcad4": "CADKIT_CAD4", "testorganic": "CADKIT_ORGANIC",
-        "testhist": "CADKIT_HIST"}.get(HASH, "CADKIT")
+        "testhist": "CADKIT_HIST", "forklift": "CADKIT_FORKLIFT",
+        "forkliftdriver": "CADKIT_DRIVER", "forkliftoperator": "CADKIT_OPERATOR",
+        }.get(HASH, "CADKIT")
 
 def exact(sock, size):
     data = b""
@@ -157,7 +180,7 @@ def open_session(fresh=False):
         pass
     return None
 
-sock = open_session()
+sock = open_session(fresh=bool(EXPORT_ANIMATION))
 if sock is None:
     out("CHROME_STUCK: 前の実行が固まっているため専用Chromeを再起動")
     sock = open_session(fresh=True)
@@ -192,10 +215,11 @@ if not result:
     out("CADKIT_CDP_TIMEOUT")
     sys.exit(2)
 
-def evaluate_value(expression, ident):
+def evaluate_value(expression, ident, timeout=180):
+    sock.settimeout(timeout)
     send_frame(sock, {"id": ident, "method": "Runtime.evaluate", "params": {
         "expression": expression, "returnByValue": True, "awaitPromise": True}})
-    end = time.time() + 180
+    end = time.time() + timeout
     while time.time() < end:
         opcode, raw_result = recv_frame(sock)
         if opcode != 1:
@@ -211,7 +235,12 @@ def evaluate_value(expression, ident):
         return remote.get("value")
     raise TimeoutError("Runtime.evaluate export timeout")
 
-if "FAIL" not in result and (EXPORT_PROJECT or EXPORT_PACKAGE):
+if "FAIL" not in result and (EXPORT_PROJECT or EXPORT_PACKAGE or EXPORT_LINE or EXPORT_ANIMATION):
+    if EXPORT_POSE or CAMERA_YAW:
+        pose_name = json.dumps(EXPORT_POSE, ensure_ascii=False) if EXPORT_POSE else "null"
+        changed = evaluate_value(f"window.__prepareLineExport({pose_name},{CAMERA_YAW})", 90)
+        if not changed:
+            raise RuntimeError(f"pose not found: {EXPORT_POSE}")
     if EXPORT_PROJECT:
         expression = "JSON.stringify(window.__projectDataZeroPose())"
         project = json.loads(evaluate_value(expression, 91))
@@ -233,4 +262,27 @@ if "FAIL" not in result and (EXPORT_PROJECT or EXPORT_PACKAGE):
         with open(os.path.join(EXPORT_PACKAGE, "assembly.json"), "w", encoding="utf-8") as f:
             json.dump(package["manifest"], f, ensure_ascii=False, indent=2)
         out(f"EXPORTED_PACKAGE {EXPORT_PACKAGE} files={len(package['files']) + 1} component={EXPORT_COMPONENT}")
+    if EXPORT_LINE:
+        line_svg = evaluate_value("window.__buildVisibleLineSVG()", 93)
+        if not line_svg:
+            raise RuntimeError("visible line SVG is empty")
+        parent = os.path.dirname(os.path.abspath(EXPORT_LINE))
+        os.makedirs(parent, exist_ok=True)
+        with open(EXPORT_LINE, "w", encoding="utf-8") as f:
+            f.write(line_svg)
+        out(f"EXPORTED_LINE {EXPORT_LINE} chars={len(line_svg)}")
+    if EXPORT_ANIMATION:
+        pose_name = json.dumps(ANIMATION_POSE, ensure_ascii=False)
+        frame_arg = f",frames:{ANIMATION_FRAMES}" if ANIMATION_FRAMES is not None else ""
+        tracking = json.dumps(ANIMATION_TRACKING)
+        expression = f"(()=>{{const o=[...document.getElementById('cameraAnimPose').options].find(o=>o.textContent==={pose_name});return window.__buildAnimatedLineSVG({{poseKey:o?.value||'0',fps:{ANIMATION_FPS}{frame_arg},cameraMode:'current',tracking:{tracking}}})}})()"
+        animation_svg = evaluate_value(expression, 94, 1800)
+        if not animation_svg:
+            raise RuntimeError(f"animated line SVG is empty: {ANIMATION_POSE}")
+        parent = os.path.dirname(os.path.abspath(EXPORT_ANIMATION))
+        os.makedirs(parent, exist_ok=True)
+        with open(EXPORT_ANIMATION, "w", encoding="utf-8") as f:
+            f.write(animation_svg)
+        frame_label = str(ANIMATION_FRAMES) if ANIMATION_FRAMES is not None else "auto"
+        out(f"EXPORTED_ANIMATION {EXPORT_ANIMATION} chars={len(animation_svg)} frames={frame_label} fps={ANIMATION_FPS} pose={ANIMATION_POSE}")
 sys.exit(1 if "FAIL" in result else 0)
