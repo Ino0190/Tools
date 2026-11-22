@@ -23,6 +23,8 @@ ASSETS = {
     "daidairi": "大内裏.json",
     "toji": "東寺.json",
     "saiji": "西寺.json",
+    "korokan-east": "東鴻臚館.json",
+    "korokan-west": "西鴻臚館.json",
 }
 
 def run(script, *args):
@@ -43,16 +45,35 @@ if not skip_test:
     if not run("cdp-run.py", "heiantest"):
         print("HEIAN_RELEASE_FAIL heiantestが失敗（書き出し中止）")
         sys.exit(1)
+    print("== 検証: heianterrain ==", flush=True)
+    if not run("cdp-run.py", "heianterrain"):
+        print("HEIAN_RELEASE_FAIL heianterrainが失敗（書き出し中止）")
+        sys.exit(1)
+    print("== 検証: heiangame ==", flush=True)
+    if not run("cdp-run.py", "heiangame"):
+        print("HEIAN_RELEASE_FAIL heiangameが失敗（書き出し中止）")
+        sys.exit(1)
+    for detail_target in ["buraku", "toji", "saiji", "korokan-east", "korokan-west"]:
+        if detail_target in targets:
+            print(f"== 検証: {detail_target} ==", flush=True)
+            if not run("cdp-run.py", detail_target):
+                print(f"HEIAN_RELEASE_FAIL {detail_target}が失敗（書き出し中止）")
+                sys.exit(1)
     if any(t.startswith("shinden") for t in targets):
         print("== 検証: shinden ==", flush=True)
         if not run("cdp-run.py", "shinden"):
             print("HEIAN_RELEASE_FAIL shindenが失敗（書き出し中止）")
             sys.exit(1)
 
+import time
+
 fails = []
 for t in targets:
     print(f"== 書き出し: {t} ==", flush=True)
-    if not run("export-model.py", t, os.path.join(OUT, ASSETS[t])):
+    exported = run("export-model.py", t, os.path.join(OUT, ASSETS[t]))
+    # export-modelの終了番犬が専用Chromeを停止してから次の書き出しを始める。
+    time.sleep(2)
+    if not exported:
         fails.append(t)
 
 if fails:
