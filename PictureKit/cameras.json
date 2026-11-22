@@ -1,0 +1,32 @@
+[
+  {
+    "id": "pentax-k1",
+    "name": "PENTAX K-1",
+    "models": ["PENTAX K-1"],
+    "formats": ["PEF", "DNG"]
+  },
+  {
+    "id": "pentax-k1-mark-ii",
+    "name": "PENTAX K-1 Mark II",
+    "models": ["PENTAX K-1 Mark II"],
+    "formats": ["PEF", "DNG"]
+  },
+  {
+    "id": "pentax-k3",
+    "name": "PENTAX K-3",
+    "models": ["PENTAX K-3"],
+    "formats": ["PEF", "DNG"]
+  },
+  {
+    "id": "ricoh-gr-iii",
+    "name": "RICOH GR III",
+    "models": ["RICOH GR III"],
+    "formats": ["DNG"]
+  },
+  {
+    "id": "sigma-fp",
+    "name": "SIGMA fp",
+    "models": ["SIGMA fp"],
+    "formats": ["DNG"]
+  }
+]
