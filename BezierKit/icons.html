@@ -28,6 +28,7 @@ header nav a.here{background:var(--ui);font-weight:700}
 .card .mini{position:absolute;top:10px;right:10px;opacity:.7}
 .card .mini svg{width:16px;height:16px}
 .card .name{font-size:16px;font-weight:700}
+.card .grp{font-size:12px;color:var(--sub);margin-top:2px}
 .card .iid{font-size:14px;color:var(--sub);font-family:ui-monospace,monospace;margin-top:2px}
 .card .edited{position:absolute;top:8px;left:8px;font-size:12px;font-weight:700;color:#7a471a;background:#f4f4ef;padding:2px 7px;border-radius:3px}
 #bar button{font-size:14px;padding:7px 12px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-family:inherit}
@@ -52,6 +53,8 @@ body.dark #grid .card .name{color:#fafafa}
 </header>
 <div id="bar">
   <input id="q" type="search" placeholder="名前・id・タグで検索" aria-label="アイコン検索">
+  <label>種類 <select id="kind" aria-label="種類で絞る"><option value="">すべて</option><option value="資料" selected>資料用</option><option value="道具">道具用</option></select></label>
+  <select id="grp" aria-label="群で絞る"><option value="">すべての群</option></select>
   <label>色 <input id="tint" type="color" value="#121212"></label>
   <label><input id="dark" type="checkbox">暗い背景で見る</label>
   <button id="ovCopy" style="display:none" title="BezierKitで編集した分をicons-data.js形式でコピー。Kiroに貼ると確定される">📋 編集結果をコピー</button>
@@ -108,25 +111,27 @@ function jsEntry(ic){
   if(p.opacity)s+=', opacity:'+p.opacity;
   return s+'}';
  }).join(',\n  ');
- return ` {num:${ic.num}, id:'${ic.id}', name:'${ic.name}', tags:[${(ic.tags||[]).map(t=>`'${t}'`).join(',')}], paths:[\n  ${ps}]},`;
+ const kg=(ic.kind?`, kind:'${ic.kind}'`:'')+(ic.group?`, group:'${ic.group}'`:'');
+ return ` {num:${ic.num}, id:'${ic.id}', name:'${ic.name}', tags:[${(ic.tags||[]).map(t=>`'${t}'`).join(',')}]${kg}, paths:[\n  ${ps}]},`;
 }
 function build(){
  const grid=$('grid');grid.replaceChildren();
  const list=mergedIcons();
  list.forEach(ic=>{
   const card=document.createElement('div');card.className='card';
-  card.dataset.key=('#'+ic.num+' '+ic.num+' '+ic.id+' '+ic.name+' '+(ic.tags||[]).join(' ')).toLowerCase();
+  card.dataset.key=('#'+ic.num+' '+ic.num+' '+ic.id+' '+ic.name+' '+(ic.tags||[]).join(' ')+' '+(ic.group||'')).toLowerCase();
+  card.dataset.kind=ic.kind||'道具'; card.dataset.grp=ic.group||'';
   const svg=svgText(ic);
   card.innerHTML=`<div class="icon">${svg}</div><div class="mini" title="16px表示の見え方">${svg}</div>`+
    (ic._edited?'<div class="edited" title="BezierKitで編集済み（icons-data.js未反映）。上の📋でKiroに渡すと確定">編集あり</div>':'')+
-   `<div class="name">${ic.name}</div><div class="iid">#${ic.num} ${ic.id}</div>`+
+   `<div class="name">${ic.name}</div>`+(ic.group?`<div class="grp">${ic.group}</div>`:'')+`<div class="iid">#${ic.num} ${ic.id}</div>`+
    `<div class="ops"><button data-op="edit" title="BezierKitで開いて編集する。編集後は右上の「アイコンへ反映」">✏️ 編集</button>`+
    `<button data-op="dl" title="SVGファイルとして保存">⇩ SVG</button></div>`;
   card.addEventListener('click',e=>{
    if(e.target.dataset.op==='dl'){download(ic);return;}
    if(e.target.dataset.op==='edit'){
     // アイコンデータはURLハッシュで渡す（file://のlocalStorageはブラウザ差があるため補助扱い）
-    const payload={num:ic.num,id:ic.id,name:ic.name,tags:ic.tags||[],paths:ic.paths};
+    const payload={num:ic.num,id:ic.id,name:ic.name,tags:ic.tags||[],kind:ic.kind,group:ic.group,paths:ic.paths};
     try{localStorage.setItem('bkIconEdit',JSON.stringify(payload));}catch(_){}
     const b64=btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
     const w=window.open('index.html#editicon='+b64);
@@ -159,17 +164,22 @@ $('ovClear').addEventListener('click',()=>{
 // BezierKit側の「アイコンへ反映」を即反映（storageは別タブ変更で発火）＋タブ復帰時も再読込
 window.addEventListener('storage',e=>{if(e.key==='bkIconOverrides')build();});
 window.addEventListener('focus',build);
+// 2026-11-19: 資料用（kind:'資料'）と道具用（kind 無し＝BezierKit/CadKit の操作ボタン）を分けて見る。群（group）でも絞れる
+(function(){const gs=[];ICONS.forEach(ic=>{if(ic.group&&!gs.includes(ic.group))gs.push(ic.group);});
+ gs.forEach(g=>{const o=document.createElement('option');o.value=g;o.textContent=g;$('grp').appendChild(o);});})();
 function filter(){
- const q=$('q').value.trim().toLowerCase();
+ const q=$('q').value.trim().toLowerCase(), k=$('kind').value, g=$('grp').value;
  let shown=0;
  document.querySelectorAll('.card').forEach(c=>{
-  const hit=!q||c.dataset.key.includes(q);
+  const hit=(!q||c.dataset.key.includes(q))&&(!k||c.dataset.kind===k)&&(!g||c.dataset.grp===g);
   c.classList.toggle('hide',!hit);
   if(hit)shown++;
  });
- $('count').textContent=q?`${shown} / ${ICONS.length}個`:`${ICONS.length}個`;
+ $('count').textContent=(q||k||g)?`${shown} / ${ICONS.length}個`:`${ICONS.length}個`;
 }
 $('q').addEventListener('input',filter);
+$('kind').addEventListener('change',()=>{if($('kind').value==='道具')$('grp').value='';filter();});
+$('grp').addEventListener('change',()=>{if($('grp').value)$('kind').value='資料';filter();});
 $('tint').addEventListener('input',()=>{$('grid').style.color=$('tint').value;});
 $('dark').addEventListener('change',()=>{document.body.classList.toggle('dark',$('dark').checked);});
 build();
