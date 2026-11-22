@@ -17,58 +17,66 @@ AIがHTML生成 → ブラウザで編集（✏️） → PPTX変換（html_to_p
 
 以下は、人が手で書く場合と仕組みを知りたい人向けの説明。
 
-## 使い方（新しいスライドを作るとき）
+## 作る流れ
 
-前提: スライドHTMLは `SlideKit/` と同じ親フォルダ配下のプロジェクトフォルダに置く想定
-（例: `ワークスペース/MyDeck/slides.html` と `ワークスペース/SlideKit/`）。
-以下の `../SlideKit/` はこの配置での相対パス。
+コマンドはすべて**ワークスペースルート**（SlideKitフォルダの親）で実行する。例のデッキは `MyDeck/slides.html`。
 
-1. `slide-template.html` をコピーして中身（スライド）を書く／Kiroに書いてもらう
-2. `<body>` 末尾に次の1行があること（HTMLからの相対パスで指定）:
+1. **構成ファイルを書く**：`SlideKit/structure-template.md` をコピーして `MyDeck/slides.structure.md`（HTMLと同じフォルダ・同じ名前）にする。誰に・理解してほしいこと・相談したいこと・一番伝えたいこと・渡し方を埋め、1枚ずつ型IDを決める
+2. **型を選ぶ**：`SlideKit/pattern-select.md` で6分類→型の順に絞る。実物は `pattern-catalog.html`（P01〜P18）と `diagram-catalog.html`（D01〜D16）の2本
+3. **雛形をコピーする**：`SlideKit/slide-template.html` を `MyDeck/slides.html` にコピーして中身を書く（Kiroに書いてもらってよい）
+4. **検査する**：`python3 SlideKit/slidecheck.py MyDeck/slides.html`（`--shot all` を付けると全ページのスクショも出る）
+5. **PPTXにする**：`python3 SlideKit/slidecheck.py MyDeck/slides.html --pptx`
 
-   ```html
-   <script src="../SlideKit/slide-edit.js"></script>
-   ```
+### 置き場所の罠
 
-3. ローカルサーバーで開く（推奨）:
+デッキは**ワークスペース直下の1階層下のフォルダ**に置く（例: `ワークスペース/MyDeck/slides.html`）。
+雛形の `<script src="../SlideKit/slide-edit.js"></script>` はこの配置が前提。
 
-   ```
-   # SlideKit 保存対応サーバー (💾保存でワークスペースに直接書き戻せる)
-   python3 SlideKit/serve.py 8130
-   # または http.server (保存はダウンロードのみ)
-   python3 -m http.server 8130
-   ```
-   → `http://localhost:8130/フォルダ/ファイル.html`
+- 2階層下（例: `ワークスペース/案件/slides/x.html`）に置くなら、src を `../../SlideKit/slide-edit.js` に直す
+- パスが切れると、スライドは表示されるのに**編集ツールバーだけ出ない**。エラーも出ない
+- `slidecheck.py` がパス切れを警告する
 
-   ※編集・閲覧だけなら `file://` 直開きでも動く（script読み込みのみ・fetch不使用のため）。
-   💾保存のワークスペース直接書き戻しは serve.py 経由の時だけ。それ以外はダウンロード保存になる。
-   ※サーバーは**ワークスペースルート**（SlideKitフォルダの親）で起動する。深い階層で起動するとSlideKit本体が404になる。
+### 開き方
 
-4. 既定は閲覧モード。右上の「✏️ 編集」を押すと編集できる。
+- HTMLをダブルクリック（`file://`）で開けば、閲覧も編集もできる
+- 💾保存でファイルを直接上書きしたい時だけ、`python3 SlideKit/serve.py 8130` を起動して `http://localhost:8130/MyDeck/slides.html` を開く。サーバーなしの💾保存はダウンロードになる
+- サーバーは必ずワークスペースルートで起動する。深い階層で起動すると SlideKit 本体が404になる
+
+既定は閲覧モード。右上の「✏️ 編集」を押すと編集できる。
 
 ## できること
 
 | パネル | 機能 |
 |---|---|
-| ✏️ 編集 | 移動 / リサイズ / 矢印キー微調整 / Shift複数選択 / グループ移動・同倍率リサイズ / ⌘Z |
+| ✏️ 編集 | 移動 / リサイズ / 矢印キー微調整 / Shift複数選択 / グループ移動・同倍率リサイズ |
+| ↩︎ 戻す / ↪︎ 進む | 直前の編集を取り消す（⌘Z）／戻しすぎたら1つ先へ進める（⌘⇧Z） |
 | 📂 開く | 保存済みのスライドHTMLを選んで読み込み、その場で編集（slide-template.html を汎用エディタとして使える） |
+| 📐 フォーマット | デッキの書式（なし／AWS提案用など）を切り替える |
+| 🅰️ 書き出しFont | PPTXに書き出すフォントを切り替える（既定はMeiryo UI） |
+| 🅣 文字 | クリックした場所に文字ボックスを置く |
+| 🔷 図形 | 四角・角丸四角・丸・三角・線・矢印・帯矢印・吹き出しを置く |
 | 🎯 選択中 | 文字色・背景色 / フォントサイズ・太字 / 箇条書き(・①②③・ぶら下げ字下げ) / 整列 |
 | 🎨 カラーパレット | バッジ/タイトル/サブ/本文/カード/赤 を全スライド一括置換 |
 | 📄 ページ操作 | ページ枠クリックで選択 → 複製 / 追加 / 並べ替え / 削除 / 背景色 |
 | 🖼 画像 / ▦ 表 | クリック配置・ドロップ・⌘V貼り付け |
+| ⧉ 複製 | 選択中の図形をその場に複製する（⌘D） |
 | 🧩 AI図解相談 | 対象ページから「案だけ」「書き換え依頼」のプロンプトを生成してコピー |
 | ✍️ ラフ | 叩き台の間は手書きフォント＋「ラフ」印で表示（見た目だけ・データ不変）。確定したらOFF |
-| 📺 プレゼン再生 | 別ウィンドウ投影 / ページ送り / レーザー / ペン / 🗒メモ（現在ページへ追加・即入力・選択枠の−/＋で文字サイズ変更・投影同期） |
-| 📋 変更をコピー | 編集内容を「Kiro貼付用パッチ」で出力 → Kiroに貼ると本体ファイルに反映 |
-| 📍 参照 | 選択オブジェクトの位置ID＋outerHTMLをコピー（変換指示用） |
+| 📺 プレゼン再生 | 別ウィンドウ投影 / ページ送り / レーザー / ペン / 🗒メモ（現在ページへ追加・即入力・選択枠の−/＋で文字サイズ変更・投影同期）/ 📝ノート（発表者ノートを手元にだけ出す） |
+| 📋 貼付（同じ位置） | 「📋 コピー」した図形を、いま見ているページの同じ座標に貼る（⌘V） |
+| 📤 Kiroへ渡す | 編集内容を「Kiro貼付用パッチ」で出力 → Kiroに貼ると本体ファイルに反映（旧「📋 変更をコピー」） |
+| 📍 場所をKiroへ | 選択オブジェクトの位置ID＋outerHTMLをコピー（変換指示用。旧「📍 参照」） |
 | 💾 保存 | 編集UIを除いたクリーンHTMLを保存（serve.py 使用時はワークスペースに直接書き戻し・data-\*/style 正規化＋不一致件数のログ出力あり） |
+
+図形そのものへの操作（⧉複製 ⌘D／📋コピー ⌘C／🗑削除）は、選択すると出る **🎯選択中パネルの先頭**にもまとまっている。
+「Kiroへ渡す」「場所をKiroへ」はKiroに文章を渡すためのボタンで、図形のコピーではない。
 
 「🧩 AI図解相談」は、ページ選択、選択中オブジェクトのページ、画面中央の順で対象を決める。ページ内容を外部へ自動送信せず、サニタイズしたHTMLを含むプロンプトだけをクリップボードへコピーする。Kiroへ貼り付けると、図解案の検討または対象ページの書き換えを依頼できる。
 
 ## 2通りの保存・反映
 
 - **💾保存**：DOM全体をクリーンHTMLで書き出す。**迷ったらこちらでいい**
-- **📋パッチ → Kiroに貼る**（Kiro併用時のみ）：位置・色・サイズ等の微調整差分をKiroが本体HTMLに反映。AIとの往復で編集履歴を残したい時に使う
+- **📤 Kiroへ渡す → Kiroに貼る**（Kiro併用時のみ）：位置・色・サイズ等の微調整差分をKiroが本体HTMLに反映。AIとの往復で編集履歴を残したい時に使う
 
 localStorageには保存しない＝**HTML本体が唯一の正本**（Kiroの編集と衝突しない）。
 💾保存はページ番号を一旦外して書き出す → 再オープン時に自動採番が振り直す（複製・追加ページも正しい連番に）。
@@ -79,18 +87,25 @@ localStorageには保存しない＝**HTML本体が唯一の正本**（Kiroの�
 - 読み込むのは `.slide` 要素だけ（標準CSSはテンプレート側のものを使う）。**独自の `<style>` を持つ凝ったデッキは見た目が変わることがある** → そのデッキは自分のHTMLを直接開いて編集する方が確実。
 - `file://` で開いても動く（fetchを使っていないため）。
 
+## ⏱ 発表時間の見積もり
+
+```
+python3 SlideKit/deck_timing.py 対象.html --limit 20     # 持ち時間20分と比べる
+```
+
+発表者ノート（`data-notes`）があればその字数、無いページは本文の6割を **300字/分** で割る（1枚の下限8秒・図だけの頁は20秒）。
+持ち時間を超えていれば、長いページから「何枚削れば収まるか」を出す。ノートが入っているほど確度が上がる（高/中/低を表示）。
+発表者ビューのヘッダにも「目安 mm:ss / 全体 mm:ss（この頁 ○秒）」が出て、経過が目安を1割超えると赤、半分以下なら緑になる。
+`slidecheck.py` でも `deck-timing` として自動で出る。kits-mcp からは `slidekit_timing` / `slidekit_lint`。
+
 ## 📺 プレゼン再生（別ウィンドウ・Zoom画面共有向け）
 
-`slide-present.js`（別ファイル・独立）を追加読み込みすると、**別ウィンドウでフルスクリーンのスライドショー**を開ける。Zoom や Meet で「そのプレゼンウィンドウだけ」を画面共有すれば、ブラウザのアドレスバーや SlideKit ツールバー・他のアプリが相手に写り込まない。
+**別ウィンドウでフルスクリーンのスライドショー**を開ける。Zoom や Meet で「そのプレゼンウィンドウだけ」を画面共有すれば、ブラウザのアドレスバーや SlideKit ツールバー・他のアプリが相手に写り込まない。
 
 ### 読み込み
 
-`slide-edit.js` の次の行に 1 行追加：
-
-```html
-<script src="../SlideKit/slide-edit.js"></script>
-<script src="../SlideKit/slide-present.js"></script>
-```
+何も足さなくていい。`slide-edit.js` が `slide-present.js` を自動で読み込む。
+雛形のように `slide-present.js` の行も書いてあるデッキはそのままでよい（二重には読まれない・無害）。
 
 編集モードの左上に **「📺 プレゼン再生」** ボタンが出る。
 
@@ -127,6 +142,7 @@ localStorageには保存しない＝**HTML本体が唯一の正本**（Kiroの�
 - ✏️ ペン：ドラッグで赤い線を描画、スライドを跨いで保存（両側同期）
 - 🗑 消す：ペン線を全消し
 - 🗒 メモ：現在のスライドにポストイット（薄黄・300×150px）を追加して即入力。相手の発言をその場で書き留める用。移動・リサイズ・選択枠右上の−/＋で文字サイズ変更ができ、💾保存でHTMLに残りPPTXでも編集可能。ペンと違い記録として残る
+- 📝 ノート：発表者ノート（編集パネル「🗒 発表者ノート」で書いた `data-notes`）を手元のリモコンの上に出す。投影には出ない。押すと隠れる。PPTXではノート欄に入る
 - 📄 ページジャンプ：全ページのタイトル一覧から直接飛べる
 - ライブ編集同期：手元で編集した内容が 300ms 後にプレゼン側に反映（構造変更＝ページ追加/削除/並べ替えも同期）
 
@@ -168,11 +184,13 @@ cp "/Applications/Microsoft PowerPoint.app/Contents/Resources/DFonts/meiryo.ttc"
 
 ## PPTX変換
 
-キット同梱の `html_to_pptx.py` で変換（依存は上の「動作要件」参照）。
+普段は `python3 SlideKit/slidecheck.py MyDeck/slides.html --pptx`（検査と変換を一度に通す）。
+変換だけしたい時はキット同梱の `html_to_pptx.py` を直接使う（依存は上の「動作要件」参照）。
+どちらも**ワークスペースルートで実行**する。
 
 ```
-python3 ../SlideKit/html_to_pptx.py 自分のスライド.html        # → 同名 .pptx を出力
-python3 ../SlideKit/html_to_pptx.py 自分のスライド.html 出力.pptx
+python3 SlideKit/html_to_pptx.py MyDeck/slides.html              # → 同名 .pptx を出力
+python3 SlideKit/html_to_pptx.py MyDeck/slides.html 出力.pptx
 ```
 
 data属性（data-x/y/w/h, data-font-size, data-bold, data-color, data-fill, data-bg, data-bg-gradient, data-align, **data-bullet**）を読む。
@@ -186,6 +204,33 @@ data属性（data-x/y/w/h, data-font-size, data-bold, data-color, data-fill, dat
 - 🟡 注意：SVG上に重ねる透明ラベル（`.tb`）は別テキストボックスとして出力される。HTML上で SVGラッパーより後ろに置くと PPTX で前面に来る（番号が図の裏に隠れる場合は順序を確認）
 
 AWS提案用テンプレ（ロゴ・フッター継承）は `<html data-template="aws">` を付ければ `html_to_pptx.py` が対応する（テンプレPPTXの検索順は SPEC.md 8.4 参照）。
+
+## 📥 PPTX から取り込む（逆変換）
+
+他人の PPTX を SlideKit 形式の HTML（雛形の作法）に取り込んで、ブラウザで編集・再生できる形にする。
+
+```
+python3 SlideKit/pptx_to_html.py 入力.pptx 出力.html
+python3 SlideKit/pptx_to_html.py 入力.pptx                 # → 入力.html
+python3 SlideKit/pptx_to_html.py 入力.pptx 出力.html --slides=1,5-8
+```
+
+- スライドサイズ・背景色・文字枠（位置・大きさ・文字・サイズ・太字・色・箇条書き）・表（行列・文字・セル色）・基本図形（矩形/楕円/三角/角丸/線/矢印の形と色）を変換
+- 画像は出力 HTML の隣に `images/` を作って書き出し、`<img src="images/...">` で参照
+- 発表者ノートは `.slide` の `data-notes` に入る（`html_to_pptx.py` でそのまま PPTX ノートへ戻せる）
+- グループは展開して絶対座標化
+- SmartArt・グラフなど画像化できないものは枠だけ置き、ページ下部の目立たない注記に「変換できなかった要素」として件数を出す
+- 逆変換の中身（色解決・座標・図形逆マップ・段落組み立て）は `pptx_to_slidekit.py` を共有（二重管理しない）
+- 旧 `pptx_to_slidekit.py` も入口として残っているが、いまは `pptx_to_html.py` を呼ぶだけの後方互換の薄い包み。両方とも同じ HTML を出す（新規の取り込みは `pptx_to_html.py` を使う）
+
+### 往復検査
+
+```
+python3 SlideKit/pptx_to_html_check.py                       # 雛形で検査
+python3 SlideKit/pptx_to_html_check.py MyDeck/slides.html    # 任意のデッキで
+```
+
+元HTML → `html_to_pptx.py` → PPTX → `pptx_to_html.py` → 往復HTML と通して、①`run_check.py` が問題なし ②枚数一致 ③文字枠の文字一致 ④座標の位置が ±2px 以内で一致、を確かめる。
 
 ## 📄 A4 縦への変換出力（PDF / PPTX）
 
@@ -207,19 +252,21 @@ AWS提案用テンプレ（ロゴ・フッター継承）は `<html data-templat
 ### PPTX 出力（CLI）
 
 ```bash
-python3 ../SlideKit/html_to_pptx_a4.py slides.html                    # 既定 1up
-python3 ../SlideKit/html_to_pptx_a4.py slides.html out.pptx --layout=2up
+python3 SlideKit/html_to_pptx_a4.py MyDeck/slides.html                    # 既定 1up（ワークスペースルートで実行）
+python3 SlideKit/html_to_pptx_a4.py MyDeck/slides.html out.pptx --layout=2up
 ```
 
 A4 縦 (210×297mm) の PPTX が出力される。既存の `html_to_pptx.py` の描画ロジックを再利用しつつ、座標変換だけ A4 用にスケール。
 
 ## AI にスライドを生成させる時（Kiro 等）
 
-`pattern-catalog.html` と `slidekit-steering.md` を用意している。
+型は全部で34（文字系18＋図解16）。見本帳2本と選び方1本、規則の steering を用意している。
 
-- **`pattern-catalog.html`**：14 種類の標準パターン（P01 表紙〜P14 Thanks）の見本帳。Kiro に「この中から選んで内容を差し替えて」と指示すれば、毎回同じ座標系・同じ配色でスライドが生成される
-- **`diagram-catalog.html`**：図解パターンの見本帳（D01 判定フロー〜D10 境界図＋D11 図解プレースホルダー）。全部PPTXネイティブ図形＝座標計算済みで、文字と表に寄りがちなAI生成スライドに図解の選択肢を与える
-- **`slidekit-steering.md`**：AI に対する「絶対規則」「カラートークン」「幾何定数」「パターン選択ガイド」を集約した文書。Kiro の steering として読み込ませる（`.kiro/steering/` に入れる）
+- **`pattern-catalog.html`**：文字系の型 P01〜P18（表紙・アジェンダ・3カラムカード・比較表・KPI・画像・階層箇条書き・大項目つき表など）の見本帳。Kiro に「この中から選んで内容を差し替えて」と指示すれば、毎回同じ座標系・同じ配色でスライドが生成される
+- **`diagram-catalog.html`**：図解の型 D01〜D16（判定フロー・層スタック・循環・4象限・ロードマップ・ガント・境界図・評価ポイント対応表・多層防御・複数レーンのタイムラインなど。D11は図解プレースホルダー）。全部PPTXネイティブ図形＝座標計算済み
+- **`pattern-select.md`**：34型を6分類→型の2段で絞る手順
+- **MUST規則とカラートークン**：正本は `.kiro/steering/slide-contract-detail.md`（入口は `slide-contract.md`）。配布版（`make_dist.sh`）では `slide-contract.md`・`slide-contract-detail.md`・`slide-html-to-pptx.md` を `.kiro/steering/` に同梱する。ワークスペース直下に `.kiro/` ごと置けば Kiro が自動で読む
+- **`slidekit-steering.md`**：生成規約の詳細（幾何定数・余白・画像・SVG図・プレースホルダー）
 
 AI を使わない場合も、`pattern-catalog.html` はデザイン参照＋座標コピー元として有用。
 

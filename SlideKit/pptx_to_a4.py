@@ -234,6 +234,9 @@ def convert_pptx_to_a4(src_path, out_path, margin_mm=10, scale_masters=True):
 
     # 保存
     prs.save(out_path)
+    # PowerPointで直せる形に（段落既定の太字を外す・手書きのページ番号を自動番号に）
+    import pptx_semantic
+    pptx_semantic.fix_editable(out_path)
     print(f'✅ 出力: {out_path}')
 
 

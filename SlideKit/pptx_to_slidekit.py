@@ -1,11 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""PPTX を SlideKit 形式の HTML に変換する。
+"""PPTX → SlideKit 形式 HTML への逆取り込みの「図形変換エンジン」。
 
-出力:
+この CLI（`python3 pptx_to_slidekit.py source.pptx [out.html]`）は後方互換のために残して
+あり、中身は pptx_to_html.convert に委譲する（出力は pptx_to_html.py と同一）。
+新規の取り込みは pptx_to_html.py を使う。
+
+このファイルが持つのは図形変換の中身（色解決 ThemeResolver・座標・図形逆マップ
+_REVERSE_SHAPE_MAP・段落組み立て build_paragraphs_html・shape_to_html など）で、
+pptx_to_html.py はこれを import して使う＝二重管理しない。
+
+出力（pptx_to_html.convert 経由）:
     - 単一 HTML ファイル（1280×720px の .slide が並ぶ）
-    - 画像は隣に `<出力名>_media/` フォルダを作って書き出し
-    - SlideKit の slide-edit.js を読み込むので、ブラウザで開けば即編集できる
+    - 画像は出力 HTML の隣に images/ を作って書き出し
+    - 発表者ノートは .slide の data-notes に入る
+    - SmartArt・グラフ等は枠だけ置き、ページ下部に「変換できなかった要素」の注記
+    - slide-edit.js / slide-present.js / slide-presenter.js を読み込む（開けば即編集・再生）
+    - ページ番号は slide-edit.js が自動採番する
 
 対応要素:
     - PLACEHOLDER / TEXT_BOX → .tb (文字色/フォントサイズ/太字/文字揃え/塗り)
@@ -153,6 +164,11 @@ class ThemeResolver:
         for k, v in aliases.items():
             if v in self.color_map and k not in self.color_map:
                 self.color_map[k] = self.color_map[v]
+
+    def text_default(self):
+        """色の無い文字の色（2026-11-15）: PowerPoint はテーマの tx1（=dk1）で描く。
+        🚫 以前は固定の #333333 にしていて、往復で本文の #121212 が #333333 に変わっていた"""
+        return self.color_map.get('tx1') or self.color_map.get('dk1') or '#333333'
 
     def resolve(self, elem, default='#333333'):
         """<a:solidFill> / <a:srgbClr> / <a:schemeClr> を含む elem を解決して hex を返す。
@@ -349,11 +365,14 @@ def sp_get_prst_shape(sp_el):
     return None
 
 
-def build_paragraphs_html(txBody_el, theme, default_color='#333333', default_size_px=18):
+def build_paragraphs_html(txBody_el, theme, default_color=None, default_size_px=18):
     """<a:txBody> から HTML の innerHTML を作る。
+    default_color を省くとテーマの本文色（theme.text_default()）。
     段落ごとに buChar / buAutoNum を検出して先頭にマーカーを追加。
     rPr の u="sng" は下線に変換。
     """
+    if default_color is None:
+        default_color = theme.text_default() if hasattr(theme, 'text_default') else '#333333'
     if txBody_el is None:
         return '', {'size_px': default_size_px, 'align': 'left', 'bold': False,
                      'color': default_color, 'has_bullet': False}
@@ -575,7 +594,7 @@ def _sp_to_html(sp_el, px, py, pw, ph, rot, theme):
         size = meta['size_px']
         align = meta['align']
         bold = meta['bold']
-        color = meta['color'] or '#333333'
+        color = meta['color'] or theme.text_default()
         s = [
             f'    <div class="tb" data-x="{px}" data-y="{py}" data-w="{pw}" data-h="{ph}"',
             f'         data-font-size="{int(size)}" data-color="{color}"',
@@ -617,7 +636,7 @@ def _sp_to_html(sp_el, px, py, pw, ph, rot, theme):
         size = meta['size_px']
         align = meta['align']
         bold = meta['bold']
-        color = meta['color'] or '#333333'
+        color = meta['color'] or theme.text_default()
         inner_style_parts = [f'font-size:{int(size)}px', f'color:{color}',
                              f'text-align:{align}', 'padding:4px 12px']
         if bold: inner_style_parts.append('font-weight:700')
@@ -742,7 +761,18 @@ def _graphic_to_html(sp_el, px, py, pw, ph, theme):
             # テキスト
             txBody = tc.find(qn('a:txBody'))
             inner, meta = build_paragraphs_html(txBody, theme, default_size_px=15)
-            style_bits = ['padding:6px 10px', 'border:1px solid #d0d7de']
+            # 罫線の色は PPTX のセルの線（lnL/lnR/lnT/lnB）から読む（2026-11-15）。
+            #   🚫 以前は固定の #d0d7de（カタログ外）で、往復で色が変わり slide-guard の B2 にも掛かっていた
+            bd_hex = None
+            if tcPr is not None:
+                for _ln in ('a:lnT', 'a:lnL', 'a:lnB', 'a:lnR'):
+                    _e = tcPr.find(qn(_ln))
+                    if _e is not None and _e.find(qn('a:noFill')) is None:
+                        _sf = _e.find(qn('a:solidFill'))
+                        if _sf is not None:
+                            bd_hex = theme.resolve(_sf, default=None)
+                            if bd_hex: break
+            style_bits = ['padding:6px 10px', f'border:1px solid {bd_hex or "#d4dde7"}']
             if fill_hex: style_bits.append(f'background:{fill_hex}')
             style_bits.append(f'vertical-align:{valign}')
             style_bits.append(f'text-align:{meta["align"]}')
@@ -848,84 +878,18 @@ def slide_to_html(slide, slide_idx, orig_w_emu, orig_h_emu, theme, media_dir, me
 
 
 def convert(src_path, out_path, slides_filter=None):
-    prs = Presentation(src_path)
-    orig_w = prs.slide_width
-    orig_h = prs.slide_height
-    theme = ThemeResolver(prs)
+    """後方互換の入口。中身は pptx_to_html.convert に委譲する（PPTX→スライドHTMLの逆取り込み）。
 
-    # media 出力先
-    base, ext = os.path.splitext(out_path)
-    media_dir = base + '_media'
-    if os.path.exists(media_dir):
-        shutil.rmtree(media_dir)
-    media_map = {}
+    以前この関数が独自に組んでいた HTML（`<出力名>_media/` フォルダ・インラインの
+    ページ番号スクリプト・slide-edit.js だけ）は、pptx_to_html の新しい出力に一本化した。
+    新しい出力は images/ フォルダ・発表者ノート(data-notes)・変換できなかった要素の注記を足し、
+    ページ番号は slide-edit.js の自動採番に任せ、present/presenter も読み込む。
 
-    slides_all = list(prs.slides)
-    total = len(slides_all)
-    if slides_filter:
-        indices = _parse_slides_filter(slides_filter, total)
-    else:
-        indices = list(range(1, total+1))
-
-    print(f'元スライド: {total}枚 / {orig_w/914400:.2f}" × {orig_h/914400:.2f}"')
-    print(f'変換対象: {len(indices)}枚 ({indices[:5]}{"..." if len(indices)>5 else ""})')
-    print(f'メディア出力先: {media_dir}')
-
-    slide_htmls = []
-    for i in indices:
-        s = slides_all[i-1]
-        slide_html = slide_to_html(s, i, orig_w, orig_h, theme, media_dir, media_map)
-        slide_htmls.append(slide_html)
-        print(f'  ✓ S{i:02d}')
-
-    # SlideKit 相対パス
-    # 出力HTMLからSlideKitへの相対パス（SlideKit フォルダは KiroProjects 直下）
-    out_dir = os.path.dirname(os.path.abspath(out_path))
-    sk_dir = os.path.dirname(os.path.abspath(__file__))
-    try:
-        sk_rel = os.path.relpath(sk_dir, out_dir)
-    except ValueError:
-        sk_rel = '../SlideKit'
-
-    # 全体 HTML
-    full = f'''<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<title>{os.path.basename(src_path)} (SlideKit変換)</title>
-<style>
-*{{margin:0;padding:0;box-sizing:border-box}}
-body{{font-family:'Yu Gothic','Meiryo UI','Noto Sans JP',sans-serif;background:#2d3748;display:flex;flex-direction:column;align-items:center;padding:20px 0 60px;font-weight:400}}
-.slide{{width:{SK_W}px;height:{SK_H}px;position:relative;overflow:hidden;margin:12px 0;box-shadow:0 4px 24px rgba(0,0,0,.2)}}
-.tb{{position:absolute;overflow:hidden;line-height:1.5}}
-.rect{{position:absolute;display:flex;flex-direction:column;justify-content:center}}
-.rect>.tb{{position:static;left:auto;top:auto;width:auto;height:auto;padding:4px 12px;overflow:visible;text-align:center}}
-</style>
-</head>
-<body>
-{chr(10).join(slide_htmls)}
-<script>
-document.querySelectorAll('.slide').forEach((s,i)=>{{
-  const n=document.createElement('div');
-  n.className='tb';
-  n.setAttribute('data-x','1200');n.setAttribute('data-y','688');
-  n.setAttribute('data-w','60');n.setAttribute('data-h','24');
-  n.setAttribute('data-font-size','21');n.setAttribute('data-color','#718096');
-  n.setAttribute('data-align','right');
-  n.style.cssText='position:absolute;left:1200px;top:688px;width:60px;height:24px;font-size:21px;color:#718096;text-align:right';
-  n.textContent=i+1;
-  s.appendChild(n);
-}});
-</script>
-<script src="{sk_rel}/slide-edit.js"></script>
-</body>
-</html>
-'''
-
-    with open(out_path, 'w', encoding='utf-8') as f:
-        f.write(full)
-    print(f'\n✅ 出力: {out_path}')
-    print(f'   ブラウザで開いて確認 (ワークスペースルートで python3 -m http.server 8138 → http://localhost:8138/{os.path.relpath(out_path, os.getcwd())})')
+    図形変換の中身（ThemeResolver・shape_to_html・_shapes_from_tree・図形逆マップ等）は
+    このファイルが持ち、pptx_to_html はそれを import して使う＝二重管理しない。
+    `python3 pptx_to_slidekit.py` と `python3 pptx_to_html.py` は同じ結果になる。"""
+    import pptx_to_html
+    return pptx_to_html.convert(src_path, out_path, slides_filter=slides_filter)
 
 
 def _parse_slides_filter(spec, total):

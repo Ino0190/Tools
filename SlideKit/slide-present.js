@@ -29,6 +29,10 @@
  */
 (function(){
   'use strict';
+  // 二重読み込み防止。slide-edit.js が自動で読み込むようになったので、
+  // デッキ側にも読み込み行があると2回評価される（ボタン2個・チャンネル2本になる）
+  if (window.__skPresentLoaded) return;
+  window.__skPresentLoaded = true;
 
   var params = new URLSearchParams(location.search);
   var isPresent = params.get('present') === '1';
@@ -41,6 +45,9 @@
   var CHANNEL_NAME = 'slidekit_present_' + location.pathname + '_' + SESSION_ID;
   var bus;
   try { bus = new BroadcastChannel(CHANNEL_NAME); } catch(_) { return; }
+  // Live Notes などの補助機能がスライド切替を購読できるように、チャンネル名だけ公開する。
+  // CHANNEL_NAME は SESSION_ID (ランダム) を含むため外部からは組み立てられない。挙動には影響しない。
+  try { window.__skPresentChannel = CHANNEL_NAME; } catch(_){}
   // 観客側ページ番号の表示切替 (Review 2-4)
   // <html data-present-counter="off"> または ?counter=0 で非表示
   var SHOW_COUNTER = !(
@@ -261,9 +268,44 @@
     // 初期表示
     showSlide(idx, false);
 
+    // 再生中でも編集できるように、ページ送りと現在位置を外へ出す（2026-09-16 利用者要望）
+    //   会議中に指摘されたその場で直せるようにするため。slide-edit.js がこれを使う
+    try {
+      window.SlidePresent = {
+        show: function(i){ showSlide(i); },
+        next: function(){ showSlide(idx + 1); },
+        prev: function(){ showSlide(idx - 1); },
+        index: function(){ return idx; },
+        total: function(){ return slides.length; },
+        slides: function(){ return slides; },
+        rescale: function(){ scaleSlide(slides[idx]); },
+        active: true
+      };
+    } catch(_){}
+
+    // ページジャンプリンク (data-link-sid → .slide[data-sid])：クリックでそのスライドへ。
+    // 画面遷移プロトタイピング用。laser/pen中は pCapture が全面を覆うのでここへは届かない。
+    document.addEventListener('click', function(e){
+      var ln = e.target && e.target.closest && e.target.closest('[data-link-sid]');
+      if (!ln) return;
+      var sid = ln.getAttribute('data-link-sid');
+      for (var i = 0; i < slides.length; i++) {
+        if (slides[i].getAttribute('data-sid') === sid) {
+          e.preventDefault(); e.stopPropagation();
+          showSlide(i);
+          return;
+        }
+      }
+    }, true);
+
     // キーボード操作
     document.addEventListener('keydown', function(e){
       if (e.target && e.target.matches && e.target.matches('input,textarea,[contenteditable]')) return;
+      // 編集モード中は矢印キーを編集側に譲る（図形を動かす／ページを送る）。
+      // ページ送りは Space・PageDown・n / PageUp・Backspace・p で行う（2026-09-16）
+      var editingNow = document.body.getAttribute('data-skit-edit') === 'on';
+      if (editingNow && (e.key === 'ArrowRight' || e.key === 'ArrowLeft' ||
+                         e.key === 'ArrowUp' || e.key === 'ArrowDown')) return;
       switch (e.key) {
         case 'ArrowRight': case ' ': case 'PageDown':
         case 'n': case 'N':
@@ -525,6 +567,13 @@
       'body._sp_active > *:not(.slide):not(._sp_ui):not(script):not(style):not(link) { display:none!important; }',
       // SlideKit UI (万一 hideUI が効かない場合の保険)
       'body._sp_active .seui:not(._sp_ui) { display:none!important; }',
+      // 編集モードに入っている間は、再生中でも編集UIを出す（2026-09-16 利用者要望）
+      //   会議でその場で直せるようにする。.skit-live を付けた編集UIだけ戻す。
+      //   サムネイル一覧（.skit-thumbs）とロゴ（.skit-brand）は投影の邪魔なので出さない。
+      //   display は各要素が自前で持っているので、ここでは revert で「隠す指定」だけ取り消す
+      'body._sp_active[data-skit-edit="on"] .seui.skit-live { display:revert!important; }',
+      'body._sp_active[data-skit-edit="on"] .seui.skit-thumbs,',
+      'body._sp_active[data-skit-edit="on"] .seui.skit-brand { display:none!important; }',
       // スライド本体は position:fixed で中央固定
       'body._sp_active .slide {',
       '  display:none!important; margin:0; box-shadow:none;',
@@ -534,7 +583,9 @@
       '  z-index:8001;',
       '}',
       'body._sp_active .slide._sp_show { display:flex!important; flex-direction:column; }',
-      '._sp_overlay { position:fixed; inset:0; background:#000; z-index:8000; }'
+      '._sp_overlay { position:fixed; inset:0; background:#000; z-index:8000; }',
+      // ページジャンプリンク (画面遷移プロト用): 指カーソルで押せることを示す
+      'body._sp_active .slide [data-link-sid] { cursor:pointer; }'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -562,28 +613,43 @@
     btn.id = '_sp_openbtn';
     btn.className = 'seui'; // SlideKit の hideUI モードでは非表示になる
     btn.textContent = '📺 プレゼン再生';
-    btn.title = '別ウィンドウでフルスクリーン プレゼンを開く (Zoom 画面共有向け)';
+    btn.title = '別ウィンドウでフルスクリーン プレゼンを開く (Zoom 画面共有向け)\n' +
+                'Shift＋クリック：編集できる状態で開く（会議中にその場で直す用）';
     btn.addEventListener('mouseenter', function(){ btn.style.background = '#3b82f6'; });
     btn.addEventListener('mouseleave', function(){ btn.style.background = '#2563eb'; });
     // ツールバー(#_sk_toolbar)は slide-edit.js が生成する。両スクリプトとも DOMContentLoaded 起動で
     // 生成順に依存するため、ツールバーが未生成のうちに setupRemote が走ると以前は左上フォールバックに
     // 落ちて「右上に置いたはずが左上に戻る」不具合が出ていた。→ 少し待って確実にツールバー内に入れる。
     // フォールバック(本体なしHTML)も左上ではなく右上に統一する。
+    // 2026-09-27 直したこと: 以前は2秒で待つのをやめて右上fixedに置いていたが、その位置は
+    // 後から出来るツールバー（z-index:99999）の真下で、ボタンが隠れて「時々出ない」になっていた。
+    // 本体（slide-edit.js）があるデッキはツールバーが出来るまで待ち、出来たら必ず中へ移す。
+    var hasEditor = !!(window.SlideKit || document.querySelector('script[src*="slide-edit"]'));
+    function intoBar(bar){
+      // 先頭に置き、ツールバーを下までスクロールしても見えるよう上端に貼り付ける
+      btn.style.cssText = 'position:sticky;top:0;z-index:2;padding:6px 10px;border:none;border-radius:4px;background:#2563eb;color:#fff;font:700 12px/1.2 -apple-system,sans-serif;cursor:pointer;text-align:center;white-space:normal;overflow-wrap:anywhere;box-shadow:0 2px 8px rgba(0,0,0,.2)';
+      bar.insertBefore(btn, bar.firstChild);
+    }
     function placeBtn(tries){
       var _skBar = document.getElementById('_sk_toolbar');
-      if (_skBar) {
-        // ツールバー内: 「✏️ 編集」の上（先頭）に配置
-        btn.style.cssText = 'padding:6px 10px;border:none;border-radius:4px;background:#2563eb;color:#fff;font:700 12px/1.2 -apple-system,sans-serif;cursor:pointer;text-align:center;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.2)';
-        _skBar.insertBefore(btn, _skBar.firstChild);
-      } else if (tries > 0) {
-        setTimeout(function(){ placeBtn(tries - 1); }, 100); // 最大 ~2秒 ツールバー生成を待つ
-      } else {
-        // fallback: 右上fixed（SlideKit本体が無いHTML用。左上ではなくツールバー位置に合わせる）
-        btn.style.cssText = 'position:fixed;top:12px;right:8px;z-index:99998;padding:8px 14px;border:none;border-radius:6px;background:#2563eb;color:#fff;font:700 13px/1.2 -apple-system,sans-serif;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3);white-space:nowrap';
-        document.body.appendChild(btn);
+      if (_skBar) { intoBar(_skBar); return; }
+      if (hasEditor && tries > 0) {
+        setTimeout(function(){ placeBtn(tries - 1); }, 100);
+        return;
+      }
+      // fallback: 右上fixed（本体が無いHTML、または10秒待っても本体が出来ない時）
+      btn.style.cssText = 'position:fixed;top:12px;right:8px;z-index:100002;padding:8px 14px;border:none;border-radius:6px;background:#2563eb;color:#fff;font:700 13px/1.2 -apple-system,sans-serif;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3);white-space:nowrap';
+      document.body.appendChild(btn);
+      if (hasEditor && window.MutationObserver) {
+        // 遅れてツールバーが出来たら中へ移す（隠れたままにしない）
+        var mo = new MutationObserver(function(){
+          var bar = document.getElementById('_sk_toolbar');
+          if (bar) { mo.disconnect(); intoBar(bar); }
+        });
+        mo.observe(document.body, { childList: true });
       }
     }
-    placeBtn(20);
+    placeBtn(100); // 最大 ~10秒 ツールバー生成を待つ
 
     var presentWin = null;
     var curIdx = 0, total = 0;
@@ -610,7 +676,32 @@
       '<button data-sp="close" title="プレゼンを閉じる" style="' + btnStyle + ';background:#c62828;font-size:12px">✕ 閉じる</button>';
     document.body.appendChild(ctrl);
 
-    function openPresentation(){
+    // 発表者ノート (手元専用・投影ウィンドウには出さない)。data-notes を textContent で出す
+    //   2026-10-14 利用者「発表者ノートつけましょうか」
+    var spNotes = document.createElement('div');
+    spNotes.id = '_sp_notes';
+    spNotes.className = 'seui';
+    spNotes.style.cssText = 'display:none;position:fixed;bottom:66px;left:140px;z-index:99998;width:min(680px,calc(100vw - 160px));max-height:32vh;overflow-y:auto;box-sizing:border-box;background:rgba(30,41,59,.94);padding:10px 14px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.4);color:#fafafa;font:400 18px/1.6 -apple-system,"Hiragino Sans",Meiryo,sans-serif;white-space:pre-wrap;backdrop-filter:blur(4px)';
+    var spNotesHead = document.createElement('div');
+    spNotesHead.style.cssText = 'color:#9fc0dd;font:700 13px/1.4 -apple-system,sans-serif;margin-bottom:4px';
+    var spNotesBody = document.createElement('div');
+    spNotes.appendChild(spNotesHead);
+    spNotes.appendChild(spNotesBody);
+    document.body.appendChild(spNotes);
+    var notesShown = true;
+    function updateSpeakerNotes(){
+      if (ctrl.style.display === 'none' || !notesShown) { spNotes.style.display = 'none'; return; }
+      var s = document.querySelectorAll('.slide')[curIdx];
+      var v = s ? (s.getAttribute('data-notes') || '').replace(/\\n/g, '\n').trim() : '';
+      if (!v) { spNotes.style.display = 'none'; return; }
+      spNotesHead.textContent = '🗒 発表者ノート（' + (curIdx + 1) + 'ページ目・手元にだけ出ています）';
+      spNotesBody.textContent = v;
+      spNotes.style.display = 'block';
+      spNotes.scrollTop = 0;
+    }
+    window.addEventListener('skit:notes', function(){ updateSpeakerNotes(); });
+
+    function openPresentation(ev){
       var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
       // 手元で今スクロール中に近いスライドを初期表示
       var idx = 0;
@@ -624,7 +715,12 @@
       });
 
       var sep = location.search ? '&' : '?';
-      var url = location.pathname + location.search + sep + 'present=1&hideUI=1&idx=' + idx + '&session=' + encodeURIComponent(SESSION_ID);
+      // 再生中も編集できるようにする（2026-09-16 利用者要望）。
+      //   既定は hideUI=1（投影は編集UIなしが安全）。Shiftを押しながら押すと編集つきで開く。
+      //   ボタンのラベルにも「Shiftで編集つき」と出している
+      var withEdit = !!(ev && ev.shiftKey);
+      var url = location.pathname + location.search + sep + 'present=1&idx=' + idx +
+                '&session=' + encodeURIComponent(SESSION_ID) + (withEdit ? '&edit=1' : '&hideUI=1');
       // カウンター非表示指定を present 側にも渡す
       if (!SHOW_COUNTER) url += '&counter=0';
       if (presentWin && !presentWin.closed) {
@@ -644,7 +740,7 @@
       }
     }
 
-    btn.addEventListener('click', openPresentation);
+    btn.addEventListener('click', function(ev){ openPresentation(ev); });
 
     // ============================================================
     // SlideKit の要素選択解除ワークアラウンド
@@ -866,6 +962,7 @@
       if (pos) pos.textContent = (curIdx + 1) + ' / ' + slideCount;
       scrollToSlideInEditor(curIdx);
       renderJumpGrid();
+      updateSpeakerNotes();
       sendMsg({type:'slide:change', index:curIdx, from:'remote'});
     }
 
@@ -876,6 +973,14 @@
     noteBtn.textContent = '🗒 メモ';
     noteBtn.style.cssText = btnStyle + ';font-size:14px;background:#f4f4ef;color:#121212;font-weight:700';
     ctrl.insertBefore(noteBtn, ctrl.querySelector('[data-sp="laser"]'));
+
+    // 発表者ノートの表示・非表示 (ノートがあるページで手元に出す)
+    var spNotesBtn = document.createElement('button');
+    spNotesBtn.setAttribute('data-sp', 'spnotes');
+    spNotesBtn.title = '発表者ノートを手元に出す／隠す (投影には出ません)';
+    spNotesBtn.textContent = '📝 ノート';
+    spNotesBtn.style.cssText = btnStyle + ';font-size:12px;background:#21537f';
+    ctrl.insertBefore(spNotesBtn, ctrl.querySelector('[data-sp="laser"]'));
 
     function addStickyNoteForCurrent(){
       var slides = document.querySelectorAll('.slide');
@@ -907,6 +1012,11 @@
       if (act === 'first') navLocalAndSend(0);
       if (act === 'last')  navLocalAndSend((total || document.querySelectorAll('.slide').length) - 1);
       if (act === 'note')  addStickyNoteForCurrent();
+      if (act === 'spnotes') {
+        notesShown = !notesShown;
+        t.style.opacity = notesShown ? '1' : '.55';
+        updateSpeakerNotes();
+      }
       if (act === 'focus') { if (presentWin && !presentWin.closed) { try { presentWin.focus(); } catch(_){} } }
       if (act === 'laser') {
         laserOn = !laserOn;
@@ -957,6 +1067,7 @@
       presentWin = null;
       // UI 隠す
       if (ctrl) ctrl.style.display = 'none';
+      if (spNotes) spNotes.style.display = 'none';
       if (jump) jump.style.display = 'none';
       // レーザー/ペンモード解除 + captureLayer 撤去
       laserOn = false;
@@ -1108,6 +1219,7 @@
         var pos = ctrl.querySelector('#_sp_pos');
         if (pos) pos.textContent = (curIdx + 1) + ' / ' + total;
         renderJumpGrid();
+        updateSpeakerNotes();
         // 手元 SlideKit 側でも同じスライドまでスクロール
         if (d.type === 'slide:change') scrollToSlideInEditor(curIdx);
       }
@@ -1248,6 +1360,7 @@
       var pos = ctrl.querySelector('#_sp_pos');
       if (pos) pos.textContent = total ? (curIdx + 1) + ' / ' + total : '0 / 0';
       renderJumpGrid();
+      updateSpeakerNotes();
       try {
         bus.postMessage({type:'deck:sync', htmls:htmls, total:total, curIdx:curIdx, from:'remote'});
       } catch(e) { console.warn('deck:sync send failed', e); }

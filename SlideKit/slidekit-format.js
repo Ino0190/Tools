@@ -390,9 +390,60 @@
   }
 
   // ---- 公開 API ----
+  // ---- 見出しスタイルの変換（AWSフォーマット2 = バッジ無し・タイトル下に線）----
+  // バッジを使わない案件向けの体裁を型として持つ（2026-09-08）。バッジの丸ピルを消し、タイトルを上げ、
+  // タイトル直下に線を引き、リード文を線の下へ送る。data属性とinline styleは常に同値にする。
+  // 冪等: すでに線がある（badge無し）スライドは何もしない。表紙（data-bg-gradient）は対象外。
+  // 事後条件: 変換したスライド数を返す。呼び出し側でundoスナップショットを取ること。
+  function applyHeaderStyle(slideEl, rule){
+    if (!slideEl || !rule) return 0;
+    if (slideEl.getAttribute('data-bg-gradient')) return 0;      // 表紙・扉は触らない
+    var LINE_MARK = 'data-sk-headline';
+    if (slideEl.querySelector('[' + LINE_MARK + ']')) return 0;  // 変換済み
+    var set = function(el, k, v){ el.setAttribute('data-' + k, v); el.style[k === 'y' ? 'top' : (k === 'x' ? 'left' : (k === 'w' ? 'width' : 'height'))] = v + 'px'; };
+    // タイトル = 最上部にある .tb（data-y が最小・幅が広いもの）
+    var tbs = Array.prototype.slice.call(slideEl.querySelectorAll(':scope > .tb[data-x][data-y]'));
+    if (!tbs.length) return 0;
+    tbs.sort(function(a, b){ return (+a.getAttribute('data-y')) - (+b.getAttribute('data-y')); });
+    var title = null, lead = null;
+    for (var i = 0; i < tbs.length; i++) {
+      var w = +tbs[i].getAttribute('data-w') || 0;
+      if (w >= 800) { title = tbs[i]; break; }
+    }
+    if (!title) return 0;
+    // バッジ（丸ピル）を消す: タイトルより上にある小さめの .rect（中に .tb を持つ）
+    var ty = +title.getAttribute('data-y');
+    Array.prototype.slice.call(slideEl.querySelectorAll(':scope > .rect[data-x][data-y]')).forEach(function(r){
+      var ry = +r.getAttribute('data-y'), rw = +r.getAttribute('data-w') || 0, rh = +r.getAttribute('data-h') || 0;
+      if (ry < ty && rw <= 320 && rh <= 48 && r.querySelector('.tb')) r.remove();
+    });
+    // タイトルを上へ・字送りを整える
+    set(title, 'y', rule.titleY);
+    if (rule.titleH) set(title, 'h', rule.titleH);
+    if (rule.titleFs) { title.setAttribute('data-font-size', rule.titleFs); title.style.fontSize = rule.titleFs + 'px'; }
+    // リード文（タイトルの次にある .tb で、線より下へ送るもの）
+    var after = tbs.filter(function(el){ return el !== title && (+el.getAttribute('data-y')) > ty; });
+    if (after.length) {
+      var cand = after[0];
+      if ((+cand.getAttribute('data-y')) < 210) lead = cand;   // 見出し直下の説明文だけ動かす
+    }
+    if (lead && rule.leadY) set(lead, 'y', rule.leadY);
+    // 線を引く（タイトル直下）
+    var y = rule.lineY, x = +title.getAttribute('data-x') || 64, w = +title.getAttribute('data-w') || 1152, h = rule.lineH || 2;
+    var line = document.createElement('div');
+    line.className = 'rect';
+    line.setAttribute(LINE_MARK, '1');
+    line.setAttribute('data-x', x); line.setAttribute('data-y', y);
+    line.setAttribute('data-w', w); line.setAttribute('data-h', h);
+    line.setAttribute('data-fill', rule.lineColor); line.setAttribute('data-shape', 'line');
+    line.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px;background:' + rule.lineColor;
+    title.insertAdjacentElement('afterend', line);
+    return 1;
+  }
   window.SlideKitFormat = {
     registerFormatPlugins: registerFormatPlugins,
     isDarkSlide: isDarkSlide,
+    applyHeaderStyle: applyHeaderStyle,
     resolveAssetUrl: resolveAssetUrl,
     ensureCoverRemapStyle: ensureCoverRemapStyle,
     applyAwsOverlay: applyAwsOverlay,

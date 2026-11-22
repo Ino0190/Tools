@@ -217,6 +217,8 @@ def main():
     prs.save(output_path)
     # 後処理 (Content Types 修復のみ・app.xml は A4 で不要)
     h2p._fix_content_types(output_path)
+    # PowerPointで直せる形に（段落既定の太字を外す・手書きのページ番号を自動番号に）
+    h2p._SEM.fix_editable(output_path)
     # macOSの検疫属性を外す（保護ビュー=読み取り専用で開くのを防ぐ。html_to_pptx.py と同じ）
     if sys.platform == 'darwin':
         try:

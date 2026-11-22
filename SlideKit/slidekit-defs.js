@@ -44,6 +44,10 @@ window.SLIDEKIT_DEFS = /* SLIDEKIT_DEFS_JSON_BEGIN */ {
       }
     }
   },
+  "chartPalette": {
+    "_note": "DashboardKit既定テーマ(seiryoku)の系列色。CalcKit/DashboardKit経由のグラフスライドで使う。2026-08-21追加＝利用者判断。他テーマ(pastel等)を使うデッキは <html data-palette=\"custom\"> を宣言する。出所=DashboardKit/dashboard-kit.js の BUILTIN_THEMES seiryoku",
+    "seiryoku": ["#1e40af", "#06b6d4", "#10b981", "#2563eb", "#14b8a6", "#94a3b8"]
+  },
   "shapes": {
     "arrow": {
       "params": {
@@ -57,6 +61,12 @@ window.SLIDEKIT_DEFS = /* SLIDEKIT_DEFS_JSON_BEGIN */ {
         "cv": { "min": 0.02, "max": 0.60, "default": 0.14 }
       },
       "mso": "PENTAGON"
+    },
+    "callout": {
+      "params": {
+        "bx": { "min": 0.08, "max": 0.92, "default": 0.3 }
+      },
+      "mso": "RECTANGULAR_CALLOUT"
     },
     "circle": { "mso": "OVAL" },
     "triangle": { "mso": "ISOCELES_TRIANGLE" },
@@ -89,14 +99,14 @@ window.SLIDEKIT_DEFS = /* SLIDEKIT_DEFS_JSON_BEGIN */ {
     }
   },
   "attrSchema": {
-    "common": ["data-x", "data-y", "data-w", "data-h"],
+    "common": ["data-x", "data-y", "data-w", "data-h", "data-rotate", "data-flip", "data-link-sid"],
     "tb": ["data-font-size", "data-bold", "data-color", "data-fill", "data-align",
            "data-valign", "data-bullet", "data-role", "data-linked-parent"],
     "li": ["data-lvl"],
-    "rect": ["data-fill", "data-radius", "data-shape", "data-at", "data-ah", "data-cv",
+    "rect": ["data-fill", "data-radius", "data-shape", "data-at", "data-ah", "data-cv", "data-bx",
              "data-border", "data-border-top", "data-border-right", "data-border-bottom",
              "data-border-left", "data-border-style", "data-shadow"],
-    "slide": ["data-bg", "data-bg-gradient", "data-aws-logo"],
+    "slide": ["data-bg", "data-bg-gradient", "data-aws-logo", "data-sid"],
     "html": ["data-template", "data-aws-decoration", "data-page-size"],
     "img": ["data-border", "data-clip", "data-crop-l", "data-crop-r", "data-crop-t", "data-crop-b"]
   },

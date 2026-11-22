@@ -14,6 +14,7 @@ EMOJI_MAP = {
     "✂️": "scissor", "🔗": "link", "📍": "pin", "🎯": "target", "🧩": "puzzle",
     "📖": "book", "☁️": "cloud", "🔄": "refresh", "📺": "screen", "🌫": "shadow",
     "✍️": "pen", "💧": "drop", "🔒": "lock", "👁": "eye", "✅": "check",
+    "📤": "export",
 }
 
 # UI記号 → カタログid（ボタンラベルの先頭記号だけ置換。本文に出る→や─を誤爆しないため）

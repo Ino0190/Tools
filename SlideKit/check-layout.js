@@ -22,6 +22,18 @@
   function rectsOverlap(a, b){
     return !(a.x+a.w <= b.x || b.x+b.w <= a.x || a.y+a.h <= b.y || b.y+b.h <= a.y);
   }
+  // 意図して重ねる形は重なりとして数えない
+  //  ・線（幅か高さが4px以下）＝区切り線・年表の軸・引き出し線は図形の上を通すのが普通
+  //  ・片方がもう片方の中に収まる＝カードの見出し帯・カード上のバッジ
+  // 🚫 これを数えていた頃、カタログ自体が25件の重なりを出し、本物の崩れが埋もれた（2026-09-27）
+  const isLine = r => r.w <= 4 || r.h <= 4;
+  const inside = (a, b) => a.x >= b.x && a.y >= b.y && a.x+a.w <= b.x+b.w && a.y+a.h <= b.y+b.h;
+  function accidentalOverlap(a, b){
+    if(!rectsOverlap(a, b)) return false;
+    if(isLine(a) || isLine(b)) return false;
+    if(inside(a, b) || inside(b, a)) return false;
+    return true;
+  }
 
   // 各.slideについて要素を集めてチェック
   function checkAll(){
@@ -39,7 +51,7 @@
       // ① .rect 同士の重なり（同じスライド内、各ペア）
       for(let i=0;i<rects.length;i++){
         for(let j=i+1;j<rects.length;j++){
-          if(rectsOverlap(rects[i], rects[j])){
+          if(accidentalOverlap(rects[i], rects[j])){
             issues.push({
               slideIdx: sIdx+1, kind:'overlap',
               elA: rects[i].el, elB: rects[j].el,
@@ -78,7 +90,11 @@
         if((isTb || isRect) && h > 0){
           // 実際の中身が枠より大きいか
           const sh = el.scrollHeight, ch = el.clientHeight;
-          if(sh > ch + 1){
+          // 行の上下の余白（line-height 1.5 の半行分）だけ枠を超えるのは見た目に出ない。
+          // 文字の大きさの4割を超えたら「行が欠けている」とみなす（2行目が隠れる等）
+          // 🚫 1pxで判定していた頃は1行ラベルが軒並み引っかかり、カタログだけで35件出た（2026-09-27）
+          const fsPx = parseFloat(getComputedStyle(el).fontSize) || 16;
+          if(sh > ch + Math.max(1, fsPx * 0.4)){
             issues.push({
               slideIdx: sIdx+1, kind:'text-overflow', el,
               msg: `中身が枠の高さを超える (scrollHeight ${sh}px > clientHeight ${ch}px) ${el.tagName.toLowerCase()}.${el.className.split(' ')[0]||''} 推奨h≧${sh}`
@@ -97,7 +113,8 @@
       });
 
       // ④ 画像アス比チェック（PPTX変換時の歪み防止）
-      const imgs = Array.from(slide.querySelectorAll('img'));
+      // .aws-overlay は編集UIが表示用に重ねるロゴで、PPTXにはテンプレ側のロゴが出る＝検査対象外
+      const imgs = Array.from(slide.querySelectorAll('img')).filter(img => !img.closest('.aws-overlay'));
       imgs.forEach(img => {
         if(!img.naturalWidth || !img.naturalHeight) return; // 未読み込み or データURL
         const parent = img.parentElement;
@@ -113,6 +130,8 @@
           const isCover = imgStyle.indexOf('object-fit:cover') >= 0;
           const isContain = imgStyle.indexOf('object-fit:contain') >= 0;
           if(isCover || isContain) return; // トリミング/内側余白で対応するので無視
+          // SlideKit UIの手動クロップ済み＝切り出し領域が枠と同アス比なので歪まない
+          if(img.dataset && (img.dataset.cropL||img.dataset.cropR||img.dataset.cropT||img.dataset.cropB)) return;
           // 推奨：幅維持で高さ調整／高さ維持で幅調整
           const recH = Math.round(cw / imgAspect);
           const recW = Math.round(ch * imgAspect);
@@ -131,7 +150,8 @@
       const _ssp = (window.SLIDEKIT_DEFS && window.SLIDEKIT_DEFS.styleSyncProps)
         || { 'data-x': 'left', 'data-y': 'top', 'data-w': 'width', 'data-h': 'height' };
       const SYNC_MAP = Object.keys(_ssp).map(function(dAttr){
-        return [dAttr, new RegExp('(?:^|;)\\s*' + _ssp[dAttr] + '\\s*:\\s*(-?\\d+(?:\\.\\d+)?)\\s*px')];
+        // 単位なしの 0（left:0）もCSSとして正しいので受け付ける（px は 0 のときだけ省略可）
+        return [dAttr, new RegExp('(?:^|;)\\s*' + _ssp[dAttr] + '\\s*:\\s*(-?\\d+(?:\\.\\d+)?)\\s*(?:px|(?=;|$|\\s))')];
       });
       const syncTargets = Array.from(slide.querySelectorAll('[data-x]'));
       syncTargets.forEach((el, eIdx) => {
@@ -164,6 +184,34 @@
             });
           }
         });
+        // data-rotate ↔ transform:rotate(Ndeg) の同期（回転はpx系と書式が違うので個別に見る）
+        const dRot = el.hasAttribute('data-rotate') ? N(A(el, 'data-rotate')) : null;
+        const mRot = style.match(/transform\s*:[^;]*rotate\(\s*(-?\d+(?:\.\d+)?)deg\s*\)/);
+        const sRot = mRot ? ((parseFloat(mRot[1]) % 360) + 360) % 360 : null;
+        if((dRot || sRot) && Math.abs((dRot || 0) - (sRot || 0)) > 0.5){
+          issues.push({
+            slideIdx: sIdx+1, kind:'data-style-mismatch', el,
+            msg: `data-rotate=${dRot === null ? '(無)' : dRot} vs style.transform=${sRot === null ? '(無)' : sRot + 'deg'}（ブラウザ表示とPPTXの回転がズレる）`
+          });
+        }
+        // data-flip ↔ transform:scaleX/Y(-1) の同期
+        const dFlip = A(el, 'data-flip') || '';
+        const tfPart = (style.match(/transform\s*:([^;]*)/) || ['',''])[1];
+        const sFlip = (tfPart.indexOf('scaleX(-1)') >= 0 ? 'h' : '') + (tfPart.indexOf('scaleY(-1)') >= 0 ? 'v' : '');
+        if(dFlip !== sFlip){
+          issues.push({
+            slideIdx: sIdx+1, kind:'data-style-mismatch', el,
+            msg: `data-flip=${dFlip || '(無)'} vs style.transform=${sFlip || '(無)'}（ブラウザ表示とPPTXの反転がズレる）`
+          });
+        }
+        // ページジャンプリンク切れ（data-link-sid の行き先 .slide[data-sid] が無い）
+        const lsid = A(el, 'data-link-sid');
+        if(lsid && !document.querySelector('.slide[data-sid="' + lsid.replace(/"/g, '\\"') + '"]')){
+          issues.push({
+            slideIdx: sIdx+1, kind:'broken-link', el,
+            msg: `リンク切れ: data-link-sid="${lsid}" の行き先スライド（data-sid）が無い（PPTXでもリンクが張られない）`
+          });
+        }
       });
 
       // ⑤ data-x のない絶対配置子div(画像コンテナ等)もスライド境界チェック
@@ -229,7 +277,10 @@
     if(panel) panel.remove();
     panel = document.createElement('div');
     panel.className = 'seui'; // 💾保存時にHTMLへ焼き込まれないようマーク
-    panel.style.cssText = 'position:fixed;top:54px;right:220px;width:380px;max-height:calc(100vh - 80px);overflow-y:auto;background:#fff;border:2px solid #d81616;border-radius:8px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.2);z-index:100001;font-family:Meiryo,sans-serif;font-size:13px;line-height:1.5';
+    // 右パネルの左隣に置く。パネル幅は slide-edit.js 側で決まるので実寸から求める（2026-09-27）
+    const _bar = document.getElementById('_sk_toolbar');
+    const _right = _bar ? Math.max(12, Math.round(window.innerWidth - _bar.getBoundingClientRect().left + 12)) : 220;
+    panel.style.cssText = 'position:fixed;top:54px;right:' + _right + 'px;width:380px;max-height:calc(100vh - 80px);overflow-y:auto;background:#fff;border:2px solid #d81616;border-radius:8px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.2);z-index:100001;font-family:Meiryo,sans-serif;font-size:13px;line-height:1.5';
     let html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:15px;color:#d81616">⚠️ 診断結果：' + issues.length + '件</b><button id="__sk_check_close" style="background:none;border:none;font-size:18px;cursor:pointer;color:#666">✕</button></div>';
     if(issues.length === 0){
       html += '<div style="color:#1a5a32;font-weight:700">問題なし。すべてOK。</div>';
@@ -245,6 +296,7 @@
           'text-overflow':'中身あふれ',
           'text-overflow-x':'横にあふれ',
           'image-aspect':'画像アス比ずれ',
+          'broken-link':'ページリンク切れ',
           'data-style-mismatch':'data-*/style不整合'
         }[k] || k;
         html += label + ': ' + byKind[k] + '件　';
@@ -329,10 +381,13 @@
 
   // 公開API（headlessから呼ぶ用）
   window.__slideKitCheck = function(){
+    // text＝どの要素かを作る人が探せるよう、中身の文字の先頭を添える
+    const head = el => el ? (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 24) : '';
     return checkAll().map(iss => ({
       slideIdx: iss.slideIdx,
       kind: iss.kind,
-      msg: iss.msg
+      msg: iss.msg,
+      text: head(iss.el || iss.elA)
     }));
   };
 

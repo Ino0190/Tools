@@ -1,6 +1,6 @@
 # SlideKit 仕様書
 
-最終更新: 2026-07-11
+最終更新: 2026-09-27（2章ファイル一覧・AWSプラグインの正本・プレゼン再生の自動読込を実装に合わせた）
 
 ## 1. 概要
 
@@ -12,7 +12,7 @@ SlideKit は、Kiro が生成した HTML スライドを **ブラウザ上で直
 - **正本は HTML 本体**: localStorage は使わず、HTML ファイル自体を編集/上書き
 - **絶対座標方式**: 全要素に `data-x/y/w/h` を持たせる (1280×720px 固定キャンバス)
 - **PPTX 変換再現性**: HTML の見た目とほぼ同じ結果を PPTX で出す
-- **Kiro併用**: 「📋変更をコピー」でブラウザ側の編集を Kiro に貼付して再生成できる
+- **Kiro併用**: 「📤Kiroへ渡す」でブラウザ側の編集を Kiro に貼付して再生成できる
 
 ## 2. ファイル構成
 
@@ -21,19 +21,42 @@ SlideKit/
 ├── slidekit-defs.js       ★共有定義 (JSON in JS)。色マップ/図形/属性スキーマ/定数の唯一の正本。JS/Python 両方が読む
 ├── slidekit-format.js     ★フォーマット描画エンジン。AWSオーバーレイ/パレット置換/暗色判定を一本化 (edit/present 共用)
 ├── slide-edit.js          ブラウザ側の編集機能 (メイン)。起動時に defs/format を自 src 基準で動的ロード
-├── slide-present.js       別ウィンドウでプレゼン再生 (Zoom画面共有向け・独立)。AWS描画は format に委譲
+├── slide-present.js       別ウィンドウでプレゼン再生 (Zoom画面共有向け)。slide-edit.js が自動で読み込む (デッキ側の行は任意・二重読込は無害)。AWS描画は format に委譲
 ├── slide-a4export.js      A4縦PDF出力 (印刷CSS方式・独立)。キャンバス定数は defs 参照
 ├── slide-template.html    新規スライド作成の雛形
-├── pattern-catalog.html   AI向けパターンカタログ (文字系14種の見本帳)
-├── diagram-catalog.html   AI向け図解パターンカタログ (D01〜D11・PPTXネイティブ図形のみ)
+├── pattern-catalog.html   AI向けパターンカタログ (文字系 P01〜P18 の見本帳)
+├── diagram-catalog.html   AI向け図解パターンカタログ (D01〜D16・PPTXネイティブ図形のみ)
+├── pattern-select.md      型の選び方 (34型を6分類で絞る・図解ゲート)
+├── structure-template.md  構成ファイル (<deck>.structure.md) の雛形。HTMLの前に作る
+├── structure-preview.py   構成ファイルを確認用HTMLにする
+├── defect-taxonomy.md     作った後の欠陥分類表 (検査出力の [R1] [B2] 等と対応)
 ├── slidekit-steering.md   AI向けステアリング文書 (Kiro等の生成ルール)
+├── slidecheck.py          検査の入口 (ガード→診断→スクショ→PPTX を1コマンドで)
+├── slide-guard.py         変換前の静的ガード (フォント下限・許可外class・カタログ外色・構成ファイル突合)
+├── ui-check.py            編集UIの実ブラウザ検査 (プレゼン再生ボタン・右パネルのはみ出し)。BezierKit/cdp-check.py を使う
 ├── html_to_pptx.py        HTML→PPTX変換スクリプト。リマップ表/図形clamp/テンプレ検索/定数を defs から読む
+├── pptx_semantic.py       PPTXの意味付け: タイトル枠・テーマ色・代替テキスト・直せる文字。html_to_pptx が読む (必須・既定ON)
+├── slidekit-chart.js      data-chart のグラフをブラウザで描く (slide-edit.js が data-chart のあるデッキだけ自動で読む)
+├── measure_layout.py      (試作) ブラウザの描画結果を測る。data属性・変換側との食い違い・行数のずれを出す
 ├── html_to_pptx_a4.py     A4縦PPTX変換 (1up/2up・独立。html_to_pptx を import して自動追従)
 ├── pptx_to_slidekit.py    PPTX→SlideKit HTML 逆変換。図形逆マッピングは defs.shapes から導出
 ├── pptx_to_a4.py          既存PPTXをA4に組み直す補助 (独立)
 ├── serve.py               保存用ローカルHTTPサーバー (PUT対応・アトミック保存)
 ├── check-layout.js        レイアウト崩れ診断 (任意)。属性/定数は defs 参照
 ├── run_check.py           レイアウト診断 CLI (Chrome headless)
+├── pptx_to_format.py      もらったPPTXから書式 (色・フォント・余白) だけ抜き出して .format.json にする。内容は捨てる
+├── pptx-compare.py        ブラウザ表示とPPTX描画 (LibreOffice) を左右に並べた比較画像を作る (目視用)
+├── html_to_standalone.py  スライドHTMLを1ファイルで送れる形にする (画像・動画をbase64埋め込み・編集UIを外す)
+├── flow_to_movie.py       CadKitのコマ送りSVGを mp4 にする＋プレビュー (poster) 選択画面を出す
+├── dk_chart_to_slide.py   DashboardKitのグラフをスライド1枚にする
+├── slide-livenotes.js     Live Notes (補助)。録音とスライド切替を記録し、発言を表示中のスライドに紐づける
+├── livenotes_transcribe.py Live Notes の録音を手元の whisper で文字起こしし、スライドごとの議事メモにする (音声は外に出さない)
+├── livenotes_check.py     Live Notes の回帰テスト (ロジック＋ブラウザ)
+├── html-edit.js           一般HTML (スライド以外) 用の編集スニペット。1行注入で右パネルからサイズ等を直せる
+├── sk-icons.js            UIの絵文字をSVGアイコンに置き換える (生成物・直接編集しない)
+├── gen-sk-icons.py        sk-icons.js を BezierKit/icons-data.js から生成する
+├── make_dist.sh           配布スナップショットを作る (steering 3本を .kiro/steering/ に同梱・個人名を除去)
+├── TESTS.md               手で確かめる動作テストのチェックリスト
 
 ├── SPEC.md                本ドキュメント
 └── README.md              導入ガイド
@@ -58,7 +81,7 @@ SlideKit/
   - `serve.py` 経由なら PUT で直接HTMLに書き戻し
   - File System Access API 対応ブラウザなら OS のファイル選択で上書き
   - どちらも不可なら DL フォールバック (ダウンロードして手動で上書き)
-- **📋変更をコピー**: 前回状態からの差分をパッチ形式でクリップボードへ (Kiroに貼付して反映)
+- **📤Kiroへ渡す**: 前回状態からの差分をパッチ形式でクリップボードへ (Kiroに貼付して反映。旧「📋変更をコピー」)
 
 ## 4. HTML 規約
 
@@ -106,11 +129,58 @@ SlideKit/
 | `<table>` | 表 | PPTX table |
 | `<img>` (親div内) | 画像 | `<p:pic>` |
 | `<svg>` (親div内) | SVG図 | PNG化して `<p:pic>` |
+| `<video>` (親div内) | 動く図 (mp4) | 動画を埋め込み (`add_movie`)。プレビューは `poster` のPNG |
+
+#### 動く図（アニメーション）の出し方
+
+🚫 **SVGのSMILアニメはPPTXで動かない。** `<svg>` は `rasterize_svg` で1コマのPNGになる。
+ブラウザでは動いていたものが、PPTXでは静止画になる（2026-08-21に空港BHSで確認）。
+動かしたい図は **mp4を埋める**。
+
+```
+CadKit/cdp-run.py <model> --export-flow <dir> --flow-frames 16 --flow-step 1.1 \
+    --line-angle 18,30 --line-outer 2.0 --line-inner 0.6 --line-size 1800,760
+SlideKit/flow_to_movie.py <dir> -o <deck>/xxx.mp4 --fps 8 --scale 2
+```
+
+スライドには枠のdivをそのまま使い、中身を `<video>` にする（座標はPPTXでも一致する）。
+
+```html
+<div data-x="0" data-y="79" data-w="1280" data-h="601" style="...">
+  <video src="xxx.mp4" poster="xxx_frames/frame08.png" autoplay loop muted playsinline
+         style="width:100%;height:100%;object-fit:contain;display:block"></video>
+</div>
+```
+
+- `poster` = **再生前にPowerPointが出す1枚**。`flow_to_movie.py` が出す
+  `xxx_frames/index.html` を開き、動画を見ながら「今の場面をプレビューに」で選ぶ。
+  選び直しは `poster=` の書き換えだけで済む（動画の作り直しは不要）
+- `autoplay` `loop` があると変換側が `p:timing` を書き換えてPowerPointでも自動再生・ループを狙う。
+  ⚠️ 実機のPowerPointで自動再生が効くかは環境差がある。効かなくてもクリックで再生できる
+- mp4以外（webm等）は埋め込まずMISSING扱い。H.264/yuv420pのmp4にする
+
+#### 3Dモデル（回せる図）は自動変換に乗らない
+
+PowerPointは3Dモデル（**GLB推奨**・OBJ/3MF/STLも可。FBXはOfficeで無効化済み）を挿入でき、
+スライド上で回転・傾きができる。GLBにアニメーションが入っていれば荷の流れも再生される。
+
+🚫 **python-pptxに3Dモデルを埋めるAPIが無いため、`html_to_pptx.py` では出せない。**
+PowerPointで「挿入 > 3Dモデル > このデバイス」で手作業で入れる。
+デッキを再生成すると消えるので、**配布物はmp4を本線にする**。
+
+アニメ入りGLBの作り方（BHSの例・`CadKit/bhs-export.py`）:
+
+```
+python3 CadKit/bhs-export.py bhstwin ../project/bhs-dashboard/scene --frames 24 --step 0.5
+```
+
+同じGLBは `project/bhs-dashboard/bhs-viewer.html` でも自動再生される（「⏸ 荷を止める」で停止）。
+打合せの場で回して見せるなら、PowerPointに入れるよりビューアを開く方が速い。
 
 ### 4.4 スライド管理
 
 - `<!-- SLIDE: 名前 -->` ... `<!-- /SLIDE -->` でスライドを囲むと並び替え/削除が容易
-- ページ番号は自動採番 (`renumberPages`) されるので手書き不要
+- ページ番号は自動採番 (`renumberPages`) されるので手書き不要。**`<html data-pageno="off">` でPPTX変換時の自動ページ番号を抑止できる**（テンプレ側フッタが番号を持つ場合など・2026-08-31追加）
 
 ## 5. data 属性一覧
 
@@ -122,11 +192,14 @@ SlideKit/
 | `data-y` | int | Y座標 px |
 | `data-w` | int | 幅 px |
 | `data-h` | int | 高さ px |
+| `data-rotate` | int (0〜359) | 回転角・度・時計回り・中心基準。style `transform:rotate(Ndeg)` と同値必須。PPTX shape.rotation に変換 (tb/rect/img。table不可) |
+| `data-flip` | `h`/`v`/`hv` | 左右/上下反転 (rect図形・img)。style `transform` の `scaleX(-1)`/`scaleY(-1)` と同値必須 (rotateの後に書く)。PPTX xfrm flipH/flipV に変換。直下の.tbは逆反転して文字を読める向きに保つ |
+| `data-link-sid` | sid文字列 | ページジャンプリンク。クリックで `.slide[data-sid]` の一致ページへ (閲覧モード=スクロール / プレゼン=切替 / PPTX=click_action.target_slide)。table不可 |
 | `data-color` | hex | 文字色 (.tb) / 表全体の文字色 (table) |
 | `data-fill` | hex/`none` | 塗り色 (.rect) / 塗りなし |
 | `data-shadow` | `soft` | 薄い影を付ける (rect のみ) |
-| `data-radius` | int | 角丸 px (.rect) |
-| `data-border` | `w,#hex` | 全周ボーダー (.rect) |
+| `data-radius` | int | 角丸 px (.rect / .flow)。**`0`=角なし（PPTXはRECTANGLE）。.flowで未指定なら既定8px を明示適用**（PowerPoint既定の大きい丸みは出さない・2026-08-31ルール化） |
+| `data-border` | `w,#hex` | 全周ボーダー (.rect)。矢印/帯矢印/三角では図形輪郭の線（表示=SVG stroke背景・PPTX=shape.line）。CSS borderは書かない |
 | `data-border-top` / `-right` / `-bottom` / `-left` | `w,#hex` | 片側ボーダー (.rect) |
 | `data-border-style` | `wavy` 等 | PPTX変換時に線種を wavy 相当にする |
 | `data-linked-parent` | skid | 親rectと連動する子.tb |
@@ -174,10 +247,12 @@ SlideKit/
 
 | 属性 | 説明 |
 |---|---|
-| `data-shape` | `circle` / `triangle` / `line` / `arrow` / `chevron` |
+| `data-shape` | `circle` / `triangle` / `line` / `arrow` / `chevron` / `callout` |
 | `data-cv` | chevron の先端幅割合 (0.02〜0.6) |
 | `data-at` | arrow の軸太さ割合 (0.05〜0.95) |
 | `data-ah` | arrow の矢羽長割合 (0.05〜0.9) |
+| `data-bx` | callout のしっぽ先端x位置 (0.08〜0.92)。本体=上80%・しっぽ=下20%。PPTXは RECTANGULAR_CALLOUT の adj に変換 |
+| `data-fill` 8桁hex | `#RRGGBBAA` で半透明塗り (UIの「塗りの不透明度」)。PPTX は alpha 変換済み |
 | `data-funnel-img` | ファネル図の目印 (画像内のラベルを一緒に動かす) |
 
 ### 5.4 スライド (.slide) 固有
@@ -186,6 +261,8 @@ SlideKit/
 |---|---|
 | `data-bg` | 単色背景 hex |
 | `data-bg-gradient` | `角度,#hex1,#hex2` (例: `135,#183251,#21537f`) |
+| `data-sid` | ページ固定ID (英数)。`data-link-sid` の行き先。編集UIがリンク設定時に自動採番。ページ複製時は複製側から自動除去 |
+| `data-notes` | 発表者ノート（改行可・旧来の `\n` 表記も可）。編集パネル「🗒 発表者ノート」で書く（undo可）。PPTXではノート欄、📺プレゼン再生中は手元のリモコン上に出る（投影には出ない・📝 ノートで隠せる）。2026-10-14 |
 
 ### 5.5 html (最上位) 固有
 
@@ -199,9 +276,56 @@ SlideKit/
 |---|---|
 | `data-border` | `w,#hex` (画像枠) |
 | `data-clip` | `circle` (円クリップ) |
-| `data-crop-l/r/t/b` | 0.0〜0.9 (手動トリミング比率) |
+| `data-crop-l/r/t/b` | 0.0〜0.9 (手動トリミング比率。切り出し領域が枠いっぱいに表示＝PPTX srcRect と同義) |
 | style `object-fit` | `cover`/`contain` (PPTX変換で crop_* に変換) |
 | style `object-position` | `left/center/right top/center/bottom` |
+
+### 5.7 グラフ (`data-chart`・2026-10-14)
+
+数値のグラフはスライド直下の div に JSON で書く。ブラウザは `slidekit-chart.js`（slide-edit.js が自動で読む）が SVG で描き、
+PPTX は `html_to_pptx.py` がネイティブグラフにする（数値は埋め込みブック＝PowerPointの「データを編集」で直せる）。
+
+```html
+<div data-x="64" data-y="170" data-w="560" data-h="440" data-font-size="16"
+     data-chart='{"type":"column","title":"問い合わせ件数","unit":"件","categories":["Q1","Q2","Q3","Q4"],
+                  "series":[{"name":"2025年","values":[120,150,135,180]},{"name":"2026年","values":[140,170,190,210]}]}'
+     style="position:absolute;left:64px;top:170px;width:560px;height:440px"></div>
+```
+
+| キー | 値 |
+|---|---|
+| `type` | `column`（縦棒）/ `bar`（横棒）/ `stacked`（積み上げ縦棒）/ `line`（折れ線）/ `pie`（円・系列は1つ目だけ）/ `table`（表＝行が項目・列が系列。PPTXでは PowerPoint の表・文字は8pt以上） |
+| `categoryLabel` | 表の1列目の見出し（既定「項目」） |
+| `type:"map"` | 地図（2026-10-14）。`{"type":"map","map":"japan-pref","mark":"circle｜bar｜fill","unit":"万人","values":{"東京都":1404,…}}`。系列が2つ以上なら `"series":[{"name":"2024年","values":{…}},…]`（棒は並べる・円と塗り分けは1つ目）。県は「東京都」「東京」「13」「JP-13」のどれでも。**円**は面積が値に比例（凡例は切りのいい値の円2つ）、**棒**は県の位置に立てる、**塗り分け**は値の並びの20・40・60・80%で5段（スライドの色の濃淡・データの無い県は白）。名前と数値は、ほかの名前・円・棒・凡例に重ならないものだけ（大きい方から5県は円に重なってもよい）。見せ方の切り替えは「円／棒／塗り分け／表」（表は1行＝1つの地域）。地図データは `maps/japan-pref.js`（`map_build.py` が Natural Earth（public domain）から作る。沖縄県は左上の枠に移す・小笠原・南鳥島・大東・尖閣は地図を小さくしないため外す）。**PPTX はサンキーと同じく、県・円・棒を図形、名前と数値を文字枠にする**（県ごとに色を直せる） |
+| `points`（地図） | 拠点と範囲＝商圏（2026-10-15）。`{"type":"map","pointLabel":"店","pointUnit":"千人","points":[{"name":"浦和店","lat":35.858,"lon":139.657,"value":12}],"areas":"circle｜voronoi｜none","radius_km":[3,5],"bbox":[西経度,南緯度,東経度,北緯度]}`。拠点は緯度経度で置く（`value` があれば点の面積が値に比例）。**circle**＝半径 `radius_km` の円（既定 3km・5km、外側は破線）、**voronoi**＝いちばん近い拠点で陸地を分ける（距離はkm・海は塗らない・`radius_km` を書くといちばん大きい半径の内側に限る）、**none**＝点だけ。`bbox` が無ければ拠点と円が収まる範囲に寄せる（最小10km四方）。寄せた地図は細かい県境 `maps/japan-pref-detail.js`、県名は見えている部分の真ん中、凡例の下に縮尺。画面の外・海に出る部分は図形を切って出す（PPTXでも枠からはみ出さない）。県の `values` と一緒に書くと、県の塗り分けの上に拠点を置く。見せ方の切り替えは「半径の円／最寄りの範囲／点／表」（表は1行＝1つの拠点・列＝値・緯度・経度）。県境は Natural Earth 1:10m（約1km単位）なので市区町村の境は無い。店の位置は自分で用意する（他社サイトから集めない） |
+| `type:"sankey"` | 流れ（2026-10-14）。`{"type":"sankey","unit":"ケース","nodes":[{"id","label"}],"links":[{"from","to","value"}]}`（DashboardKit と同じ形）。列＝起点からの段数、列の中は量の多い順、帯の太さは量・色は出どころの箱。名前と量は箱の右。見せ方の切り替えは「サンキー／表」（表は1行＝1本の帯）。**PPTX は PowerPoint に同じグラフが無いので、ブラウザで描いた帯・箱を図形のグループ、名前と量を文字枠にする**（数値をあとで直すときはSlideKitで直してPPTXを作り直す）。表にしたものは PowerPoint の表 |
+| `fitY` | `true` で値の軸をデータの範囲に合わせる（折れ線だけ・`max` があれば使わない）。体重47〜49kgのような小さな変化が平らにならない（DashboardKit の fitY と同じ考え方） |
+| `max` | 値の軸の上限（データの最大より小さいときは使わない）。率は `100` |
+| `target` | `{"value":100,"label":"目標"}` 目標線。赤の破線と「目標 100kg」。範囲に入れて軸を作る。PPTXは同じ値の系列（ブックで直せる・凡例には出さない）、棒グラフでは棒＋線の組み合わせ。横棒には出さない |
+| `series[].dash` | `true` で破線＋白抜きの点（予測・理論値）。折れ線だけ。`null` の値は線を切る（0に落とさない） |
+| `timeAxis` | `true` で点を実際の日付の間隔に置く（折れ線・項目がすべて `YYYY-MM-DD`）。1日を1枠・点は枠の中央。項目名は重ならないものだけ。PPTXは日付の軸（m/d） |
+| `bands` | `[{"from","to","label","color","opacity"}]` 期間・その日の帯（線・棒の後ろ）。from/to は項目の値（日付の項目なら日付で比べ、間の日も含む）。color は `danger/accent/warn/ok/sub` か #hex（既定 sub・濃さ0.12）。名前は帯の左上（48px以上）。PPTXは折れ線だけ＝線の後ろの棒（名前は帯の始めに）。縦棒の帯はブラウザだけ（WARN） |
+| `area` | `true` で線の下を上から下へ薄く塗る（系列で `area:false`・破線の系列は塗らない）。PPTXは線の後ろの面グラフ（グラデーション） |
+| `smooth` | `true` でなめらかな線（ブラウザは単調3次補間＝山や谷を越えて膨らまない。PPTXは PowerPoint の平滑線で、少し違う） |
+| `weekendBand` | `true` で土日を薄く塗る（折れ線・項目がすべて日付）。timeAxis なら範囲の中の土日すべて。PPTXは線の後ろの「土日」の棒（すき間なし・凡例に出さない）。timeAxis と両方のときは間の日付も項目に入れ、線はつなぐ |
+| `categories` / `series` | 項目名の配列 / `[{"name","values"}]` |
+| `unit` | 数値ラベルと目盛りに付ける単位（任意） |
+| `labels` / `legend` | `false` で数値ラベル / 凡例を消す（凡例は系列2つ以上か円のときだけ出る）。`labels` を書かなければ数値を**間引いて**出す＝数値1つずつの置き場所を見積もり、置いた数値と重ならないものだけ出す（置く順は系列ごとの最大・最小・最後→左から）。`"all"` で全部出す。折れ線が2本以上なら平均の低い系列の数値は線の下。ブラウザ（slidekit-chart.js labelPlan）とPPTX（html_to_pptx.chart_label_plan・出さない点は c:dLbl delete）で同じ点を選ぶ（tests/test_chart_wording.py） |
+| `colors` | 系列色（既定＝トークン `#21537f #9fc0dd #718096 #162a42 #d4dde7 #c62828`） |
+| `title` | 図の代替テキスト（グラフの上に見出しは出さない。見出しは `.tb` で書く） |
+
+- 目盛りの刻みはブラウザとPPTXで同じ計算（4刻み前後のきりのいい値）。文字の大きさは `data-font-size`（既定15px）
+- 中に描かれた SVG は保存HTMLに残る（JS 無しでも見える）。変換時は SVG を画像にせず、JSON から作り直す
+- 回帰の見本 = `tests/fixtures/chart_native.html`（5種類）
+- **見せ方の切り替え**（2026-10-14）: グラフにマウスを乗せると、上に「縦棒・横棒・積み上げ・折れ線・円・表」のボタンが出る
+  （`.seui`＝保存・同期・コピーでは外れる）。見ているとき・📺プレゼン中は**その場の見せ方だけ**変わり、ファイルとPPTXは変わらない
+  （「↺ 元の形」で戻る）。✏️編集中に押すと `type` を書き換える＝保存され、PPTXもその形（グラフか表）になる。⌘Zで戻る
+- **貼り付けで入れる**（2026-10-14）: DashboardKit のどの画面でも、グラフをクリックして ⌘C
+  （`excel-chart.html` でExcelから作ったグラフも、ダッシュボードのグラフも同じ。画面にボタンは出さない）→ 編集画面（✏️編集）で ⌘V（または「📋 貼付」）。
+  点が多いグラフは数値ラベルを重ならない分だけ間引き（上の `labels`）、項目名も間引く。日付は 4/1 の形で出す（項目名はPPTXでは PowerPoint が間引く）。グラフの依頼の枠（`data-ask="chart"`）を
+  選んでから貼ると、枠の位置と大きさで置き換わる（⌘Z 2回で枠に戻る）。選んでいなければ画面中央のページの本文域。
+  貼れるのは data-chart の div か JSON だけ。HTMLは DOMParser で読むだけで、要素はこちらで作り直す
+  （クリップボードの他の属性・スクリプトは持ち込まない。type・項目・系列・数値は型を確かめ、数でない値は空にする）
 
 ## 6. ツールバー・パネル
 
@@ -219,9 +343,10 @@ SlideKit/
 | 🖼画像 | 画像挿入 (ファイル選択 or ⌘V or ドロップ) |
 | ▦表 | 表挿入 |
 | ⧉複製 | 選択要素を複製 |
-| 📍参照 | 選択要素の outerHTML を Kiro貼付形式で出力 |
+| 📋貼付（同じ位置） | 「📋コピー」した図形を、いま見ているページの同じ座標に貼る (⌘V) |
+| 📍場所をKiroへ | 選択要素の outerHTML を Kiro貼付形式で出力 (旧「📍参照」) |
 | 🧩AI図解相談 | 対象ページから図解検討・書き換え用プロンプトを生成 |
-| 📋変更をコピー | 前回からの差分パッチをクリップボードへ |
+| 📤Kiroへ渡す | 前回からの差分パッチをクリップボードへ (旧「📋変更をコピー」) |
 | 💾保存 | 3モード自動判定 (PUT/FS Access API/DL) |
 
 ### 6.1.1 🧩 AI図解相談
@@ -251,6 +376,7 @@ SlideKit/
 
 | 行 | 表示条件 | 内容 |
 |---|---|---|
+| この図形を | 1つ以上選択時 | ⧉複製 (⌘D) / 📋コピー (⌘C) / 🗑削除 (Delete)。貼付はツールバーの📋貼付 (⌘V) |
 | 文字色 / 背景・塗り | 常時 | hex入力 + ピッカー + ⌀透明ボタン |
 | サイズ/太字 | .tb 選択時 | +/− ボタン、hex数値入力、B (太字) |
 | 文字ぞろえ | .tb/table 選択時 | 左 / 中央 / 右 (横並び) |
@@ -267,7 +393,7 @@ SlideKit/
 | 整列 | 2つ以上選択時 | 横方向 / 縦方向 / サイズ統一 / 等間隔 |
 | 共通化 | 1カード選択時 | 塗り/枠線/文字色/サイズを他ページに伝播 (無/同/全) |
 | リンク解除 | 子.tb選択時 | 親rectとの連動を解除 |
-| トリミング | 単一img選択時 | クロップモード |
+| トリミング | 画像(または画像1枚の枠)選択時 | クロップモード（ドラッグ=位置/ホイール=拡縮） |
 | 並び順 | 常時 | 最前面/前へ/後ろへ/最背面 |
 
 ### 6.4 📄 ページ操作パネル
@@ -300,9 +426,17 @@ SlideKit/
 
 - **選択**: クリック / Shift+クリックで複数 / ドラッグで矩形選択
 - **移動**: 選択要素をドラッグ / 矢印キー / 選択枠の十字アイコンをドラッグ
-- **リサイズ**: 選択枠の3ハンドル (角=両軸/右辺=横のみ/下辺=縦のみ)
-- **同倍率リサイズ**: 複数選択 → 角ハンドル
-- **アスペクト比固定リサイズ**: Shift+角ハンドル
+- **リサイズ**: 選択枠の8ハンドル (四隅=両軸/辺=片軸)。上・左から掴むと反対側の辺を固定して位置も追従
+- **同倍率リサイズ**: 複数選択 → 角ハンドル (どの角でも可・掴んだ角の対角を固定)
+- **アスペクト比固定リサイズ**: Shift+角ハンドル (ドラッグ開始時の縦横比を維持。画像が歪まない)
+- **回転**: 選択枠上中央の↻ハンドルをドラッグ (0/90/180/270°近傍に吸着・Shiftで15°刻み)。
+  ハンドル上・ドラッグ中はマウスカーソルも↻になる (SVGカーソル)。
+  ダブルクリックで0°に戻す。`data-rotate`(度・時計回り・中心基準)に保存され、
+  PPTX の shape.rotation にそのまま変換 (図形は内部テキストごと回転)。表(table)は回転不可
+- **画像トリミング**: 画像をダブルクリック（または🎯パネルの✂️ボタン）で開始。枠＝表示エリアは固定のまま、
+  枠内ドラッグで画像の表示位置を移動、マウスホイールで拡大縮小（×1〜×8・カーソル位置中心）。
+  Esc/枠外クリックで終了、✂️「解除」で元に戻す。表示は `object-view-box`（Chrome系ブラウザ）、
+  データは `data-crop-l/r/t/b` に保存され PPTX の crop_*（srcRect）へそのまま変換される
 
 ### 7.3 特殊選択機構
 
@@ -316,7 +450,15 @@ SlideKit/
 
 ```bash
 python3 SlideKit/html_to_pptx.py 対象.html [出力.pptx]
+python3 SlideKit/html_to_pptx.py 対象.html --measured               # 試作（2026-10-14）
+python3 SlideKit/html_to_pptx.py 対象.html --no-semantic            # タイトル枠・テーマ色をやめる（既定はON）
+python3 SlideKit/measure_layout.py 対象.html [--lines]              # 実測との食い違いだけ見る
 ```
+
+- 常時: `img` の `alt`（無ければ `title`・ラッパーの `aria-label`/`data-alt`）、SVG図の `aria-label`/`<title>` を図の代替テキストに入れる。無い図は件数を出す
+- 意味付け（**2026-10-14 既定ON**。利用者がPowerPoint実機で、見出しの位置・大きさが従来と同じ／アウトライン表示にタイトルが並ぶ／ネイティブグラフの「データの編集」で数値を変えると図が変わる、を確認。`--no-semantic` で外す・`--semantic` は旧指定として受ける）: 見出しの `.tb` をタイトルのプレースホルダーにする（本文=y20〜140で22px以上の最大字／暗色=28px以上の最大字。数字の強調は除く）。書式は明示して見た目を変えない。トークン10色をテーマの配色に登録し、同じ色を schemeClr で参照する（AWSテンプレ使用時は配色を触らない）。読み上げ順: スライド直下の文字の無い図形・線（代替テキストなし）に「装飾」の印（adec:decorative）を付け、読み上げで飛ばす。重なり順は変えない（並べ替えると見出しが背景の下に隠れるため）
+- `--measured`（試作）: Chrome で開いて測り、位置・大きさと文字ごとの太字・大きさ・色を見えている値にする（段落の組み方は従来どおり）。型に乗らない自由配置の div（従来は消えていた）を箱と文字のまま置く。Chrome が無ければ従来の変換に戻る
+- `measure_layout.py --lines`: PPTX を LibreOffice で描き、スライド直下の文字枠の行数をブラウザと比べる（PowerPoint の字詰めとは少し違う）
 
 ### 8.2 レイアウト再現
 
@@ -350,7 +492,39 @@ python3 SlideKit/html_to_pptx.py 対象.html [出力.pptx]
 - **Latin + EastAsian 両方指定**: `<a:latin>` に加えて `<a:ea>` にも同じ typeface を書く (日本語グリフのフォント揃え)
 - サポート例: Yu Gothic, Meiryo UI, メイリオ, Noto Sans JP, ヒラギノ角ゴ ProN, Yu Mincho
 
-### 8.7 SVG 画像化
+### 8.6.1 SVG をPowerPointの図形にする（2026-10-14）
+
+SVGのあるデッキは変換時に必ずブラウザで測り（`measure_layout.py` ＋ `svg_shapes.js`）、SVGを**PowerPointの図形（自由な形）のグループ**にする（`pptx_vector.py`）。
+
+- 線・曲線・四角（角丸）・円・楕円・多角形・弧 → 1つずつ custGeom（直線と3次ベジェ）。変形・viewBox・CSSは効いた後の値
+- 塗り（不透明度つき）・直線グラデーション・線の色/太さ/端の形/角の形/破線 → そのまま
+- SVGの中の文字 → 同じ位置・大きさ・太さ・色・角度の文字枠（グループの中に入る）
+- 1つのSVG＝1つのグループ（名前 `Illust S枚目`・代替テキスト＝aria-label か中の文字）。PowerPointでグループの中の図形を選べば、色を変える・消す・動かすができる
+- **PowerPointにあるものへ置き換えるもの**（2026-10-14 追加・利用者「できるものは対応してほしい」）
+  - 影・光彩・ぼかし輪郭（BezierKit の filter・`feDropShadow`・CSS の `drop-shadow()`）→ 図形の効果（`outerShdw`・`glow`・`softEdge`）
+  - 矢印の印（marker の始点・終点）→ 線の矢じり。形は BezierKit の5種（三角・鋭角・開いた矢・丸・菱形）、大きさは markerWidth（2.5以下＝小・4以下＝中・それより大）
+  - 中心の放射グラデ → 「パス（円）」のグラデ
+  - 図形を包む長方形の切り抜き → 外す（Illustrator・Figmaの書き出しに多い）。切り抜きの外の図形 → 出さない
+  - 長方形1つのマスク: 単色 → 不透明度、直線グラデ（図形と同じ大きさ）→ 透明度つきのグラデ（端に向かって消える）
+  - 塗りの規則 nonzero で穴の無い重なり → 輪郭ごとの図形に分ける（1つにすると重なりが白く抜けた）
+- **`<img>` で入ったSVG**（2026-10-14）: data URL・同じフォルダの .svg を、変換の中でインラインの `<svg>` に置き換えてから図形にする（元のHTMLは変えない）。それまでは「PPTX非対応の画像形式」で黙ってPPTXから消えていた。手動トリミング（data-crop-*）のある画像は画像のまま
+- **SVGの貼り付け・ドロップ**（編集画面・2026-10-14）: .svg ファイルのドロップ・貼り付け、SVGの文字（CadKit・BezierKitの「CadKit用コピー」など）の貼り付けは、img にせず座標つき div の中のインラインSVGとして入れる。PPTXで図形になり、「BezierKitで編集」でも開ける。script・foreignObject・on属性・外のURLは外してから入れる
+- **`<use>`（使い回し）**: 参照先を展開して普通の図形にする（symbol の viewBox・use の x/y/width/height/transform が効く。入れ子は5段まで）。測る一時ページの中だけで展開し、元のHTMLは変えない
+- **その要素だけ画像にするもの**（2026-10-14 追加）: SVGの中の `<image>`（写真など。切り抜き・変形も効いたまま）・図形そのもののぼかし・色の変換などの filter・長方形以外の切り抜きと途中で切れる切り抜き・複雑なマスク・模様・途中の印（marker-mid）・中心のずれた放射グラデ・線のグラデ。その要素（効果がグループに付いていればそのグループ）の周りだけを画像にし、同じグループの同じ順番に入れる。ほかの図形は図形のまま。理由は `INFO: … SVGの一部だけを画像にした（図形にできない: …）` で出る
+- **絵全体を画像にするもの**: `<foreignObject>`・参照先の無い `<use>`・ルートの svg に付いた効果・画像にする要素が全部か12個超・図形1500個超・一部の画像を作れなかったとき。理由は `INFO: … SVGを画像にした（図形にできない: …）` で出る
+- BezierKit の「スライドへ戻す」は、クリッピングマスクを切り抜いた形にして渡す（作業データはマスクのまま）
+- 強制的に画像にしたい時は、SVGを包む div に `data-svg="image"`
+- 見本＝`tests/fixtures/illust_vector.html`（29図形）。PowerPoint実機で開き、グループを解除すると29個の「フリーフォーム」になることを確認済み
+- 効果の見本＝`tests/fixtures/bezier_effects.html`（BezierKit の見本の絵を「スライドへ戻す」と同じ形で入れたもの。作り直しは `python3 BezierKit/cdp-check.py slidefx SlideKit/tests/fixtures/bezier_effects.html`）。回帰は `tests/test_editable_text.py` の `test_bezierkit_effects_stay_shapes`・`test_generic_svg_effects`・`test_only_unshapeable_parts_become_pictures`・`test_use_and_image`
+
+### 8.6.2 BezierKit で絵を直す（2026-10-14）
+
+- SlideKitで絵（SVGを包む要素）を選ぶ →「✏ BezierKitで編集」→ BezierKitが開く（`#editslide=`）
+- BezierKitの「スライドへ戻す」→ スライドの絵が差し替わる（⌘Zで戻せる・💾保存で確定）
+- 戻した絵には BezierKit の作業データ（`<metadata id="bezierkit">`）が入る＝次に開いてもレイヤーのまま編集できる。HTML本体が正本のまま
+- 作業データの無いSVG（Kiroが描いた絵など）は、普通のSVGとして図形に読み込む。SVGの中の文字は持ち込めない（開く前に確認が出る）。ラベルは `.tb` で重ねて書く
+
+### 8.7 SVG 画像化（図形にできないSVG）
 
 - SVG 単体ファイル書き出し: PPTX と同じフォルダに `対象.pptx_svg/` を作って個別SVGを保存 (PowerPointに手動ドラッグでベクター貼付可能)
 - ラッパー `.rect` の内側に SVG がある場合: rect の枠 + SVG (PNG化) の両方を描画
@@ -382,8 +556,9 @@ python3 SlideKit/serve.py [port]        # 既定 8130
 
 ### `check-layout.js` (ブラウザ)
 
-- HTML の `</body>` 直前に `<script src="./check-layout.js"></script>` で読み込み
-- 右上に「⚠️診断」ボタンが出る → クリックで検出結果一覧
+- デッキに書く必要はない。検査のときは `run_check.py`（`slidecheck.py` 経由）が自動で差し込む
+- ブラウザで診断したい時だけ、`</body>` 直前に `<script src="../SlideKit/check-layout.js"></script>`（HTMLからの相対パス）を書く
+- 書くと右上に「⚠️診断」ボタンが出る → クリックで検出結果一覧
 - 検出項目:
   - rect 同士の重なり (意図しない overlap)
   - .tb の中身あふれ (data-h 不足)
@@ -397,7 +572,7 @@ python3 SlideKit/serve.py [port]        # 既定 8130
 python3 SlideKit/run_check.py 対象.html
 ```
 
-同じ検出をCLIで実行。CI組み込みや事前チェック用。
+同じ検出をCLIで実行。CI組み込みや事前チェック用。デッキが check-layout.js を読んでいなくても、run_check.py が差し込んで診断する。
 
 ## 11. 制約・非対応
 
@@ -429,7 +604,9 @@ python3 SlideKit/run_check.py 対象.html
 ```
 
 AWS のようなオーバーレイ付きフォーマットは `overlay: "aws"` と `coverBg`/`coverRemap`/`copyright`/
-`bandGradient`/`pptxTemplate` を持たせる。描画は `slidekit-format.js` が defs を読んで行う。
+読み込み時に defs.formats へ自己登録される。描画は `slidekit-format.js` が行う。
+見出しの体裁を変えるフォーマット（`aws2`）は `header` を持ち、利用者がそのフォーマットへ**切り替えた時だけ**
+確認のうえ変換する（開いた時の自動適用では変換しない）。
 
 ### 図形追加 = defs.shapes に 1 エントリ + clip-path
 
@@ -447,7 +624,7 @@ AWS のようなオーバーレイ付きフォーマットは `overlay: "aws"` �
 Kiro (骨組み生成)
   ↓  HTML (data属性付きスライド)
 ブラウザで SlideKit ロード
-  ↓  ✏️編集で微調整 / 📋変更をコピー
+  ↓  ✏️編集で微調整 / 📤Kiroへ渡す
 Kiro に貼付 or 💾保存
   ↓
 確定 HTML → html_to_pptx.py
@@ -483,11 +660,28 @@ PPTXがネイティブで描けない曲線・ファネル・テーパー・グ�
 
 ### 14.3 図解プレースホルダー（D11・図が要るが型が決まらない時）
 
-図解が適所なのに D01〜D10 に当てはまらない／自信がない時は、文字で埋めず**図解プレースホルダーを置いて提案する**。書式は `diagram-catalog.html` の D11。必須要素:
+図解が適所なのに34型（P01〜P18・D01〜D16）のどれにも当てはまらない／自信がない時は、文字で埋めず**図解プレースホルダーを置いて提案する**。書式は `diagram-catalog.html` の D11。必須要素:
 
 1. 枠内に**「伝えたいこと」を1文**（これが図の設計仕様になる）
 2. 横に**作り方の選択肢**（□新規作図／□過去PPTXの図を移植＝候補ファイル名+ページ／□スクショを貼る／□表で十分）＋Kiroの推しに印
 3. 過去の図の在処の当たりを付ける: 過去案件の報告書・分科会資料のPPTXフォルダ（論理アーキ・課題構造・修正フロー・体制図などの実績図がある）
+
+### 14.5 依頼の枠（イラスト・グラフ・写真をどう用意するかを書いておく・2026-10-14）
+
+イラストやグラフがあると伝わりやすいと考えた場所に、**何を描いてもらうか／どんなグラフを作るか・探すか**を書いた枠を置く。
+`.ins .inszone` に `data-ask="illust|chart|photo"` を付ける。見本＝`tests/fixtures/ask_zone.html`。
+
+| data-ask | 枠に書くこと（1行ずつ・「見出し：中身」） |
+|---|---|
+| `illust` | 伝えたいこと／描くもの（誰が・どこで・何をしている）／構図（枠の比率と大きさ・主役の位置）／画風（線画・色はトークンの1〜2色）／入れないもの（文字・数字・ロゴ） |
+| `chart` | 伝えたいこと／作るなら（data-chart の種類・項目・値・元のデータ）／探すなら（何の調査か・検索語2つ）／出典の条件 |
+| `photo` | 伝えたいこと／写すもの／撮り方（向き・距離・比率）／探すなら（検索語・使ってよい出典）／写さないもの（顔・社名） |
+
+- 1行目の「伝えたいこと」は、画像を貼ったときに代替テキスト（`data-alt`）として残る
+- 編集画面で枠を選ぶと「📋 依頼文をコピー」が出る（枠の種類＋中の文＋枠の大きさ＋「画像に文字は入れない」）。画像生成やKiroに貼る
+- 画像を貼る（選んで⌘V・ダブルクリック・ドロップ）と、枠は画像に置き換わる。グラフは data-chart（5.7）に書き換える
+- 💾保存しても消えない（普通のスクショ枠は保存で消える）。PPTXでは破線の枠と編集できる依頼文のまま出る
+- 残っている枠は slide-guard [F7] と変換時に枚数つきで出る＝作りかけのまま渡さない
 
 ### 14.4 画像プレースホルダー（スクショ差し込み枠）
 
@@ -725,6 +919,7 @@ if img_path.lower().endswith('.webp'):
 ### C.11 表 (table): 列幅と行高
 
 **列幅の優先順**: `<colgroup><col style="width:200px">` → 最初の行の `<th>/<td> style="width:38%">` (colspan考慮)。
+**colgroupの部分指定を尊重する**: `<col>`（幅なし）が混在しても指定済みの列幅は使い、幅なし列だけ残り幅を等分（全滅させて等分に落とさない・2026-08-31ルール化）。
 
 ```python
 def _parse_len_px(style, attr_val, total_px, prop='width'):
@@ -806,6 +1001,7 @@ python-pptx の再保存は「PowerPoint が自動修復した後の理想的な
 | data-bg | `#fafafa` | 🟢 | 🟢 | 単色背景 |
 | data-bg-gradient | `135,#183251,#21537f` | 🟢 | 🟢 | 2色線形グラデ |
 | data-aws-logo | `off` | 🟢 | 🟢 | AWS フォーマット時にロゴを外す (中表紙用) |
+| data-notes | `話すこと` | 🟢（手元のみ） | 🟢 | 発表者ノート。PPTXのノート欄へ・投影には出ない |
 | data-aws-decoration | `on` | 🟢 | 🟢 | 旧仕様 (自動で data-template=aws に格上げ) |
 
 ### テキストボックス (.tb)
@@ -816,12 +1012,15 @@ python-pptx の再保存は「PowerPoint が自動修復した後の理想的な
 | data-font-size | `28` | 🟢 | 🟢 | px |
 | data-bold | `1` | 🟢 | 🟢 | 太字 |
 | data-color | `#1a365d` | 🟢 | 🟢 | 文字色 |
-| data-fill | `#f7fafc` / `none` | 🟢 | 🟢 | 塗り色 (none = 透明) |
+| data-fill | `#f7fafc` / `none` | 🟢 | 🔴 | **PPTXでは塗られない**。背景が要る文字は .rect の上に .tb を重ねる |
 | data-align | `left/center/right` | 🟢 | 🟢 | 水平揃え |
+| 中の `<b>` `<strong>` / `<div>` `<p>` | | 🟢 | 🟢 | 太字の run／1行ずつの段落になる（2026-09-27〜）。`<i>` `<u>` は未対応 |
+| 全角スペース・`&nbsp;` | | 🟢 | 🟢 | 潰さずに残る（2026-09-27〜） |
+| 中の `<a href>` | | 🟢 | 🔴 | リンクにならず文字だけ出る。ページ間リンクは data-link-sid |
 | data-bullet | `disc/decimal` | 🟢 | 🟢 | ぶら下げ字下げ (marL/indent)。マーカーは本文文字 |
 | data-bullet | `native-disc/native-decimal` | 🟢 | 🟢 | PowerPointネイティブ箇条書き (buChar/buAutoNum + lvl + lstStyle) |
 | data-lvl (`.li`) | `0`〜`4` | 🟢 | 🟢 | ネイティブ箇条書きの階層。`<a:pPr lvl>` になる |
-| data-valign | `top/middle/bottom` | 🔴 | 🔴 | **未対応** (テーブルセルのみ後述で対応) |
+| data-valign | `top/middle/bottom` | 🟢 | 🟢 | 単独の .tb はテキストフレームのアンカーに変換 |
 | data-role | `title` | 🟢 | 🔴 | 編集時のタイトル判定用のみ (PPTX には影響なし) |
 | data-linked-parent | (skid) | 🟢 | 🔴 | Alt+クリック分離した子tb の親リンク (エディタのみ) |
 
@@ -884,8 +1083,11 @@ python-pptx の再保存は「PowerPoint が自動修復した後の理想的な
 | `<img>` 親div | data-x/y/w/h | 🟢 | 🟢 | ラッパー div のサイズで PPTX 配置 |
 | `<img>` | src (相対パス) | 🟢 | 🟢 | HTMLファイルからの相対解決 |
 | `<img>` | style: object-fit:cover | 🟢 | 🟢 | crop_left/right/top/bottom に変換 |
-| `<img>` | style: object-position | 🟢 | 🟢 | left/right/top/bottom 指定を crop に反映 |
-| WebP 画像 | | 🟢 | 🟢 | Pillow で JPG 変換 |
+| `<img>` | style: object-position | 🟢 | 🟢 | キーワード2語（順不同）・0%/100% を crop に反映 |
+| `<img>` | style: width:100%;height:auto | 🟢 | 🟢 | 幅に合わせ、枠を超えた下を切る（引き伸ばさない） |
+| `.rect`/`.flow` 直下の `<img>` | | 🟢 | 🟢 | 枠と同じ位置に画像（2026-09-27〜）。それより深い img・表・入れ子の枠・孫の .tb は出ないので WARN |
+| 画像が見つからない／svg・heic・avif／http(s) | | 🟢 | ⚠️ | 欠落として記録し `.incomplete.pptx`＋exit 2（SVG・動画と同じ扱い） |
+| WebP 画像 | | 🟢 | 🟢 | 同名 .jpg があれば使用、無ければ Pillow で一時 PNG に変換 |
 | 親div | data-border | 🟢 | 🟢 | 画像の枠線 |
 | 親div | data-clip="circle" | 🟢 | 🔴 | **未対応** (エディタは border-radius:50% で丸表示、PPTXは矩形のまま) |
 | `<svg>` ラッパーdiv | data-x/y/w/h | 🟢 | 🟢 | Chrome headless で PNG ラスタライズ (Chrome 必須) |

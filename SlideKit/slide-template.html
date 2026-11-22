@@ -9,7 +9,9 @@ body{font-family:'Meiryo UI','Yu Gothic','游ゴシック','Noto Sans JP',sans-s
 .slide{width:1280px;height:720px;position:relative;overflow:hidden;margin:12px 0;box-shadow:0 4px 24px rgba(0,0,0,.2)}
 .tb{position:absolute;overflow:hidden;line-height:1.5}
 .rect{position:absolute;display:flex;flex-direction:column;justify-content:center;align-items:center}
-.rect>.tb{position:static;left:auto;top:auto;width:auto;height:auto;padding:3px;overflow:visible;text-align:center}
+.rect>.tb{position:static;left:auto;top:auto;width:auto;height:auto;padding:3px;overflow:visible}
+.rect>.tb:not([data-align]){text-align:center}
+.rect>.tb[data-align="left"],.rect>.tb[data-align="right"]{align-self:stretch}
 .flow{position:absolute;display:flex;flex-direction:column;justify-content:flex-start;border-radius:8px}
 .flow>.tb{position:static;left:auto;top:auto;width:auto;height:auto;padding:3px;overflow:visible}
 </style>
@@ -18,28 +20,29 @@ body{font-family:'Meiryo UI','Yu Gothic','游ゴシック','Noto Sans JP',sans-s
 
 <!-- SLIDE: 表紙 [P01] -->
 <div class="slide" data-bg-gradient="135,#183251,#21537f" style="background:linear-gradient(135deg,#183251,#21537f)">
-  <div class="tb" data-x="120" data-y="260" data-w="1040" data-h="70"
-       data-font-size="42" data-bold="1" data-color="#fafafa" data-align="center"
-       style="left:120px;top:260px;width:1040px;height:70px;font-size:42px;font-weight:700;color:#fafafa;text-align:center">タイトルをここに</div>
-  <div class="tb" data-x="120" data-y="356" data-w="1040" data-h="36"
-       data-font-size="22" data-color="#9fc0dd" data-align="center"
-       style="left:120px;top:356px;width:1040px;height:36px;font-size:22px;color:#9fc0dd;text-align:center">サブタイトル｜日付｜著者</div>
+  <div class="tb" data-x="120" data-y="244" data-w="1040" data-h="88"
+       data-font-size="54" data-bold="1" data-color="#fafafa" data-align="center"
+       style="left:120px;top:244px;width:1040px;height:88px;font-size:54px;font-weight:700;color:#fafafa;text-align:center">タイトルをここに</div>
+  <div class="tb" data-x="120" data-y="352" data-w="1040" data-h="44"
+       data-font-size="28" data-color="#9fc0dd" data-align="center"
+       style="left:120px;top:352px;width:1040px;height:44px;font-size:28px;color:#9fc0dd;text-align:center">サブタイトル｜日付｜著者</div>
 </div>
 <!-- /SLIDE -->
 
 <!-- SLIDE: コンテンツ [P04] -->
-<div class="slide" data-bg="#fafafa" style="background:#fafafa">
-  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="34" data-fill="#162a42"
-       style="left:64px;top:40px;width:200px;height:34px;background:#162a42;border-radius:18px">
-    <div class="tb" data-font-size="18" data-bold="1" data-color="#fafafa" data-align="center"
-         style="font-size:18px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">バッジ</div>
+<div class="slide" data-bg="#fafafa" style="background:#fafafa"
+     data-notes="（発表者ノートの例）このページで話すことをここに書く。投影には出ず、発表者ビューと📝ノートにだけ出る。PPTXのノート欄にも入る。">
+  <div class="rect" data-x="64" data-y="40" data-w="200" data-h="38" data-fill="#162a42"
+       style="left:64px;top:40px;width:200px;height:38px;background:#162a42;border-radius:19px">
+    <div class="tb" data-font-size="20" data-bold="1" data-color="#fafafa" data-align="center"
+         style="font-size:20px;font-weight:700;color:#fafafa;text-align:center;white-space:nowrap">バッジ</div>
   </div>
-  <div class="tb" data-x="64" data-y="81" data-w="1152" data-h="52"
-       data-font-size="34" data-bold="1" data-color="#21537f"
-       style="left:64px;top:81px;width:1152px;height:52px;font-size:34px;font-weight:700;color:#21537f">スライドの見出し</div>
-  <div class="tb" data-x="64" data-y="170" data-w="1152" data-h="40"
-       data-font-size="20" data-color="#121212"
-       style="left:64px;top:170px;width:1152px;height:40px;font-size:20px;color:#121212">本文をここに。編集は右上「✏️ 編集」をONにして要素をクリック。</div>
+  <div class="tb" data-x="64" data-y="86" data-w="1152" data-h="64"
+       data-font-size="40" data-bold="1" data-color="#21537f"
+       style="left:64px;top:86px;width:1152px;height:64px;font-size:40px;font-weight:700;color:#21537f">スライドの見出し</div>
+  <div class="tb" data-x="64" data-y="176" data-w="1152" data-h="46"
+       data-font-size="26" data-color="#121212"
+       style="left:64px;top:176px;width:1152px;height:46px;font-size:26px;color:#121212">本文をここに。編集は右上「✏️ 編集」をONにして要素をクリック。</div>
 </div>
 <!-- /SLIDE -->
 
@@ -47,6 +50,12 @@ body{font-family:'Meiryo UI','Yu Gothic','游ゴシック','Noto Sans JP',sans-s
 <script src="../SlideKit/slide-edit.js"></script>
 <!-- プレゼン再生（別ウィンドウで開く・Zoom画面共有向け） -->
 <script src="../SlideKit/slide-present.js"></script>
+<!-- 発表者ビュー（別ウィンドウに現在・次・ノート・時計を出す。本窓のページ送りに追従） -->
+<script src="../SlideKit/slide-presenter.js"></script>
+<!-- Live Notes（手元だけに出る。録音＋スライド紐づけ。文字起こしは後から手元のwhisperで）
+     使う時だけ有効化する。有効にしたら livenotes_transcribe.py で文字起こしする
+<script src="../SlideKit/slide-livenotes.js"></script>
+-->
 <!-- A4 縦 PDF エクスポートは必要な時だけ読み込む（普段は不要）
 <script src="../SlideKit/slide-a4export.js"></script>
 -->
