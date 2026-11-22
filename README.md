@@ -1,30 +1,45 @@
 # なになにKit
 
-ビルドやサーバーなしで、ブラウザから直接使える5つのローカルツールです。
+ブラウザとlocalhostで使える12のローカルツールです。
 入口は **`kits.html`**。まずこのファイルをダブルクリックしてください。
 
 | キット | 用途 |
 |---|---|
-| SlideKit | HTMLスライドの作成・編集・PPTX変換 |
-| CadKit | スケッチ拘束・押し出し・回転・STEP入出力に対応したブラウザ3D CAD |
-| BezierKit | 画像トレース・可変線幅に対応したベジェ描画 |
-| CaptureKit | スクリーンショットの保存・検索・画像編集 |
-| CalcKit | 式・複数シート・Excel相互コピペに対応した表計算 |
+| SlideKit | HTMLスライドの作成・編集・発表・PPTX変換（PPTXの取り込みも） |
+| DashboardKit | グラフ24種とダッシュボード（データファイルを差し替えて量産） |
+| ArchKit | AWS構成図（概算料金・Well-Architectedの自己点検・IaCからの起こし） |
+| GanttKit | 工程表（担当・祝日・計画の控えと遅れ・PPTX書き出し） |
+| CalcKit | 式・複数シート・Excel相互コピペ・xlsxの読み書きに対応した表計算 |
+| BezierKit | 画像トレース・可変線幅に対応したベジェ描画・資料用アイコン178個 |
+| CadKit | スケッチ拘束・押し出し・回転・STEP入出力・三面図に対応したブラウザ3D CAD |
+| CaptureKit | スクリーンショットの保存・検索（文字の読み取り）・画像編集 |
+| PictureKit | RAW現像・非破壊補正・JPEG書き出し |
+| DocKit | 手元のMarkdown文書の索引・検索・参照切れ・決定と宿題の台帳 |
+| ResearchKit | 調査の依頼・受け取り・主張の採否を案件ごとに記録 |
+| ClassroomKit | 授業の出席・くじ・班分け・座席表・投票・進行表 |
 
 ## 使い方
 
 各キットの詳しい入口と検証コマンドは `kits.html` にあります。
 PPTX・Excel変換の一部機能では `python-pptx` と `openpyxl` を使用します。
 
+DocKit と ResearchKit は、手元の文書や案件を `scan.js`（`node scan.js`）で読んで索引を作ります。
+索引（`catalog-data.js` など）と案件の中身は配布物に含みません。
+
 CaptureKit の常駐取り込みを使う場合は、`capturekit-app.applescript` と `*.plist` 内の
 `/PATH/TO/...` を自分の環境のパスへ変更してください。
+PictureKit は `python3 -m venv PictureKit/.venv` で環境を作り、requirementsを導入して
+`PictureKit/PictureKit.command` から起動します。RAWと書き出し画像は配布物に含みません。
 
 ## 外部通信
 
-CadKitはThree.js等をunpkg/jsDelivr、BezierKitは描画ライブラリとフォントを
-jsDelivr等のCDNから実行時に読み込みます。CDNを制限する環境では一部機能を利用できません。
+CadKitはThree.js等をunpkg/jsDelivrから実行時に読み込みます。
+BezierKitは描画ライブラリとフォントを `BezierKit/vendor/` に同梱しており、CDNなしで動きます。
+PictureKitは画像を外部送信せず、localhost内で処理します。
+CDNを制限する環境ではCadKitの一部機能を利用できません。
 
 ## ライセンス
 
-MIT（`LICENSE`）。CadKit同梱のOCCT WebAssemblyはLGPL-2.1です。
+MIT（`LICENSE`）。CadKitがCDNから読み込むOCCT WebAssemblyはLGPL-2.1です。
+BezierKitに同梱したフォントはSIL Open Font Licenseです（`BezierKit/vendor/fonts/`）。
 詳細は `THIRD-PARTY-NOTICES.md` を参照してください。
