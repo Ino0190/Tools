@@ -3,6 +3,11 @@
 (function(){
 'use strict';
 
+const PARAMS=new URLSearchParams(location.search);
+const READONLY=PARAMS.get('readonly')==='1';
+const REVIEW=PARAMS.get('review')==='1';
+const EMBED=PARAMS.get('embed')==='1';
+
 // ==== アドレス変換 ====
 function colName(i){ let s=''; i++; while(i>0){ i--; s=String.fromCharCode(65+i%26)+s; i=Math.floor(i/26);} return s; }
 function colIndex(name){ let n=0; for(const ch of name) n=n*26+(ch.charCodeAt(0)-64); return n-1; }
@@ -12,13 +17,16 @@ function parseAddr(a){ const m=/^(\$?)([A-Z]+)(\$?)([0-9]+)$/.exec(a); if(!m) re
   return {c:colIndex(m[2]), r:parseInt(m[4],10)-1, absC:m[1]==='$', absR:m[3]==='$'}; }
 
 // ==== ドキュメント（マルチシート） ====
-const STORAGE_KEY='calckit_v1';
+const STORE_NS=PARAMS.get('ns')||'';   // 埋め込みごとに保存領域を分ける（1ページに複数のreview埋め込みを置くため）
+const STORAGE_KEY=(REVIEW?'calckit_review_v12':'calckit_v1')+(STORE_NS?'_'+STORE_NS:'');
+let restoredDocument=false;
 let doc=null;           // {name, sheets:[{name,rows,cols,colW,rowH,cells:{addr:{v,fmt,..}}}], active}
 let vals={};            // 計算結果 "シートindex!addr" -> number|string|{e:'#..'}
 let cur={r:0,c:0};      // カーソル
 let selA=null;          // 選択アンカー {r,c}（nullなら単一セル）
 let undoStack=[], redoStack=[];
 let dirty=false;
+let lastImport=null;    // 直近の .xlsx 取り込みの要約 {sheets, formulas, valued}
 
 function newSheet(name,rows,cols){ return {name:name||'シート1',rows:rows||50,cols:cols||26,colW:{},rowH:{},cells:{}}; }
 function newDoc(name,rows,cols){ return {name:name||'新しいシート',sheets:[newSheet('シート1',rows,cols)],active:0}; }
@@ -34,6 +42,19 @@ function normalizeDoc(d){ // 旧形式（単一シート）→ sheets形式へ�
   return {name:d.name||'シート',active:0,
     sheets:[{name:'シート1',rows:d.rows||50,cols:d.cols||26,colW:d.colW||{},rowH:d.rowH||{},cells:d.cells||{}}]};
 }
+function loadDocument(raw){
+  if(!raw||typeof raw!=='object'||(!raw.sheets&&!raw.cells)) throw new Error('CalcKit文書ではありません');
+  const cloned=JSON.parse(JSON.stringify(raw));
+  doc=normalizeDoc(cloned);
+  if(!doc.sheets.length) throw new Error('シートがありません');
+  undoStack=[]; redoStack=[]; cur={r:0,c:0}; selA=null; dirty=false;
+  astCache.clear(); recalc(); buildGrid(); setName(doc.name);
+  if($('bsave')) $('bsave').classList.remove('dirty');
+  setSaveStatus(READONLY?'読み取り専用':'外部文書');
+  restoredDocument=true;
+  if(REVIEW)autosave();
+  return true;
+}
 function cell(a){ return sheet().cells[a]; }
 function rawOf(a){ const c=sheet().cells[a]; return c? (c.v??'') : ''; }
 function canonFormula(f){ // 引用符の外だけ大文字化（参照・関数名の正規化。文字列は保持）
@@ -41,7 +62,14 @@ function canonFormula(f){ // 引用符の外だけ大文字化（参照・関数
   for(const ch of f){ if(ch==='"'){ q=!q; out+=ch; } else out+=q?ch:ch.toUpperCase(); }
   return out;
 }
+function cellEditable(a){
+  if(READONLY)return false;
+  if(!REVIEW)return true;
+  const current=sheet().cells[a];
+  return !(current&&current.locked);
+}
 function setRaw(a,v){
+  if(!cellEditable(a)) return false;
   const cs=sheet().cells;
   if(v===''||v==null){ const c=cs[a]; if(c){ delete c.v; cleanCell(a); } return; }
   let s=String(v);
@@ -214,6 +242,133 @@ function serialToYMD(s){
   return dt.getUTCFullYear()+'-'+String(dt.getUTCMonth()+1).padStart(2,'0')+'-'+String(dt.getUTCDate()).padStart(2,'0');
 }
 
+// ==== 関数の追加（2026-11-14）: 論理・条件集計・INDEX/MATCH・日付・数値・文字 ====
+// FUNCS には「引数を全部値にして渡せばよい」関数、SPECIAL_FUNCS には範囲そのものや遅延評価が要る関数。
+function toDate(v){ // 日付引数: シリアル値の数か 'YYYY-MM-DD' の文字 → シリアル値
+  if(isErr(v)) return v;
+  if(typeof v==='number') return Math.floor(v);
+  if(v==null||v==='') return {e:'#VALUE!'};
+  const d=parseDateRaw(v); if(d!=null) return d;
+  const n=parseFloat(String(v)); return isNaN(n)? {e:'#VALUE!'} : Math.floor(n);
+}
+function ymdOf(serial){ const dt=new Date(Math.round(serial-25569)*86400000); return {y:dt.getUTCFullYear(),m:dt.getUTCMonth()+1,d:dt.getUTCDate(),w:dt.getUTCDay()}; }
+function monthEndSerial(y,m){ return dateToSerial(y,m+1,0); } // 翌月0日＝当月末（Date.UTC が繰り上げを吸収）
+function addMonths(serial,n){ const t=ymdOf(serial); const tot=t.y*12+(t.m-1)+n; const y=Math.floor(tot/12), m=tot%12+1;
+  const last=ymdOf(monthEndSerial(y,m)).d; return dateToSerial(y,m,Math.min(t.d,last)); }
+function strOf(v){ return isErr(v)? v : (v==null? '' : String(v)); }
+function numArg(a,i,def){ return toNum(a[i]==null||a[i]===''? (def??0) : a[i]); }
+function textFmt(n,fmt){ // TEXT(値, 書式) の最低限: 0 / 0.00 / #,##0 / #,##0.00 / 0% / 0.0% / yyyy-mm-dd / yyyy/m/d / m/d / yyyy年m月d日
+  const f=String(fmt);
+  if(/[ymd]/i.test(f)){ const t=ymdOf(n); const p2=x=>String(x).padStart(2,'0');
+    return f.replace(/yyyy/gi,t.y).replace(/mm/g,p2(t.m)).replace(/dd/g,p2(t.d)).replace(/m/g,t.m).replace(/d/g,t.d); }
+  const pct=/%$/.test(f); let x=pct? n*100 : n;
+  const dm=/\.(0+)/.exec(f); const dec=dm? dm[1].length : 0;
+  let out=Math.abs(x).toFixed(dec);
+  if(f.includes(',')) out=out.replace(/^(\d+)/,m=>m.replace(/\B(?=(\d{3})+(?!\d))/g,','));
+  return (x<0?'-':'')+out+(pct?'%':'');
+}
+Object.assign(FUNCS,{
+  // 論理
+  NOT:a=>{ const n=toNum(a[0]); return isErr(n)?n:(n===0?1:0); },
+  TRUE:()=>1, FALSE:()=>0,
+  ISBLANK:a=>(a[0]==null||a[0]==='')?1:0,
+  ISNUMBER:a=>(typeof a[0]==='number')?1:0,
+  ISTEXT:a=>(typeof a[0]==='string'&&a[0]!=='')?1:0,
+  ISERROR:a=>isErr(a[0])?1:0,
+  // 日付
+  YEAR:a=>{ const d=toDate(a[0]); return isErr(d)?d:ymdOf(d).y; },
+  MONTH:a=>{ const d=toDate(a[0]); return isErr(d)?d:ymdOf(d).m; },
+  DAY:a=>{ const d=toDate(a[0]); return isErr(d)?d:ymdOf(d).d; },
+  EOMONTH:a=>{ const d=toDate(a[0]),n=numArg(a,1,0); if(isErr(d))return d; if(isErr(n))return n;
+    const t=ymdOf(addMonths(d,Math.trunc(n))); return monthEndSerial(t.y,t.m); },
+  EDATE:a=>{ const d=toDate(a[0]),n=numArg(a,1,0); if(isErr(d))return d; if(isErr(n))return n; return addMonths(d,Math.trunc(n)); },
+  DAYS:a=>{ const e=toDate(a[0]),s=toDate(a[1]); if(isErr(e))return e; if(isErr(s))return s; return e-s; },
+  WEEKDAY:a=>{ const d=toDate(a[0]),t=numArg(a,1,1); if(isErr(d))return d; if(isErr(t))return t;
+    const w=ymdOf(d).w; return t===2? (w===0?7:w) : t===3? (w===0?6:w-1) : w+1; },
+  NETWORKDAYS:a=>{ const s=toDate(a[0]),e=toDate(a[1]); if(isErr(s))return s; if(isErr(e))return e;
+    const lo=Math.min(s,e),hi=Math.max(s,e); let n=0;
+    for(let d=lo; d<=hi; d++){ const w=ymdOf(d).w; if(w!==0&&w!==6) n++; }
+    return s<=e? n : -n; },
+  // 数値
+  MOD:a=>{ const x=toNum(a[0]),y=toNum(a[1]); if(isErr(x))return x; if(isErr(y))return y; if(y===0)return {e:'#DIV/0!'}; return x-y*Math.floor(x/y); },
+  POWER:a=>{ const x=toNum(a[0]),y=toNum(a[1]); if(isErr(x))return x; if(isErr(y))return y; return Math.pow(x,y); },
+  PRODUCT:a=>{ const n=numsOf(a); return isErr(n)?n:n.reduce((s,x)=>s*x,1); },
+  CEILING:a=>{ const x=toNum(a[0]),g=numArg(a,1,1); if(isErr(x))return x; if(isErr(g))return g; if(g===0)return 0; return Math.ceil(x/g-1e-12)*g; },
+  FLOOR:a=>{ const x=toNum(a[0]),g=numArg(a,1,1); if(isErr(x))return x; if(isErr(g))return g; if(g===0)return {e:'#DIV/0!'}; return Math.floor(x/g+1e-12)*g; },
+  // 文字
+  LEN:a=>{ const s=strOf(a[0]); return isErr(s)?s:[...s].length; },
+  LEFT:a=>{ const s=strOf(a[0]),n=numArg(a,1,1); if(isErr(s))return s; if(isErr(n))return n; return [...s].slice(0,Math.max(0,n)).join(''); },
+  RIGHT:a=>{ const s=strOf(a[0]),n=numArg(a,1,1); if(isErr(s))return s; if(isErr(n))return n; const c=[...s]; return n<=0? '' : c.slice(-n).join(''); },
+  MID:a=>{ const s=strOf(a[0]),st=toNum(a[1]),n=toNum(a[2]); if(isErr(s))return s; if(isErr(st))return st; if(isErr(n))return n;
+    if(st<1||n<0) return {e:'#VALUE!'}; return [...s].slice(st-1,st-1+n).join(''); },
+  UPPER:a=>{ const s=strOf(a[0]); return isErr(s)?s:s.toUpperCase(); },
+  LOWER:a=>{ const s=strOf(a[0]); return isErr(s)?s:s.toLowerCase(); },
+  TRIM:a=>{ const s=strOf(a[0]); return isErr(s)?s:s.replace(/\s+/g,' ').trim(); },
+  CONCATENATE:a=>{ let out=''; for(const v of a){ if(isErr(v))return v; out+=displayVal(v); } return out; },
+  CONCAT:a=>{ let out=''; for(const v of a){ if(isErr(v))return v; out+=displayVal(v); } return out; },
+  VALUE:a=>{ if(a[0]==null||a[0]==='') return 0; const d=parseDateRaw(a[0]); if(d!=null) return d; return toNum(a[0]); },
+  TEXT:a=>{ const v=a[0]; if(isErr(v))return v; if(a[1]==null||a[1]==='') return displayVal(v);
+    if(typeof v!=='number'){ const d=parseDateRaw(v); if(d==null) return displayVal(v); return textFmt(d,a[1]); }
+    return textFmt(v,a[1]); },
+});
+// 範囲をそのまま受ける・引数を遅延評価する関数
+function rangeArg(nd,si){ const v=evalNode(nd,si); if(!v||!v.rng) return {e:'#VALUE!'}; return v; }
+function rangeGrid(nd){ // 範囲ノード → 行数・列数・左上（INDEX 用）
+  if(!nd||nd.n!=='range') return null;
+  const A=parseAddr(nd.a),B=parseAddr(nd.b);
+  return {r1:Math.min(A.r,B.r),c1:Math.min(A.c,B.c),rows:Math.abs(A.r-B.r)+1,cols:Math.abs(A.c-B.c)+1};
+}
+function critsMatch(pairs,i){ // [{rng,si,crit}] の全部に i 番目が合うか
+  for(const p of pairs){ const v=cellValue(p.rng[i],p.si); if(isErr(v)) return v; if(!matchCrit(v,p.crit)) return false; }
+  return true;
+}
+function readCritPairs(nd,si,from){ // (範囲, 条件)* を読む
+  const pairs=[];
+  for(let k=from;k<nd.args.length;k+=2){
+    const rv=rangeArg(nd.args[k],si); if(isErr(rv)) return rv;
+    const crit=evalScalar(nd.args[k+1]??{n:'str',v:''},si); if(isErr(crit)) return crit;
+    pairs.push({rng:rv.rng,si:rv.si,crit});
+  }
+  return pairs;
+}
+const SPECIAL_FUNCS={
+  IFERROR:(nd,si)=>{ const v=evalScalar(nd.args[0]??{n:'num',v:0},si); return isErr(v)? evalScalar(nd.args[1]??{n:'str',v:''},si) : v; },
+  IFS:(nd,si)=>{ for(let k=0;k+1<nd.args.length;k+=2){ const c=toNum(evalScalar(nd.args[k],si)); if(isErr(c))return c; if(c!==0) return evalScalar(nd.args[k+1],si); } return {e:'#N/A'}; },
+  AND:(nd,si)=>{ let any=false; for(const a of nd.args){ for(const v of flatten(a,si)){ if(isErr(v))return v; if(v==null||v==='')continue; const n=toNum(v); if(isErr(n))continue; any=true; if(n===0) return 0; } } return any?1:{e:'#VALUE!'}; },
+  OR:(nd,si)=>{ let any=false; for(const a of nd.args){ for(const v of flatten(a,si)){ if(isErr(v))return v; if(v==null||v==='')continue; const n=toNum(v); if(isErr(n))continue; any=true; if(n!==0) return 1; } } return any?0:{e:'#VALUE!'}; },
+  SUMIFS:(nd,si)=>{ const sv=rangeArg(nd.args[0],si); if(isErr(sv))return sv; const pairs=readCritPairs(nd,si,1); if(isErr(pairs))return pairs;
+    let acc=0; for(let i=0;i<sv.rng.length;i++){ const m=critsMatch(pairs,i); if(isErr(m))return m; if(m){ const x=cellValue(sv.rng[i],sv.si); if(typeof x==='number') acc+=x; } } return acc; },
+  COUNTIFS:(nd,si)=>{ const pairs=readCritPairs(nd,si,0); if(isErr(pairs))return pairs; if(!pairs.length) return {e:'#VALUE!'};
+    let n=0; for(let i=0;i<pairs[0].rng.length;i++){ const m=critsMatch(pairs,i); if(isErr(m))return m; if(m) n++; } return n; },
+  AVERAGEIF:(nd,si)=>{ const rv=rangeArg(nd.args[0],si); if(isErr(rv))return rv; const crit=evalScalar(nd.args[1],si); if(isErr(crit))return crit;
+    let av=rv; if(nd.args[2]){ av=rangeArg(nd.args[2],si); if(isErr(av))return av; }
+    let acc=0,n=0; for(let i=0;i<rv.rng.length;i++){ const v=cellValue(rv.rng[i],rv.si); if(isErr(v))return v;
+      if(matchCrit(v,crit)){ const x=cellValue(av.rng[i]??rv.rng[i],av.si); if(typeof x==='number'){ acc+=x; n++; } } }
+    return n? acc/n : {e:'#DIV/0!'}; },
+  INDEX:(nd,si)=>{ const rg=nd.args[0]; const g=rangeGrid(rg); if(!g) return {e:'#VALUE!'}; const rsi=resolveSheet(rg,si); if(rsi<0) return {e:'#REF!'};
+    let r=toNum(evalScalar(nd.args[1]??{n:'num',v:1},si)); if(isErr(r))return r;
+    let c=nd.args[2]!=null? toNum(evalScalar(nd.args[2],si)) : null; if(isErr(c))return c;
+    if(c==null){ if(g.rows===1){ c=r; r=1; } else c=1; }        // 1行の範囲なら2番目の引数は列番号
+    if(r<1||r>g.rows||c<1||c>g.cols) return {e:'#REF!'};
+    return cellValue(addrOf(g.r1+r-1,g.c1+c-1),rsi); },
+  MATCH:(nd,si)=>{ const key=evalScalar(nd.args[0],si); if(isErr(key))return key; const rv=rangeArg(nd.args[1],si); if(isErr(rv))return rv;
+    const t=nd.args[2]!=null? toNum(evalScalar(nd.args[2],si)) : 1; if(isErr(t))return t;
+    const ks=(typeof key==='string')? key.toLowerCase() : key; let best=-1;
+    for(let i=0;i<rv.rng.length;i++){ const v=cellValue(rv.rng[i],rv.si); if(isErr(v)||v==null||v==='') continue;
+      const vs=(typeof v==='string')? v.toLowerCase() : v;
+      if(typeof vs!==typeof ks) continue;
+      if(vs===ks) return i+1;
+      if(t>0&&vs<ks) best=i; else if(t<0&&vs>ks) best=i; }
+    return (t!==0&&best>=0)? best+1 : {e:'#N/A'}; },
+  SUMPRODUCT:(nd,si)=>{ const rs=[]; for(const a of nd.args){ const v=rangeArg(a,si); if(isErr(v))return v; rs.push(v); }
+    if(!rs.length) return 0; const n=rs[0].rng.length; if(rs.some(r=>r.rng.length!==n)) return {e:'#VALUE!'};
+    let acc=0; for(let i=0;i<n;i++){ let p=1; for(const r of rs){ const x=cellValue(r.rng[i],r.si); if(isErr(x))return x; p*=(typeof x==='number')? x : 0; } acc+=p; } return acc; },
+  RANK:(nd,si)=>{ const v=toNum(evalScalar(nd.args[0],si)); if(isErr(v))return v; const rv=rangeArg(nd.args[1],si); if(isErr(rv))return rv;
+    const asc=nd.args[2]!=null? toNum(evalScalar(nd.args[2],si))!==0 : false;
+    let n=0,found=false; for(const a of rv.rng){ const x=cellValue(a,rv.si); if(typeof x!=='number') continue; if(x===v) found=true; if(asc? x<v : x>v) n++; }
+    return found? n+1 : {e:'#N/A'}; },
+};
+
 let busy=null; // 循環参照検出
 function cellValue(a,si){
   const ad=a.replace(/\$/g,'');
@@ -344,6 +499,8 @@ function evalCall(nd,si){
     }
     return f==='SUMIF'? acc : cnt;
   }
+  const sp=SPECIAL_FUNCS[f];           // 範囲や遅延評価が要る関数（2026-11-14 追加分）
+  if(sp) return sp(nd,si);
   const fn=FUNCS[f];
   if(!fn) return {e:'#NAME?'};
   const args=[];
@@ -395,6 +552,8 @@ const DEFAULT_W=104;
 function colWidth(c){ return sheet().colW[c]||DEFAULT_W; }
 function buildGrid(){
   const t=$('grid-t');
+  const tableWidth=48+Array.from({length:sheet().cols},(_,c)=>colWidth(c)).reduce((a,b)=>a+b,0);
+  t.style.width=tableWidth+'px'; t.style.minWidth=tableWidth+'px';
   let h='<tr><th class="corner"></th>';
   for(let c=0;c<sheet().cols;c++)
     h+=`<th class="ch" data-c="${c}" style="width:${colWidth(c)}px;min-width:${colWidth(c)}px">${colName(c)}<span class="colgrip" data-c="${c}"></span></th>`;
@@ -407,21 +566,126 @@ function buildGrid(){
     b+='</tr>';
   }
   t.tBodies[0].innerHTML=b;
-  refreshCells(); paintSel(); renderTabs();
+  refreshCells();
+  if(sheet().filter) applyFilterView(); else { fltHidden=0; markFilterCols(); }
+  paintSel(); renderTabs();
 }
 function refreshCells(){
+  prepBars();                                  // 条件付き書式データバーの範囲内 最小/最大を先に求める
+  numCells.length=0;                           // この描画で見つけた数のセル（C2: 幅に入らない数の ### 表示に使う）
   for(let r=0;r<sheet().rows;r++) for(let c=0;c<sheet().cols;c++){
     const a=addrOf(r,c), td=$('c-'+r+'-'+c); if(!td) continue;
-    const v=V(a);
-    td.textContent=displayOf(a);
+    const v=V(a), shown=displayOf(a);
+    const fhd=isFilterHeader(r,c);
+    if(fhd) paintFilterHead(td,c,shown); else { td.textContent=shown; td.title=''; }  // 文字セル・空セルはホバーなし（### の名残を消す）
     const cl=sheet().cells[a];
     const al=cl&&cl.align? {l:'al',c:'ac',r:'ar'}[cl.align]||'' : '';
     const vl=cl&&cl.valign? {t:'vt',m:'vm',b:'vb'}[cl.valign]||'' : '';
-    td.className=(typeof v==='number'?'num ':'')+(isErr(v)?'err ':'')+(cl&&cl.bold?'bold ':'')
-      +(al?al+' ':'')+(vl?vl+' ':'')+(cl&&cl.wrap?'wrap ':'');
+    const spill=!fhd&&shown!==''&&typeof v!=='number'&&!isErr(v)&&!(cl&&cl.wrap)&&(!cl||!cl.align||cl.align==='l');
+    const stop=shown!=='';
+    td.className=(fhd?'fhd ':'')+(typeof v==='number'?'num ':'')+(isErr(v)?'err ':'')+(cl&&cl.bold?'bold ':'')
+      +(al?al+' ':'')+(vl?vl+' ':'')+(cl&&cl.wrap?'wrap ':'')+(cl&&cl.fill?'fill-'+cl.fill+' ':'')+(cl&&cl.borderTop?'bt-'+cl.borderTop+' ':'')
+      +(spill?'spill ':'')+(stop?'spill-stop ':'');
+    // 数のセルだけ控える。文字セルは今までどおりスピル・折り返しのまま（### にはしない）。
+    if(!fhd&&typeof v==='number'&&!isErr(v)) numCells.push({td,c,full:shown});
+    applyCellStyle(td,a,r,c,v,cl,fhd);         // 静的なセル色（xlsx取り込み/Kiro生成）＋条件付き書式
   }
+  applyNumClip();                              // C2: 列幅に入らない数は ### にして全体値を title へ（2026-11-15）
   paintSel();
 }
+// ==== C2: 幅に入らない数は「###」（2026-11-15）====
+// 🚫 以前は #grid-t td{overflow:hidden} で、入らない数（¥1,000,000,000 など）が
+//    知らせなしに途中で切れて ¥1,000,000 のように見えていた。Excel と同じく入らない数は
+//    「###」を見せ、全体の値は title（ホバー）と数式バーで読めるようにする。
+//    文字セルは対象外（今までどおりスピル・折り返し）。列幅変更・再計算のたびに付け外しする。
+let numCells=[];   // refreshCells が毎回詰め直す {td,c,full}。snapshot には残さない。
+function applyNumClip(onlyCol){
+  const list = (onlyCol==null)? numCells : numCells.filter(n=>n.c===onlyCol);
+  // ①まず全体値に戻す（戻してから測らないと、### の幅で測って誤判定する）
+  for(const n of list){ n.td.textContent=n.full; n.td.title=''; n.td.classList.remove('ovf'); }
+  // ②入りきらないセルを拾う（書き戻し後に一度だけ測る。右寄せでも scrollWidth は中身の幅）
+  const over=[];
+  for(const n of list){ if(n.td.scrollWidth > n.td.clientWidth+1) over.push(n); }
+  // ③### を見せ、全体値はホバー（title）で読めるようにする。数式バーは rawOf 由来で元から全体値
+  for(const n of over){ n.td.textContent='###'; n.td.title=n.full; n.td.classList.add('ovf'); }
+}
+// ==== 条件付き書式＋静的なセル色（塗り/文字色/太字/データバー）====
+// 規則は sheet().condfmt に保存（.calc.json へ入るので Kiro 生成の表にも仕込める）。
+// 規則の形: {kind:'cell', range:{r1,c1,r2,c2}, op:'>='|'<='|'between'|'contains'|'empty',
+//            v1, v2, text, bg:'#rrggbb', color:'#rrggbb', bold:1}
+//          {kind:'databar', range:{...}, barColor:'#rrggbb'}
+const barBounds=new Map();   // databar規則→{lo,hi}（毎refreshで作り直す・snapshotには残さない）
+function prepBars(){
+  barBounds.clear();
+  const rules=sheet().condfmt; if(!rules) return;
+  for(const rule of rules){
+    if(!rule||rule.kind!=='databar'||!rule.range) continue;
+    const rg=rule.range; let mn=Infinity,mx=-Infinity;
+    for(let r=rg.r1;r<=rg.r2;r++) for(let c=rg.c1;c<=rg.c2;c++){
+      const x=V(addrOf(r,c)); if(typeof x==='number'){ if(x<mn)mn=x; if(x>mx)mx=x; }
+    }
+    if(mx!==-Infinity) barBounds.set(rule,{lo:Math.min(0,mn),hi:Math.max(0,mx)});
+  }
+}
+function inCfRange(rg,r,c){ return rg&&r>=rg.r1&&r<=rg.r2&&c>=rg.c1&&c<=rg.c2; }
+function cfMatch(rule,v,a){
+  const op=rule.op;
+  if(op==='empty') return v==null||v==='';
+  if(op==='contains'){ const t=String(rule.text==null?'':rule.text); if(t==='')return false;
+    return String(v==null?'':displayOf(a)).indexOf(t)>=0; }
+  const n=(typeof v==='number')?v:parseFloat(v);
+  if(!isFinite(n)) return false;
+  if(op==='>=') return n>=(+rule.v1);
+  if(op==='<=') return n<=(+rule.v1);
+  if(op==='between'){ const a1=+rule.v1,a2=+rule.v2; return n>=Math.min(a1,a2)&&n<=Math.max(a1,a2); }
+  return false;
+}
+function dataBarPct(rule,v){
+  if(typeof v!=='number') return null;
+  const b=barBounds.get(rule); if(!b) return null;
+  if(b.hi===b.lo) return v>0?100:0;
+  return Math.max(0,Math.min(100,(v-b.lo)/(b.hi-b.lo)*100));
+}
+function cfStyleAt(a,r,c,v){     // 当該セルに効く最終スタイル（なければnull）
+  const cl=sheet().cells[a];
+  let bg=(cl&&cl.bg)||'', color=(cl&&cl.color)||'', bold=false, bar=null, barColor='';
+  const rules=sheet().condfmt;
+  if(rules) for(const rule of rules){
+    if(!rule||!inCfRange(rule.range,r,c)) continue;
+    if(rule.kind==='databar'){ const w=dataBarPct(rule,v); if(w!=null){ bar=w; barColor=rule.barColor||'#9cc3ea'; } }
+    else if(cfMatch(rule,v,a)){ if(rule.bg)bg=rule.bg; if(rule.color)color=rule.color; if(rule.bold)bold=true; }
+  }
+  if(!bg&&!color&&!bold&&bar==null) return null;
+  return {bg,color,bold,bar:(bar==null?null:Math.round(bar)),barColor};
+}
+function applyCellStyle(td,a,r,c,v,cl,fhd){
+  const st=fhd? null : cfStyleAt(a,r,c,v);     // 見出し行（フィルタ）は触らない
+  if(!st){ td.style.background=''; td.style.color=''; td.style.fontWeight=''; return; }
+  if(st.bar!=null){ td.style.background='linear-gradient(90deg,'+st.barColor+' '+st.bar+'%,transparent '+st.bar+'%)'; }
+  else td.style.background=st.bg||'';
+  td.style.color=st.color||'';
+  td.style.fontWeight=st.bold?'700':'';
+}
+function normRange(rg){ return {r1:Math.min(rg.r1,rg.r2),c1:Math.min(rg.c1,rg.c2),
+  r2:Math.max(rg.r1,rg.r2),c2:Math.max(rg.c1,rg.c2)}; }
+function addCondRule(rule){
+  if(READONLY)return false;
+  if(!rule) return false;
+  pushUndo();
+  const rg=normRange(rule.range||selRange());
+  const r={kind:rule.kind||'cell',range:rg};
+  if(r.kind==='databar'){ r.barColor=rule.barColor||'#9cc3ea'; }
+  else{ r.op=rule.op||'>='; if(rule.v1!=null)r.v1=+rule.v1; if(rule.v2!=null)r.v2=+rule.v2;
+    if(rule.text!=null)r.text=String(rule.text);
+    if(rule.bg)r.bg=rule.bg; if(rule.color)r.color=rule.color; if(rule.bold)r.bold=1; }
+  (sheet().condfmt||(sheet().condfmt=[])).push(r);
+  recalc(); refreshCells(); markDirty();
+  return r;
+}
+function removeCondRule(i){ if(READONLY)return false; const rs=sheet().condfmt; if(!rs||!rs[i])return false;
+  pushUndo(); rs.splice(i,1); if(!rs.length)delete sheet().condfmt; recalc(); refreshCells(); markDirty(); return true; }
+function clearCondRules(){ if(READONLY)return false; if(!sheet().condfmt)return false;
+  pushUndo(); delete sheet().condfmt; recalc(); refreshCells(); markDirty(); return true; }
 // ==== 選択 ====
 function selRange(){
   const a=selA||cur;
@@ -449,7 +713,11 @@ function positionDdBtn(){ // 単一セル選択かつ選択肢つきセルなら
   const single=(s.r1===s.r2&&s.c1===s.c2);
   const td=$('c-'+cur.r+'-'+cur.c);
   if(!single||!cl||!cl.opts||!td){ b.style.display='none'; return; }
-  b.style.left=(td.offsetLeft+td.offsetWidth)+'px';
+  b.hidden=false;
+  b.textContent='▼';
+  b.style.left=(td.offsetLeft+td.offsetWidth-28)+'px';
+  b.style.width='28px';
+  b.style.zIndex='20';
   b.style.top=td.offsetTop+'px';
   b.style.height=td.offsetHeight+'px';
   b.style.display='block';
@@ -457,6 +725,7 @@ function positionDdBtn(){ // 単一セル選択かつ選択肢つきセルなら
 function positionBox(box,s){ // 範囲の外周にオーバーレイ枠を置く
   const a=$('c-'+s.r1+'-'+s.c1), b=$('c-'+s.r2+'-'+s.c2);
   if(!a||!b){ box.style.display='none'; return; }
+  if(a.offsetParent===null||b.offsetParent===null){ box.style.display='none'; return; } // 絞り込みで隠れている行
   box.style.left=a.offsetLeft+'px'; box.style.top=a.offsetTop+'px';
   box.style.width=(b.offsetLeft+b.offsetWidth-a.offsetLeft)+'px';
   box.style.height=(b.offsetTop+b.offsetHeight-a.offsetTop)+'px';
@@ -478,25 +747,30 @@ function updateStatus(){
   $('st-sum').textContent=nums.length? fmtNum(nums.reduce((a,b)=>a+b,0),'num') : '-';
   $('st-avg').textContent=nums.length? fmtNum(nums.reduce((a,b)=>a+b,0)/nums.length,'num') : '-';
   $('st-cnt').textContent=nums.length||'-';
+  const fe=$('st-flt');
+  if(fe){
+    const f=sheet().filter;
+    fe.textContent=(f&&fltHidden)? '絞り込み '+fltHidden+'行を非表示' : '';
+  }
 }
 
 // ==== 変更・Undo ====
 function snapshot(){ return JSON.stringify({name:doc.name,sheets:doc.sheets,active:doc.active}); }
-function pushUndo(){ undoStack.push(snapshot()); if(undoStack.length>80)undoStack.shift(); redoStack=[]; }
-function restore(s){ doc=JSON.parse(s); astCache.clear(); recalc(); buildGrid(); markDirty(); }
-function undo(){ if(!undoStack.length)return; redoStack.push(snapshot()); restore(undoStack.pop()); }
-function redo(){ if(!redoStack.length)return; undoStack.push(snapshot()); restore(redoStack.pop()); }
-function markDirty(){ dirty=true; $('bsave').classList.add('dirty');
+function pushUndo(){ if(READONLY)return false; undoStack.push(snapshot()); if(undoStack.length>80)undoStack.shift(); redoStack=[]; }
+function restore(s){ if(READONLY)return false; doc=JSON.parse(s); astCache.clear(); recalc(); buildGrid(); markDirty(); }
+function undo(){ if(READONLY||!undoStack.length)return false; redoStack.push(snapshot()); restore(undoStack.pop()); }
+function redo(){ if(READONLY||!redoStack.length)return false; undoStack.push(snapshot()); restore(redoStack.pop()); }
+function markDirty(){ if(READONLY)return false; dirty=true; $('bsave').classList.add('dirty');
   clearTimeout(markDirty._t); markDirty._t=setTimeout(autosave,600); }
-function autosave(){ try{ localStorage.setItem(STORAGE_KEY,snapshot()); }catch(e){} }
-function commit(){ recalc(); refreshCells(); markDirty(); }
+function autosave(){ if(READONLY)return false; try{ localStorage.setItem(STORAGE_KEY,snapshot()); }catch(e){} }
+function commit(){ if(READONLY)return false; recalc(); refreshCells(); markDirty(); }
 function ensureSize(r,c){ // 範囲外アクセス時にグリッドを自動拡張
   let grew=false;
   if(r>=sheet().rows){ sheet().rows=r+1; grew=true; }
   if(c>=sheet().cols){ sheet().cols=c+1; grew=true; }
   return grew;
 }
-function setCellAndRecalc(a,v){ pushUndo();
+function setCellAndRecalc(a,v){ if(!cellEditable(a))return false; pushUndo();
   const p=parseAddr(a); const grew=p? ensureSize(p.r,p.c) : false;
   setRaw(a,v);
   if(grew){ recalc(); buildGrid(); markDirty(); } else commit(); }
@@ -505,6 +779,7 @@ function setCellAndRecalc(a,v){ pushUndo();
 const ed=()=>$('cell-ed');
 let editing=false;
 function startEdit(initial){
+  if(!cellEditable(addrOf(cur.r,cur.c)))return false;
   const td=$('c-'+cur.r+'-'+cur.c); if(!td) return;
   const gw=$('grid-inner').getBoundingClientRect(), tr=td.getBoundingClientRect();
   const e=ed();
@@ -524,8 +799,9 @@ function endEdit(save,move){
 }
 
 function moveCur(dr,dc,extend){
-  const nr=Math.max(0,Math.min(sheet().rows-1,cur.r+dr));
+  let nr=Math.max(0,Math.min(sheet().rows-1,cur.r+dr));
   const nc=Math.max(0,Math.min(sheet().cols-1,cur.c+dc));
+  if(dr!==0&&sheet().filter) nr=nextVisibleRow(nr,dr>0?1:-1,cur.r); // 隠れている行は飛ばす
   if(extend){ if(!selA) selA={...cur}; } else selA=null;
   cur={r:nr,c:nc}; paintSel(); scrollToCur();
 }
@@ -579,6 +855,7 @@ function shiftRelative(f,dr,dc){ // コピペ時の相対参照シフト
   })));
 }
 function pasteAt(text){
+  if(READONLY||REVIEW)return false;
   pushUndo();
   const useInternal=clipInternal&&clipInternal.sig===text.replace(/\r/g,'').replace(/\n$/,'');
   const rows=useInternal? clipInternal.rows
@@ -633,17 +910,18 @@ function remapCells(axis,pos,delta){
       nw[c]=sheet().colW[k]; }
     sheet().colW=nw; }
 }
-function insertRow(pos){ pushUndo(); remapCells('r',pos,1); sheet().rows++; astCache.clear(); recalc(); buildGrid(); markDirty(); }
-function deleteRow(pos){ if(sheet().rows<=1)return; pushUndo(); remapCells('r',pos,-1); sheet().rows--; astCache.clear();
+function insertRow(pos){ if(READONLY)return false; pushUndo(); remapCells('r',pos,1); sheet().rows++; astCache.clear(); recalc(); buildGrid(); markDirty(); }
+function deleteRow(pos){ if(READONLY||sheet().rows<=1)return false; pushUndo(); remapCells('r',pos,-1); sheet().rows--; astCache.clear();
   if(cur.r>=sheet().rows)cur.r=sheet().rows-1; recalc(); buildGrid(); markDirty(); }
-function insertCol(pos){ pushUndo(); remapCells('c',pos,1); sheet().cols++; astCache.clear(); recalc(); buildGrid(); markDirty(); }
-function deleteCol(pos){ if(sheet().cols<=1)return; pushUndo(); remapCells('c',pos,-1); sheet().cols--; astCache.clear();
+function insertCol(pos){ if(READONLY)return false; pushUndo(); remapCells('c',pos,1); sheet().cols++; astCache.clear(); recalc(); buildGrid(); markDirty(); }
+function deleteCol(pos){ if(READONLY||sheet().cols<=1)return false; pushUndo(); remapCells('c',pos,-1); sheet().cols--; astCache.clear();
   if(cur.c>=sheet().cols)cur.c=sheet().cols-1; recalc(); buildGrid(); markDirty(); }
 
 // ==== 書式 ====
 function cleanCell(a){ const cl=sheet().cells[a];
   if(cl&&cl.v==null&&!cl.fmt&&!cl.bold&&!cl.align&&!cl.valign&&!cl.opts&&!cl.wrap) delete sheet().cells[a]; }
 function applyFmt(fmt){
+  if(READONLY||REVIEW)return false;
   pushUndo(); const s=selRange();
   for(let r=s.r1;r<=s.r2;r++) for(let c=s.c1;c<=s.c2;c++){
     const a=addrOf(r,c);
@@ -654,6 +932,7 @@ function applyFmt(fmt){
   commit();
 }
 function applyAlign(prop,val){ // prop:'align'(l/c/r)|'valign'(t/m/b)。同じ値をもう一度で解除
+  if(READONLY||REVIEW)return false;
   pushUndo(); const s=selRange();
   const a0=sheet().cells[addrOf(s.r1,s.c1)];
   const off=a0&&a0[prop]===val;
@@ -665,6 +944,7 @@ function applyAlign(prop,val){ // prop:'align'(l/c/r)|'valign'(t/m/b)。同じ�
   commit();
 }
 function toggleWrap(){ // 折り返して全体を表示（行の高さは中身に合わせて伸びる）
+  if(READONLY||REVIEW)return false;
   pushUndo(); const s=selRange();
   const a0=sheet().cells[addrOf(s.r1,s.c1)]; const on=!(a0&&a0.wrap);
   for(let r=s.r1;r<=s.r2;r++) for(let c=s.c1;c<=s.c2;c++){
@@ -675,6 +955,7 @@ function toggleWrap(){ // 折り返して全体を表示（行の高さは中身
   commit();
 }
 function setOpts(list){ // 選択範囲にプルダウン選択肢を設定（nullで解除）
+  if(READONLY||REVIEW)return false;
   pushUndo(); const s=selRange();
   for(let r=s.r1;r<=s.r2;r++) for(let c=s.c1;c<=s.c2;c++){
     const a=addrOf(r,c);
@@ -698,6 +979,7 @@ function showOptsModal(){
   };
 }
 function toggleBold(){
+  if(READONLY||REVIEW)return false;
   pushUndo(); const s=selRange();
   const a0=addrOf(s.r1,s.c1); const on=!(sheet().cells[a0]&&sheet().cells[a0].bold);
   for(let r=s.r1;r<=s.r2;r++) for(let c=s.c1;c<=s.c2;c++){
@@ -722,6 +1004,7 @@ function savedTo(name,downloaded){
   setSaveStatus((downloaded?'DL: ':'保存先: ')+name);
 }
 async function saveDocument(saveAs){
+  if(READONLY)return false;
   autosave();
   const name=(doc.name||'sheet').replace(/[\\/:*?"<>|]/g,'_')+'.calc.json';
   const content=snapshot();
@@ -755,18 +1038,24 @@ function loadOpenedText(name,text,handle){
   }
 }
 async function openDocument(){
+  if(READONLY)return false;
   if(typeof window.showOpenFilePicker==='function'){
     try{
       const handles=await window.showOpenFilePicker({
         id:'calckit-document',multiple:false,
-        types:[{description:'CalcKit / CSV',accept:{'application/json':['.calc.json','.json'],'text/plain':['.csv','.tsv','.txt']}}]
+        types:[{description:'CalcKit / Excel / CSV',accept:{'application/json':['.calc.json','.json'],
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm'],
+          'text/plain':['.csv','.tsv','.txt']}}]
       });
       const handle=handles[0],file=await handle.getFile();
+      if(/\.(xlsx|xlsm|xlsb)$/i.test(file.name)){ importXlsxArrayBuffer(file.name,await file.arrayBuffer()); return; }
       loadOpenedText(file.name,await file.text(),handle); return;
     }catch(e){ if(e&&e.name==='AbortError')return; alert('ファイルを開けません: '+(e.message||e)); return; }
   }
-  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,.csv,.tsv,.txt';
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,.csv,.tsv,.txt,.xlsx,.xlsm';
   inp.onchange=()=>{ const file=inp.files[0]; if(!file)return;
+    if(/\.(xlsx|xlsm|xlsb)$/i.test(file.name)){
+      const rd=new FileReader(); rd.onload=()=>importXlsxArrayBuffer(file.name,rd.result); rd.readAsArrayBuffer(file); return; }
     const rd=new FileReader(); rd.onload=()=>loadOpenedText(file.name,String(rd.result),null); rd.readAsText(file); };
   inp.click();
 }
@@ -818,16 +1107,98 @@ function buildCSV(){
     lines.push(row.join(',')); }
   return lines.join('\n');
 }
-function exportXls(){ // HTMLテーブル方式（Excelが開ける）
-  const u=usedRange(); let rows='';
-  for(let r=u.r1;r<=u.r2;r++){ rows+='<tr>';
-    for(let c=u.c1;c<=u.c2;c++){ const a=addrOf(r,c); const v=V(a);
-      const cl=sheet().cells[a];
-      const st=(cl&&cl.bold?'font-weight:bold;':'')+(typeof v==='number'?'mso-number-format:\\#\\,\\#\\#0;':'');
-      rows+=`<td style="${st}">${escHtml(displayOf(a))}</td>`; }
-    rows+='</tr>'; }
-  const html=`<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body><table>${rows}</table></body></html>`;
-  download(doc.name+'.xls',html,'application/vnd.ms-excel');
+// ==== Excel 書き出し：全シートを色・罫線つきで（SpreadsheetML 2003・外部ライブラリなし）====
+//   各タブを正式な <Worksheet> として定義するため、タブを押すと中身が出る（HTMLテーブル方式は
+//   Excelが表を1枚目に積んでタブが空になるため不採用）。塗り(section/header)・階層罫線(major/middle)・
+//   太字・揃え・折り返し・列幅を viewer の見た目のまま出す。
+const XLS_FILL={section:'#DBE7F3',header:'#EEF3F8'};   // .fill-section / .fill-header と揃える
+const XLS_H={l:'Left',c:'Center',r:'Right'};
+const XLS_V={t:'Top',m:'Center',b:'Bottom'};
+const XLS_NUMFMT={num:'#,##0',dec2:'#,##0.00'};        // 数として出す書式のみ（¥/%/日付は表示文字で出す）
+function usedRangeOf(s){
+  let r2=0,c2=0,found=false;
+  for(const a in s.cells){ if(s.cells[a].v==null)continue;
+    const p=parseAddr(a); if(!p)continue; r2=Math.max(r2,p.r); c2=Math.max(c2,p.c); found=true; }
+  return {r1:0,c1:0,r2,c2,found};
+}
+function displayOfIn(si,a){ // displayOf のシート指定版（アクティブ以外も出せる）
+  const s=doc.sheets[si], v=vals[si+'!'+a];
+  if(v==null||v==='') return '';
+  if(isErr(v)) return v.e;
+  if(typeof v==='number'){ const c=s.cells[a];
+    let fmt=c&&c.fmt;
+    if(!fmt&&c&&c.v&&c.v[0]!=='='){
+      if(DATE_RE.test(c.v)) fmt='date';
+      else if(c.v.indexOf('¥')>=0) fmt='yen';
+      else if(/%\s*$/.test(c.v)) fmt='pct';
+    }
+    return fmtNum(v,fmt); }
+  return String(v);
+}
+function xlsSheetName(name){
+  return (String(name||'シート').replace(/[\[\]:*?\/\\]/g,'_').slice(0,31))||'シート';
+}
+function xmlEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/\r/g,'').replace(/\n/g,'&#10;'); }
+function exportXls(){ // 全シートを色・罫線つきExcelへ（SpreadsheetML 2003）
+  recalc();
+  const styleXml=[], styleMap=new Map(); let styleN=0;
+  function styleId(c,numFmt){
+    const key=[c.fill||'',c.bold?1:0,c.align||'',c.valign||'',c.wrap?1:0,c.borderTop||'',numFmt||''].join('|');
+    let id=styleMap.get(key); if(id) return id;
+    id='s'+(styleN++); styleMap.set(key,id);
+    const ver=XLS_V[c.valign]||'Center', hor=XLS_H[c.align];
+    let s='<Style ss:ID="'+id+'"><Alignment ss:Vertical="'+ver+'"'
+      +(hor?' ss:Horizontal="'+hor+'"':'')+(c.wrap?' ss:WrapText="1"':'')+'/><Borders>'
+      +'<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="0.5" ss:Color="#E2E8F0"/>'
+      +'<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="0.5" ss:Color="#E2E8F0"/>'
+      +'<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="0.5" ss:Color="#E2E8F0"/>';
+    if(c.borderTop==='major') s+='<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#21537F"/>';
+    else if(c.borderTop==='middle') s+='<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1.5" ss:Color="#718096"/>';
+    else s+='<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="0.5" ss:Color="#E2E8F0"/>';
+    s+='</Borders><Font ss:Color="#1E293B"'+((c.bold||c.fill)?' ss:Bold="1"':'')+'/>';
+    const fill=c.fill&&XLS_FILL[c.fill];
+    if(fill) s+='<Interior ss:Color="'+fill+'" ss:Pattern="Solid"/>';
+    if(numFmt) s+='<NumberFormat ss:Format="'+numFmt+'"/>';
+    s+='</Style>'; styleXml.push(s); return id;
+  }
+  const used=new Set(); let sheetsXml='';
+  doc.sheets.forEach((sh,si)=>{
+    let nm=xlsSheetName(sh.name), base=nm, i=2;
+    while(used.has(nm)){ nm=base.slice(0,28)+'_'+i; i++; } used.add(nm);
+    const u=usedRangeOf(sh);
+    let cols='';
+    for(let c=u.c1;c<=u.c2;c++){ const w=(sh.colW&&sh.colW[c])?Math.round(sh.colW[c]*0.75):68;
+      cols+='<Column ss:Width="'+w+'"/>'; }
+    let rowsXml='';
+    for(let r=u.r1;r<=u.r2;r++){
+      let cells='';
+      for(let c=u.c1;c<=u.c2;c++){
+        const a=addrOf(r,c), cell=sh.cells[a]||{}, v=vals[si+'!'+a];
+        // 数として出せるのは fmt無し/num/dec2 の数値だけ。¥/%/日付・式は表示文字で出す（見た目一致）
+        let numFmt=null, type='String', data='';
+        const plainNum=(typeof v==='number')&&!(cell.v&&cell.v[0]==='=')
+          &&(!cell.fmt||cell.fmt==='num'||cell.fmt==='dec2')
+          &&!(cell.v&&(DATE_RE.test(cell.v)||cell.v.indexOf('¥')>=0||/%\s*$/.test(cell.v)));
+        if(plainNum){ type='Number'; data=String(v); numFmt=XLS_NUMFMT[cell.fmt]||null; }
+        else if(v!=null&&v!==''){ data=xmlEsc(displayOfIn(si,a)); }
+        const id=styleId(cell,numFmt);
+        cells+='<Cell ss:StyleID="'+id+'"><Data ss:Type="'+type+'">'+data+'</Data></Cell>';
+      }
+      rowsXml+='<Row>'+cells+'</Row>';
+    }
+    sheetsXml+='<Worksheet ss:Name="'+xmlEsc(nm)+'"><Table>'+cols+rowsXml+'</Table></Worksheet>';
+  });
+  const xml='<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n'
+    +'<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"'
+    +' xmlns:o="urn:schemas-microsoft-com:office:office"'
+    +' xmlns:x="urn:schemas-microsoft-com:office:excel"'
+    +' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"'
+    +' xmlns:html="http://www.w3.org/TR/REC-html40"><Styles>'
+    +'<Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/>'
+    +'<Font ss:Color="#1E293B"/></Style>'+styleXml.join('')+'</Styles>'
+    +sheetsXml+'</Workbook>';
+  download((doc.name||'CalcKit')+'.xls', xml, 'application/vnd.ms-excel');
 }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function importCSVText(text,name){
@@ -851,6 +1222,85 @@ function parseCSVLine(line){
   out.push(cur); return out;
 }
 
+// ==== .xlsx 読み込み（SheetJS・外部へ送らない・file://で動く）====
+//   全シートをタブに取り込み、値・式（CalcKitが持つ関数のみ生きた式／無理な式は値）・
+//   日付（Excelシリアル→YYYY-MM-DD）・列幅を入れる。正本は引き続き .calc.json。
+const CK_FUNCS=new Set(['SUM','AVERAGE','MIN','MAX','COUNT','COUNTA','IF','SUMIF','COUNTIF',
+  'ROUND','ROUNDUP','ROUNDDOWN','ABS','INT','SQRT','VLOOKUP','HLOOKUP','DATE','TODAY']);
+function xlsxFormulaSupported(f){
+  // 関数名（識別子の直後が「(」）を洗い出し、全部CalcKitが持つ関数か
+  const names=f.toUpperCase().match(/[A-Z][A-Z0-9_.]*(?=\s*\()/g)||[];
+  for(const n of names){ if(!CK_FUNCS.has(n)) return false; }
+  if(/[\[\]{}]/.test(f)) return false;   // 構造化参照・配列数式は非対応→値に落とす
+  return true;
+}
+function xlsxCellRaw(cell){ // 式でないセルの値→CalcKitの生入力文字列
+  const t=cell.t;
+  if(t==='n'){
+    if(cell.z && window.XLSX && XLSX.SSF && XLSX.SSF.is_date(cell.z) && isFinite(cell.v))
+      return serialToYMD(cell.v);        // 日付書式の数値→YYYY-MM-DD
+    return String(cell.v);
+  }
+  if(t==='b') return cell.v? 'TRUE':'FALSE';
+  if(t==='e') return cell.w||'#VALUE!';
+  if(t==='d'){ const d=cell.v;           // cellDates:false では来ない想定の保険
+    return (d instanceof Date)? d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')
+      +'-'+String(d.getUTCDate()).padStart(2,'0') : String(cell.w||cell.v||''); }
+  return cell.w!=null? String(cell.w) : (cell.v!=null? String(cell.v):'');
+}
+function importXlsxArrayBuffer(name,buf,deferEnrich){
+  if(READONLY)return false;
+  if(typeof window.XLSX==='undefined'){ alert('xlsxライブラリ（xlsx.full.min.js）が読み込めていません'); return false; }
+  let wb;
+  try{ wb=XLSX.read(new Uint8Array(buf),{type:'array',cellFormula:true,cellNF:true,cellStyles:true,cellDates:false}); }
+  catch(e){ alert('xlsxを読み込めません: '+(e&&e.message||e)); return false; }
+  pushUndo();
+  const base=String(name||'book').replace(/\.(xlsx|xlsm|xlsb)$/i,'');
+  const nd={name:base||'読み込みシート',active:0,sheets:[]};
+  let nf=0,nk=0,nfmt=0,nfill=0,nmerge=0;
+  (wb.SheetNames||[]).forEach(sn=>{
+    const ws=wb.Sheets[sn]; if(!ws)return;
+    const sh=newSheet(sn); let maxR=0,maxC=0;
+    const ref=ws['!ref'];
+    if(ref){
+      const rng=XLSX.utils.decode_range(ref);
+      maxR=rng.e.r; maxC=rng.e.c;
+      for(let R=rng.s.r;R<=rng.e.r;R++) for(let C=rng.s.c;C<=rng.e.c;C++){
+        const cell=ws[XLSX.utils.encode_cell({r:R,c:C})]; if(!cell)continue;
+        let raw;
+        if(cell.f){
+          const f=String(cell.f);
+          if(xlsxFormulaSupported(f)){ raw='='+canonFormula(f); nf++; }
+          else { raw=xlsxCellRaw(cell); nk++; }   // 無理な式は計算結果（値）に落とす
+        }else raw=xlsxCellRaw(cell);
+        if(raw==null||raw==='')continue;
+        const co={v:raw};
+        const fmt=xlsxFmtOf(cell); if(fmt){ co.fmt=fmt; nfmt++; }   // %・¥・桁区切り・小数・日付
+        const bg=fillHexOf(cell); if(bg){ co.bg=bg; nfill++; }      // 塗り色（SheetJSが読める分）
+        sh.cells[addrOf(R,C)]=co;
+      }
+    }
+    sh.rows=Math.max(50,maxR+10); sh.cols=Math.max(26,maxC+4);
+    const cols=ws['!cols'];
+    if(Array.isArray(cols)) cols.forEach((w,ci)=>{ if(!w)return;
+      let px=w.wpx!=null?w.wpx:(w.width!=null?Math.round(w.width*7):(w.wch!=null?Math.round(w.wch*7+5):null));
+      if(px&&px>0) sh.colW[ci]=Math.round(px); });
+    const mg=ws['!merges'];                      // CalcKitに結合はないので左上に値を置く（SheetJS既定）＋件数を注記
+    if(Array.isArray(mg)) nmerge+=mg.length;
+    nd.sheets.push(sh);
+  });
+  if(!nd.sheets.length) nd.sheets.push(newSheet('シート1'));
+  doc=nd; astCache.clear(); recalc(); buildGrid(); setName(doc.name);
+  clearSaveTarget();           // 正本は .calc.json。xlsxには書き戻さない（次の保存で保存先を選ぶ）
+  markDirty();
+  lastImport={sheets:nd.sheets.length,formulas:nf,valued:nk,fmts:nfmt,fills:nfill,merges:nmerge};
+  const msg='xlsxから取り込んだ（シート'+nd.sheets.length+'・式'+nf+'・書式'+nfmt
+    +(nmerge?'・結合'+nmerge+'は左上に値':'')+'）';
+  setSaveStatus(msg); toast(msg);
+  if(!deferEnrich) enrichXlsxStyles(buf);   // 太字・文字色・横位置を zip から後追いで補う（非同期）
+  return true;
+}
+
 // ==== シート（タブ）操作 ====
 function uniqueSheetName(base){
   let n=base,k=2;
@@ -864,12 +1314,14 @@ function switchSheet(i){
   buildGrid(); markDirty();
 }
 function addSheet(){
+  if(READONLY||REVIEW)return false;
   pushUndo();
   doc.sheets.push(newSheet(uniqueSheetName('シート'+(doc.sheets.length+1))));
   doc.active=doc.sheets.length-1; cur={r:0,c:0}; selA=null;
   recalc(); buildGrid(); markDirty();
 }
 function renameSheet(i,name){
+  if(READONLY)return false;
   name=String(name||'').trim();
   if(!name||name.includes('!')||name.includes("'")) return false;
   if(sheetIdx(name)>=0&&sheetIdx(name)!==i) return false;
@@ -889,6 +1341,7 @@ function renameSheet(i,name){
   return true;
 }
 function deleteSheet(i){
+  if(READONLY)return false;
   if(doc.sheets.length<=1) return false;
   pushUndo();
   doc.sheets.splice(i,1);
@@ -898,6 +1351,7 @@ function deleteSheet(i){
   return true;
 }
 function dupSheet(i){
+  if(READONLY||REVIEW)return false;
   pushUndo();
   const src=doc.sheets[i];
   const cp=JSON.parse(JSON.stringify(src));
@@ -913,26 +1367,31 @@ function renderTabs(){
     const b=document.createElement('button');
     b.className='tab'+(i===doc.active?' on':'');
     b.textContent=s.name;
-    b.title='クリックで切替／ダブルクリックで名前変更／右クリックで複製・削除';
+    b.title=READONLY?'クリックで切替':'クリックで切替／ダブルクリックで名前変更／右クリックで複製・削除';
     b.onclick=()=>switchSheet(i);
-    b.ondblclick=()=>{ const n=prompt('シート名',s.name); if(n!=null&&!renameSheet(i,n)&&n.trim()!==s.name)
-      alert('その名前は使えません（重複か、!と\'は不可）'); };
-    b.oncontextmenu=e=>{ e.preventDefault();
-      showCtx(e.clientX,e.clientY,[
-        {label:'名前を変更',fn:()=>b.ondblclick()},
-        {label:'複製',fn:()=>dupSheet(i)},'-',
-        {label:`「${s.name}」を削除`,fn:()=>{ if(doc.sheets.length<=1){alert('最後のシートは削除できません');return;}
-          if(confirm(`シート「${s.name}」を削除しますか？（参照している式は#REF!になります）`)) deleteSheet(i); }}]); };
+    if(!(READONLY||REVIEW)){
+      b.ondblclick=()=>{ const n=prompt('シート名',s.name); if(n!=null&&!renameSheet(i,n)&&n.trim()!==s.name)
+        alert('その名前は使えません（重複か、!と\'は不可）'); };
+      b.oncontextmenu=e=>{ e.preventDefault();
+        showCtx(e.clientX,e.clientY,[
+          {label:'名前を変更',fn:()=>b.ondblclick()},
+          {label:'複製',fn:()=>dupSheet(i)},'-',
+          {label:`「${s.name}」を削除`,fn:()=>{ if(doc.sheets.length<=1){alert('最後のシートは削除できません');return;}
+            if(confirm(`シート「${s.name}」を削除しますか？（参照している式は#REF!になります）`)) deleteSheet(i); }}]); };
+    }
     el.appendChild(b);
   });
-  const add=document.createElement('button');
-  add.className='tab tab-add'; add.textContent='＋'; add.title='シートを追加';
-  add.onclick=addSheet;
-  el.appendChild(add);
+  if(!(READONLY||REVIEW)){
+    const add=document.createElement('button');
+    add.className='tab tab-add'; add.textContent='＋'; add.title='シートを追加';
+    add.onclick=addSheet;
+    el.appendChild(add);
+  }
 }
 
 // ==== テンプレート ====
 function loadTemplate(id){
+  if(READONLY||REVIEW)return false;
   pushUndo();
   if(id==='blank'){ doc=newDoc('新しいシート'); }
   else if(id==='cost') doc=tmplCost();
@@ -1060,7 +1519,9 @@ function buildSlideHtml(){
       const tag=isHead?'th':'td';
       let st;
       if(isHead) st=`background:#21537f;color:#fafafa;padding:7px 10px;text-align:${num?'right':'left'};font-weight:700;font-size:${fs}px`;
-      else st=`padding:5px 10px;border-bottom:1px solid #e2e8f0;color:#121212;text-align:${num?'right':'left'};`+
+      // 決定: 罫線はSlideKitトークンの #d4dde7 を使う（#e2e8f0 等はslide-guardの許可色外でPPTX化が止まる）
+      // 根拠=.kiro/steering/slide-contract-detail.md のカラートークン表
+      else st=`padding:5px 10px;border-bottom:1px solid #d4dde7;color:#121212;text-align:${num?'right':'left'};`+
         `${cl&&cl.bold?'font-weight:700;':''}font-size:${fs}px`;
       rows+=`<${tag} style="${st}">${escHtml(displayOf(a))}</${tag}>`;
     }
@@ -1104,7 +1565,7 @@ function normMonth(s){ // 'YYYY-MM'|'YYYY-MM-DD'|'YYYY/M/D' → 'YYYY-MM' / 日�
 function monthOf(d){ return d.slice(0,7); }
 function buildGanttPayload(map){ // GanttKitに渡す素データ（localStorage受け渡し用）
   const p=ganttRows(map); if(!p) return null;
-  return {config:p.config,categories:p.cats,items:p.items};
+  return {config:p.config,categories:p.cats,items:p.items,baselines:p.baselines||[]};
 }
 function ganttRows(map){ // 表→ガント用の中間形（列マッピングを適用）
   const u=exportRange();
@@ -1117,7 +1578,15 @@ function ganttRows(map){ // 表→ガント用の中間形（列マッピング�
     if(!st||!en) continue;
     const grp=g('group')||'項目';
     if(!catNames.includes(grp)) catNames.push(grp);
-    items.push({name,cat:grp,start:st,end:en,ver:g('label')||'',desc:g('desc')||''});
+    // 進捗%（0〜100 の数。「45%」の表示でも値は 0.45 なので 100 倍）・控え（GanttKit→表→ガントの往復で落とさない・2026-11-14）
+    const gv=v=>{ const ci=map[v]; return (ci==null||ci<0)? null : V(addrOf(r,u.c1+ci)); };
+    let prog=gv('progress');
+    if(typeof prog==='string'){ const m=String(prog).trim().match(/^(-?\d+(?:\.\d+)?)\s*%?$/); prog=m? +m[1] : null; }
+    else if(typeof prog==='number'){ const cl=sheet().cells[addrOf(r,u.c1+map.progress)]; if((cl&&cl.fmt==='pct')||(prog>0&&prog<=1)) prog=prog*100; }
+    if(typeof prog!=='number'||!isFinite(prog)) prog=null; else prog=Math.max(0,Math.min(100,Math.round(prog)));
+    const bs=normMonth(g('bstart')), be=normMonth(g('bend'));
+        items.push({name,cat:grp,start:st,end:en,ver:g('label')||'',desc:g('desc')||'',assignee:g('assignee')||'',
+          progress:prog, base:(bs&&be)?{start:bs,end:be}:null});
     const a=monthOf(st),b=monthOf(en);
     if(!minM||a<minM)minM=a; if(!maxM||b>maxM)maxM=b;
   }
@@ -1128,8 +1597,19 @@ function ganttRows(map){ // 表→ガント用の中間形（列マッピング�
   return {cats,
     config:{start:minM,end:maxM,today:minM,storageKey:'ganttkit_calc_'+Date.now(),
       exportName:doc.name,exportTitle:doc.name},
-    items:items.map((it,i)=>({id:'ck'+(i+1),cat:catId(it.cat),name:it.name,
-      versions:[{ver:it.ver,start:it.start,end:it.end,desc:it.desc}]}))};
+    items:items.map((it,i)=>{
+      const v={ver:it.ver,start:it.start,end:it.end,desc:it.desc};
+      if(it.progress!=null) v.progress=it.progress;
+      return {id:'ck'+(i+1),cat:catId(it.cat),name:it.name,assignee:it.assignee||'',versions:[v]};
+    }),
+    // 控え: 1行でも控え開始・控え終了があれば1本の控えにまとめる（GanttKit の TL_BASELINES の形）
+    baselines:(()=>{
+      const bi={}; let any=false;
+      items.forEach((it,i)=>{ if(it.base){ bi['ck'+(i+1)]=[{start:it.base.start,end:it.base.end}]; any=true; } });
+      if(!any) return [];
+      const d=new Date(), ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      return [{date:ds,label:'控え（表から）',items:bi}];
+    })()};
 }
 function buildGanttData(map){ // GanttKitデータjs（ファイル保存用）
   const p=ganttRows(map); if(!p) return null;
@@ -1140,6 +1620,7 @@ function buildGanttData(map){ // GanttKitデータjs（ファイル保存用）
   js.push('window.TL_MILESTONES=[];');
   js.push('window.TL_ANNUAL_FOCUS=[];');
   js.push('window.TL_PLANS=[];');
+  if(p.baselines&&p.baselines.length) js.push('window.TL_BASELINES='+JSON.stringify(p.baselines)+';');
   js.push('window.TL_CATEGORIES='+JSON.stringify(p.cats)+';');
   js.push('window.TL_ITEMS=['+p.items.map(it=>JSON.stringify(it)).join(',\n')+'];');
   js.push('})();');
@@ -1255,21 +1736,28 @@ function showGanttModal(){
   const opts=(sel,none)=> (none?'<option value="-1">（なし）</option>':'')+
     heads.map((h,i)=>`<option value="${i}"${i===sel?' selected':''}>${escHtml(h)}</option>`).join('');
   const guess=(words)=>heads.findIndex(h=>words.some(w=>String(h).includes(w)));
-  const gi={name:guess(['項目','名前','タスク','作業']),start:guess(['開始','From','from']),
-    end:guess(['終了','完了','To','to']),group:guess(['グループ','分類','カテゴリ','フェーズ'])};
+    const gi={name:guess(['項目','名前','タスク','作業']),start:guess(['開始','From','from']),desc:guess(['説明','備考','メモ']),
+      end:guess(['終了','完了','To','to']),group:guess(['グループ','分類','カテゴリ','フェーズ']),
+      assignee:guess(['担当','担当者','アサイン','owner','Owner']),
+      progress:guess(['進捗','進捗%','進捗率','progress']),bstart:guess(['控え開始','計画開始','当初開始']),bend:guess(['控え終了','計画終了','当初終了'])};
   openModal(`<h3>GanttKitデータ書き出し</h3>
     <div class="note">先頭行をヘッダとして列を割り当てる。日付は YYYY-MM か YYYY-MM-DD（/区切りも可）</div>
     <label>項目名の列</label><select id="gk-name">${opts(gi.name<0?0:gi.name)}</select>
     <label>開始の列</label><select id="gk-start">${opts(gi.start<0?1:gi.start)}</select>
     <label>終了の列</label><select id="gk-end">${opts(gi.end<0?2:gi.end)}</select>
     <label>グループの列（任意）</label><select id="gk-group">${opts(gi.group,true)}</select>
+    <label>担当の列（任意）</label><select id="gk-assignee">${opts(gi.assignee,true)}</select>
     <label>ラベルの列（任意・PoC/本番など）</label><select id="gk-label">${opts(-1,true)}</select>
-    <label>説明の列（任意）</label><select id="gk-desc">${opts(-1,true)}</select>
+    <label>説明の列（任意）</label><select id="gk-desc">${opts(gi.desc==null?-1:gi.desc,true)}</select>
+    <label>進捗%の列（任意・0〜100）</label><select id="gk-progress">${opts(gi.progress,true)}</select>
+    <label>控え開始・控え終了の列（任意・両方そろった行だけ控えになる）</label>
+    <div style="display:flex;gap:6px"><select id="gk-bstart" style="flex:1">${opts(gi.bstart,true)}</select><select id="gk-bend" style="flex:1">${opts(gi.bend,true)}</select></div>
     <div class="modal-btns"><button class="m-cancel" id="m-cancel">キャンセル</button>
     <button id="m-go">データjsを保存</button>
     <button class="m-save" id="m-open">GanttKitで開く</button></div>`);
-  const readMap=()=>({name:+$('gk-name').value,start:+$('gk-start').value,end:+$('gk-end').value,
-    group:+$('gk-group').value,label:+$('gk-label').value,desc:+$('gk-desc').value});
+    const readMap=()=>({name:+$('gk-name').value,start:+$('gk-start').value,end:+$('gk-end').value,
+      group:+$('gk-group').value,label:+$('gk-label').value,desc:+$('gk-desc').value,
+      assignee:+$('gk-assignee').value,progress:+$('gk-progress').value,bstart:+$('gk-bstart').value,bend:+$('gk-bend').value});
   $('m-open').onclick=()=>{
     const d=buildGanttPayload(readMap());
     if(!d){ alert('書き出せる行がありません（項目名と開始・終了の日付を確認）'); return; }
@@ -1301,6 +1789,7 @@ function hideCtx(){ $('ctx').style.display='none'; }
 
 // ==== フィル（式コピー・連番・日付シリーズ） ====
 function performFill(base,dir,count,alt){
+  if(READONLY)return false;
   if(count<=0) return false;
   pushUndo();
   const vert=(dir==='down'||dir==='up');
@@ -1369,15 +1858,19 @@ function performFill(base,dir,count,alt){
 }
 
 // ==== 並べ替え（選択範囲を指定列でソート・先頭行はヘッダなら除外） ====
-function sortRange(byCol,asc){
-  let s=selRange();
-  if(s.r1===s.r2&&s.c1===s.c2) s=usedRange();
+function sortRange(byCol,asc,fixedRange,skipHeader){
+  if(READONLY)return false;
+  let s=fixedRange||selRange();
+  if(!fixedRange&&s.r1===s.r2&&s.c1===s.c2) s=usedRange();
   if(byCol<s.c1||byCol>s.c2) return false;
   let start=s.r1;
-  const headV=V(addrOf(s.r1,byCol));
-  let numBelow=0;
-  for(let r=s.r1+1;r<=s.r2;r++) if(typeof V(addrOf(r,byCol))==='number') numBelow++;
-  if(typeof headV!=='number'&&numBelow>0) start=s.r1+1;
+  if(skipHeader) start=s.r1+1;
+  else {
+    const headV=V(addrOf(s.r1,byCol));
+    let numBelow=0;
+    for(let r=s.r1+1;r<=s.r2;r++) if(typeof V(addrOf(r,byCol))==='number') numBelow++;
+    if(typeof headV!=='number'&&numBelow>0) start=s.r1+1;
+  }
   const idx=[]; for(let r=start;r<=s.r2;r++) idx.push(r);
   idx.sort((a,b)=>{
     const va=V(addrOf(a,byCol)), vb=V(addrOf(b,byCol));
@@ -1404,10 +1897,191 @@ function sortRange(byCol,asc){
   }
   for(const a in buf){ if(buf[a]) sheet().cells[a]=buf[a]; else delete sheet().cells[a]; }
   commit();
+  if(sheet().filter) applyFilterView();
   return true;
 }
 
-// ==== イベント ====
+// ==== フィルタ（見出し行ごとの絞り込み。行を隠すだけで値は触らない） ====
+// sheet().filter = {r:見出し行, r2:最終行, c1,c2:列範囲, sel:{"列":[表示する値...]}}
+let fltCol=null, fltHidden=0;
+function filterOf(){ return sheet().filter||null; }
+function isFilterHeader(r,c){ const f=filterOf(); return !!f&&r===f.r&&c>=f.c1&&c<=f.c2; }
+function colSel(c){ const f=filterOf(); return (f&&f.sel&&f.sel[String(c)])||null; }
+function filterActive(c){ return !!colSel(c); }
+function keyOf(r,c){ return displayOf(addrOf(r,c)); }
+function rowVisible(r){
+  const f=filterOf(); if(!f||!f.sel) return true;
+  if(r<=f.r||r>f.r2) return true;
+  for(const k in f.sel){
+    const allow=f.sel[k];
+    if(allow&&allow.indexOf(keyOf(r,+k))<0) return false;
+  }
+  return true;
+}
+function nextVisibleRow(r,step,fallback){
+  let n=r;
+  while(n>=0&&n<sheet().rows&&!rowVisible(n)) n+=step;
+  return (n<0||n>=sheet().rows)? fallback : n;
+}
+function applyFilterView(){
+  const tb=tbody(); if(!tb) return;
+  let hidden=0;
+  for(let r=0;r<sheet().rows;r++){
+    const tr=tb.rows[r]; if(!tr) continue;
+    const vis=rowVisible(r);
+    tr.style.display=vis? '' : 'none';
+    if(!vis) hidden++;
+  }
+  fltHidden=hidden;
+  markFilterCols(); updateStatus(); paintSel();
+}
+function markFilterCols(){
+  const f=filterOf();
+  if(!f&&!document.querySelector('#grid-t th.ch.fcol')) return;
+  document.querySelectorAll('#grid-t th.ch').forEach(th=>{
+    const c=+th.dataset.c;
+    th.classList.toggle('fcol', !!f&&c>=f.c1&&c<=f.c2&&filterActive(c));
+  });
+}
+function paintFilterHead(td,c,shown){
+  td.textContent='';
+  const cap=document.createElement('span'); cap.className='fh-cap'; cap.textContent=shown;
+  const on=filterActive(c);
+  const b=document.createElement('button');
+  b.type='button'; b.className='fh-btn'+(on?' on':''); b.dataset.fc=String(c);
+  b.textContent=on? '▼' : '▽';
+  b.title=on? '絞り込み中（クリックで変更）' : '絞り込み・並べ替え';
+  td.appendChild(cap); td.appendChild(b);
+}
+// ==== フィルタの付け外し ====
+function filterTargetRange(){
+  const s=selRange();
+  if(s.r1===s.r2&&s.c1===s.c2) return currentRegion(cur.r,cur.c);
+  return s;
+}
+function setFilterRange(range){
+  const s=range||filterTargetRange();
+  if(s.r2<=s.r1){ alert('見出し行とデータ行を含む範囲を選んでください'); return false; }
+  sheet().filter={r:s.r1,r2:s.r2,c1:s.c1,c2:s.c2,sel:{}};
+  afterFilterChange(true);
+  return true;
+}
+function clearFilter(){
+  hideFilterPanel();
+  if(!filterOf()) return false;
+  delete sheet().filter;
+  afterFilterChange(true);
+  return true;
+}
+function toggleFilter(){ return filterOf()? clearFilter() : setFilterRange(); }
+function refreshFilterHeads(){ // 見出しの▽だけ描き直す（全セル再描画は重い）
+  const f=filterOf(); if(!f) return;
+  for(let c=f.c1;c<=f.c2;c++){
+    const td=$('c-'+f.r+'-'+c);
+    if(td) paintFilterHead(td,c,displayOf(addrOf(f.r,c)));
+  }
+}
+function afterFilterChange(structural){
+  if(structural) refreshCells(); else refreshFilterHeads();
+  applyFilterView();   // 行の表示・非表示
+  if(REVIEW) autosave(); else markDirty();
+}
+// ==== フィルタのパネル ====
+function cmpFilterVals(a,b){
+  if(a===''&&b!=='') return 1;
+  if(b===''&&a!=='') return -1;
+  const na=Number(String(a).replace(/[,¥%\s]/g,'')), nb=Number(String(b).replace(/[,¥%\s]/g,''));
+  if(a!==''&&b!==''&&!isNaN(na)&&!isNaN(nb)) return na-nb;
+  return String(a).localeCompare(String(b),'ja');
+}
+function colValues(c){
+  const f=filterOf(); if(!f) return [];
+  const m=new Map();
+  for(let r=f.r+1;r<=f.r2;r++){ const k=keyOf(r,c); m.set(k,(m.get(k)||0)+1); }
+  return [...m.entries()].map(([v,n])=>({v,n})).sort((x,y)=>cmpFilterVals(x.v,y.v));
+}
+function hideFilterPanel(){ const p=$('fltp'); if(p){ p.hidden=true; } fltCol=null; }
+function openFilterPanel(c,anchor){
+  const f=filterOf(); if(!f) return;
+  fltCol=c;
+  const p=$('fltp');
+  $('fp-ttl').textContent=(keyOf(f.r,c)||colName(c)+'列')+'（'+colName(c)+'列）';
+  $('fp-q').value='';
+  $('fp-asc').disabled=READONLY; $('fp-desc').disabled=READONLY;
+  renderFilterList();
+  p.hidden=false;
+  const rc=anchor.getBoundingClientRect(), ph=p.offsetHeight;
+  p.style.left=Math.max(6,Math.min(rc.right-268,innerWidth-274))+'px';
+  p.style.top=(rc.bottom+4+ph>innerHeight? Math.max(6,rc.top-4-ph) : rc.bottom+4)+'px';
+  $('fp-q').focus();
+}
+function mkFilterRow(label,count,checked,onToggle){
+  const row=document.createElement('label'); row.className='fp-row';
+  const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked;
+  const v=document.createElement('span'); v.className='fp-v'; v.textContent=label;
+  row.appendChild(cb); row.appendChild(v);
+  if(count!=null){ const n=document.createElement('span'); n.className='fp-n'; n.textContent=count; row.appendChild(n); }
+  cb.addEventListener('change',()=>onToggle(cb.checked));
+  return row;
+}
+function renderFilterList(){
+  const list=$('fp-list'); if(fltCol==null) return;
+  const q=$('fp-q').value.trim().toLowerCase();
+  const all=colValues(fltCol);
+  const shown=q? all.filter(o=>String(o.v).toLowerCase().indexOf(q)>=0) : all;
+  const isOn=v=>{ const s=colSel(fltCol); return !s||s.indexOf(v)>=0; };
+  list.textContent='';
+  let allCb=null;
+  const syncAll=()=>{ if(allCb) allCb.checked=shown.length>0&&shown.every(o=>isOn(o.v)); };
+  const allRow=mkFilterRow(q?'（表示中をすべて）':'（すべて）',null,false,on=>{
+    const keys=shown.map(o=>o.v);
+    let next=colSel(fltCol)? colSel(fltCol).slice() : all.map(o=>o.v);
+    if(on){ for(const k of keys) if(next.indexOf(k)<0) next.push(k); }
+    else next=next.filter(k=>keys.indexOf(k)<0);
+    setColSel(next,all);
+    renderFilterList();   // 全行のチェックが変わるので作り直す
+  });
+  allCb=allRow.querySelector('input');
+  list.appendChild(allRow);
+  for(const o of shown.slice(0,400)){
+    // 値の行は作り直さない（チェックのたびにDOMが入れ替わると連続で選べない）
+    list.appendChild(mkFilterRow(o.v===''?'（空白）':o.v,o.n,isOn(o.v),on=>{
+      let next=colSel(fltCol)? colSel(fltCol).slice() : all.map(x=>x.v);
+      const i=next.indexOf(o.v);
+      if(on){ if(i<0) next.push(o.v); } else if(i>=0) next.splice(i,1);
+      setColSel(next,all); syncAll();
+    }));
+  }
+  if(shown.length>400){
+    const note=document.createElement('div'); note.className='fp-note';
+    note.textContent='他 '+(shown.length-400)+' 件（検索でしぼってください）';
+    list.appendChild(note);
+  }
+  if(!shown.length){
+    const note=document.createElement('div'); note.className='fp-note'; note.textContent='該当なし';
+    list.appendChild(note);
+  }
+  syncAll();
+}
+function setColSel(next,all){
+  const f=filterOf(); if(!f) return;
+  if(next.length>=all.length) delete f.sel[String(fltCol)];
+  else f.sel[String(fltCol)]=next;
+  afterFilterChange();
+}
+function clearColFilter(){
+  const f=filterOf(); if(!f||fltCol==null) return;
+  delete f.sel[String(fltCol)];
+  afterFilterChange(); renderFilterList();
+}
+function sortByFilterCol(asc){
+  const f=filterOf(); if(!f||fltCol==null||READONLY) return false;
+  const c=fltCol;
+  selA={r:f.r,c:f.c1}; cur={r:f.r2,c:f.c2};
+  const ok=sortRange(c,asc,{r1:f.r,c1:f.c1,r2:f.r2,c2:f.c2},true);
+  refreshCells(); applyFilterView(); hideFilterPanel();
+  return ok;
+}
 function setName(n){ doc.name=n; $('hsub').textContent=n; document.title='CalcKit — '+n; }
 function tdPos(td){ const m=/^c-(\d+)-(\d+)$/.exec(td.id); return m? {r:+m[1],c:+m[2]} : null; }
 let dragSel=false, gripDrag=null, fillDrag=null, rowGripDrag=null;
@@ -1433,6 +2107,51 @@ function fillGhost(t){
   if(t.dir==='left')s.c1=Math.max(0,b.c1-t.count);
   positionBox(g,s);
 }
+function wireFilter(){ // 閲覧・編集の両モードで使う（絞り込みは見る操作）
+  document.addEventListener('mousedown',e=>{
+    if(e.target.closest('.fh-btn')){ e.stopPropagation(); return; } // セル選択を走らせない
+    if(!e.target.closest('#fltp')) hideFilterPanel();
+  },true);
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('.fh-btn'); if(!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const c=+b.dataset.fc;
+    if(!$('fltp').hidden&&fltCol===c) hideFilterPanel(); else openFilterPanel(c,b);
+  },true);
+  $('fp-q').addEventListener('input',renderFilterList);
+  $('fp-q').addEventListener('keydown',e=>{ if(e.key==='Escape'){ hideFilterPanel(); } e.stopPropagation(); });
+  $('fp-asc').onclick=()=>sortByFilterCol(true);
+  $('fp-desc').onclick=()=>sortByFilterCol(false);
+  $('fp-clear').onclick=clearColFilter;
+  $('fp-off').onclick=clearFilter;
+  $('grid-wrap').addEventListener('scroll',()=>{ if(!$('fltp').hidden) hideFilterPanel(); });
+  window.addEventListener('resize',()=>hideFilterPanel());
+}
+// 2026-09-25 セルを押したら表にフォーカスを移す。mousedownで既定動作を止めているので、
+//   iframeに埋め込むと（viewer.html）枠の中にフォーカスが移らず、⌘C・矢印キーが外のページに行っていた
+function focusGrid(){ const w=$('grid-wrap'); if(w&&document.activeElement!==w) w.focus({preventScroll:true}); }
+function wireReadonlyEvents(){
+  const wrap=$('grid-wrap');
+  wrap.addEventListener('mousedown',e=>{
+    const td=e.target.closest('td');
+    if(td){ const p=tdPos(td); if(!p)return;
+      if(e.shiftKey){ if(!selA)selA={...cur}; cur=p; } else { selA=null; cur=p; }
+      paintSel(); e.preventDefault(); focusGrid(); return; }
+    const rh=e.target.closest('th.rh');
+    if(rh){ const r=+rh.dataset.r; selA={r,c:0}; cur={r,c:sheet().cols-1}; paintSel(); return; }
+    const ch=e.target.closest('th.ch');
+    if(ch){ const c=+ch.dataset.c; selA={r:0,c}; cur={r:sheet().rows-1,c}; paintSel(); }
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
+    const mv={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+    if(mv){ e.preventDefault(); moveCur(mv[0],mv[1],e.shiftKey); return; }
+    if(e.key==='Tab'){ e.preventDefault(); moveCur(0,e.shiftKey?-1:1); return; }
+    if(e.key==='Escape'){ selA=null; paintSel(); }
+  });
+  document.addEventListener('copy',e=>{ if(document.activeElement.tagName==='INPUT')return; copySel(e); });
+  window.addEventListener('resize',paintSel);
+}
 function wireEvents(){
   const wrap=$('grid-wrap');
   // フィルハンドル
@@ -1453,7 +2172,7 @@ function wireEvents(){
     if(td){ const p=tdPos(td); if(!p)return;
       if(editing) endEdit(true);
       if(e.shiftKey){ if(!selA)selA={...cur}; cur=p; } else { selA=null; cur=p; }
-      dragSel=true; paintSel(); e.preventDefault(); return; }
+      dragSel=true; paintSel(); e.preventDefault(); focusGrid(); return; }
     const rh=e.target.closest('th.rh');
     if(rh){ if(editing)endEdit(true); const r=+rh.dataset.r;
       selA={r,c:0}; cur={r,c:sheet().cols-1}; paintSel(); return; }
@@ -1471,6 +2190,7 @@ function wireEvents(){
       sheet().colW[gripDrag.c]=w;
       document.querySelectorAll(`#grid-t th.ch[data-c="${gripDrag.c}"]`)
         .forEach(th=>{ th.style.width=w+'px'; th.style.minWidth=w+'px'; });
+      applyNumClip(gripDrag.c);   // C2: 幅が変わったその列の数だけ ### を付け外し（2026-11-15）
       return; }
     if(!dragSel) return;
     const td=document.elementFromPoint(e.clientX,e.clientY)?.closest?.('td');
@@ -1500,6 +2220,7 @@ function wireEvents(){
         {label:'右に列を挿入',fn:()=>insertCol(c+1)},'-',
         {label:`${colName(c)}列で昇順に並べ替え`,fn:()=>sortRange(c,true)},
         {label:`${colName(c)}列で降順に並べ替え`,fn:()=>sortRange(c,false)},'-',
+        {label:filterOf()?'フィルタを外す':'フィルタを付ける（見出し行に▽）',fn:toggleFilter},'-',
         {label:`${colName(c)}列を削除`,fn:()=>deleteCol(c)}]); }
   });
   document.addEventListener('mousedown',e=>{ if(!e.target.closest('#ctx')) hideCtx(); });
@@ -1524,7 +2245,7 @@ function wireEvents(){
   });
   // セル編集
   ed().addEventListener('keydown',e=>{
-    if(e.key==='Enter'){ e.preventDefault(); endEdit(true,'down'); }
+    if(e.key==='Enter'&&!(e.isComposing||e.keyCode===229)){ e.preventDefault(); endEdit(true,'down'); }
     else if(e.key==='Tab'){ e.preventDefault(); endEdit(true,'right'); }
     else if(e.key==='Escape'){ e.preventDefault(); endEdit(false); }
     e.stopPropagation();
@@ -1533,7 +2254,7 @@ function wireEvents(){
   ed().addEventListener('input',()=>{ $('fx').value=ed().value; });
   // 数式バー
   $('fx').addEventListener('keydown',e=>{
-    if(e.key==='Enter'){ e.preventDefault(); setCellAndRecalc(addrOf(cur.r,cur.c),$('fx').value); moveCur(1,0); $('fx').blur(); }
+    if(e.key==='Enter'&&!(e.isComposing||e.keyCode===229)){ e.preventDefault(); setCellAndRecalc(addrOf(cur.r,cur.c),$('fx').value); moveCur(1,0); $('fx').blur(); }
     else if(e.key==='Escape'){ e.preventDefault(); updateFxBar(); $('fx').blur(); }
   });
   // クリップボード
@@ -1570,6 +2291,9 @@ function wireEvents(){
   $('fvb').onclick=()=>applyAlign('valign','b');
   $('fwrap').onclick=toggleWrap;
   $('fdd').onclick=showOptsModal;
+  $('fflt').onclick=toggleFilter;
+  $('fcond').onclick=showCondModal;
+  $('fpivot').onclick=showPivotModal;
   $('frowa').onclick=()=>{ pushUndo(); sheet().rows+=10; buildGrid(); markDirty(); };
   $('fcola').onclick=()=>{ pushUndo(); sheet().cols+=4; buildGrid(); markDirty(); };
   // ヘッダー
@@ -1579,6 +2303,23 @@ function wireEvents(){
     } };
   $('bopen').onclick=openDocument;
   $('bcsv').onclick=()=>download(doc.name+'.csv','\ufeff'+buildCSV(),'text/csv');
+  // ファイルのドロップで開く（.xlsx / .json / .csv / .tsv / .txt）
+  const gwrap=$('grid-wrap');
+  if(gwrap){
+    ['dragover','dragenter'].forEach(evn=>gwrap.addEventListener(evn,e=>{
+      if(READONLY||!e.dataTransfer||!Array.from(e.dataTransfer.types||[]).includes('Files'))return;
+      e.preventDefault(); e.dataTransfer.dropEffect='copy'; }));
+    gwrap.addEventListener('drop',e=>{
+      if(READONLY)return;
+      const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(!f)return;
+      e.preventDefault();
+      if(/\.(xlsx|xlsm|xlsb)$/i.test(f.name)){
+        const rd=new FileReader(); rd.onload=()=>importXlsxArrayBuffer(f.name,rd.result); rd.readAsArrayBuffer(f);
+      }else if(/\.(json|csv|tsv|txt)$/i.test(f.name)){
+        const rd=new FileReader(); rd.onload=()=>loadOpenedText(f.name,String(rd.result),null); rd.readAsText(f);
+      }
+    });
+  }
   $('bxls').onclick=exportXls;
   $('bchart').onclick=showChartModal;
   $('bslide').onclick=()=>download(doc.name+'-slide.html',buildSlideHtml(),'text/html');
@@ -1592,16 +2333,393 @@ function wireEvents(){
     const inp=document.createElement('input'); inp.value=doc.name;
     cu.textContent=''; cu.appendChild(inp); inp.focus(); inp.select();
     const done=ok=>{ const v=ok? inp.value.trim():doc.name; setName(v||doc.name); markDirty(); };
-    inp.onkeydown=e=>{ if(e.key==='Enter')done(true); if(e.key==='Escape')done(false); e.stopPropagation(); };
+    inp.onkeydown=e=>{ if(e.key==='Enter'&&!(e.isComposing||e.keyCode===229))done(true); if(e.key==='Escape')done(false); e.stopPropagation(); };
     inp.onblur=()=>done(true);
   };
   window.addEventListener('resize',()=>{ if(editing)endEdit(true); });
 }
 
+function applyReadonlyUi(){
+  if(!READONLY)return;
+  document.body.classList.add('ck-readonly');
+  document.querySelectorAll('header .hbtn').forEach(el=>{ el.hidden=true;el.style.display='none'; });
+  const fxbar=document.querySelector('.fxbar'); if(fxbar){fxbar.hidden=true;fxbar.style.display='none';}
+  const grid=$('grid-wrap'); if(grid){grid.style.top='48px';grid.style.bottom='50px';}
+  const fx=$('fx'); if(fx){fx.readOnly=true;fx.tabIndex=-1;}
+  const ed0=ed(); if(ed0)ed0.disabled=true;
+  const fill=$('fill-handle'); if(fill)fill.hidden=true;
+  const dd=$('dd-btn'); if(dd)dd.hidden=true;
+  const hs=$('hsub'); if(hs){hs.title='読み取り専用';hs.style.cursor='default';}
+  const hint=document.querySelector('.status .hint');
+  document.querySelectorAll('.status>span').forEach(el=>{el.style.display='none';});
+  const fe=$('st-flt'); if(fe)fe.style.display='inline';   // 絞り込み中の件数だけは残す
+  if(hint)hint.textContent='読み取り専用　タブで最新表を切り替え／見出しの▽で絞り込み／セルを選択してコピー可能';
+  if(EMBED)document.body.classList.add('ck-embed');
+}
+function applyReviewUi(){
+  if(!REVIEW)return;
+  document.body.classList.add('ck-review');
+  document.querySelectorAll('header .hbtn').forEach(el=>{el.style.display='none';});
+  ['bsave','bxls'].forEach(id=>{const el=$(id);if(el){el.hidden=false;el.style.display='inline-block';}});
+  if($('bsave'))$('bsave').textContent='保存 (.calc)';
+  if($('bxls'))$('bxls').textContent='Excel';
+  const fxbar=document.querySelector('.fxbar');if(fxbar)fxbar.style.display='none';
+  const grid=$('grid-wrap');if(grid){grid.style.top='48px';grid.style.bottom='42px';}
+  const fill=$('fill-handle');if(fill){fill.hidden=true;fill.style.display='none';}
+  const dd=$('dd-btn');if(dd){dd.hidden=false;dd.style.display='none';}
+  document.querySelectorAll('.status>span').forEach(el=>{el.style.display='none';});
+  const fe=$('st-flt'); if(fe)fe.style.display='inline';   // 絞り込み中の件数だけは残す
+  if(EMBED)document.body.classList.add('ck-embed');
+}
+function initExternalBridge(){
+  if(!EMBED)return;
+  window.addEventListener('message',e=>{
+    if(e.source!==parent||!e.data||e.data.type!=='calckit:load')return;
+    try{
+      loadDocument(e.data.doc);
+      parent.postMessage({type:'calckit:loaded',name:doc.name,sheets:doc.sheets.map(s=>s.name)},'*');
+    }catch(err){
+      parent.postMessage({type:'calckit:error',message:String(err&&err.message||err)},'*');
+    }
+  });
+  parent.postMessage({type:'calckit:ready',hasDocument:REVIEW&&restoredDocument},'*');
+}
+
+// ==== 条件付き書式の小窓（規則の管理）====
+function parseRangeStr(s){
+  if(!s) return null;
+  const m=/^\s*([A-Za-z]+[0-9]+)\s*(?::\s*([A-Za-z]+[0-9]+))?\s*$/.exec(s);
+  if(!m) return null;
+  const a=parseAddr(m[1].toUpperCase()); if(!a) return null;
+  const b=m[2]? parseAddr(m[2].toUpperCase()) : a; if(!b) return null;
+  return normRange({r1:a.r,c1:a.c,r2:b.r,c2:b.c});
+}
+function rangeToStr(rg){ return addrOf(rg.r1,rg.c1)+(rg.r1===rg.r2&&rg.c1===rg.c2?'':':'+addrOf(rg.r2,rg.c2)); }
+function showCondModal(){
+  if(READONLY||REVIEW)return false;
+  const rules=sheet().condfmt||[];
+  const selStr=rangeToStr(selRange());
+  const opL={'>=':'以上','<=':'以下','between':'範囲','contains':'文字を含む','empty':'空'};
+  const sw=c=>c?`<span style="display:inline-block;width:12px;height:12px;border:1px solid #cbd5e1;background:${escHtml(c)};vertical-align:middle;margin:0 2px"></span>`:'';
+  const listHtml=rules.length? rules.map((r,i)=>{
+    let desc,style;
+    if(r.kind==='databar'){ desc='データバー'; style=sw(r.barColor); }
+    else{ const val=r.op==='contains'?('「'+(r.text||'')+'」'):r.op==='between'?((r.v1)+'〜'+(r.v2)):r.op==='empty'?'':(r.v1);
+      desc=(opL[r.op]||r.op)+(val!==''&&val!=null?' '+val:'');
+      style=sw(r.bg)+(r.color?`<span style="color:${escHtml(r.color)};font-weight:700">A</span>`:'')+(r.bold?'<b>太</b>':''); }
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid var(--border)">
+      <span style="flex:1;font-size:13px">${escHtml(rangeToStr(r.range))}：${escHtml(desc)} ${style}</span>
+      <button class="fbtn" data-del="${i}">削除</button></div>`;
+  }).join('') : '<div class="note">まだ規則はありません</div>';
+  openModal(`<h3>条件付き書式</h3>
+    <div style="max-height:150px;overflow:auto;margin-bottom:10px">${listHtml}</div>
+    <div style="border-top:2px solid var(--border);padding-top:8px">
+    <label>範囲</label><input id="cf-range" value="${escHtml(selStr)}">
+    <label>種類</label><select id="cf-kind">
+      <option value="cell">セルの値で色を付ける</option>
+      <option value="databar">データバー（セル内の横棒）</option></select>
+    <div id="cf-cell">
+      <label>条件</label><select id="cf-op">
+        <option value=">=">値が ○ 以上</option><option value="<=">値が ○ 以下</option>
+        <option value="between">範囲 ○〜○</option><option value="contains">文字を含む</option>
+        <option value="empty">空セル</option></select>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <input id="cf-v1" placeholder="値" style="flex:1">
+        <input id="cf-v2" placeholder="上限" style="flex:1;display:none">
+        <input id="cf-text" placeholder="文字" style="flex:1;display:none"></div>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px">
+        <label style="margin:0;display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="cf-bgon" checked>塗り <input type="color" id="cf-bg" value="#fde68a" style="width:40px;padding:0"></label>
+        <label style="margin:0;display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="cf-fgon">文字色 <input type="color" id="cf-fg" value="#b91c1c" style="width:40px;padding:0"></label>
+        <label style="margin:0;display:inline-flex;align-items:center;gap:4px"><input type="checkbox" id="cf-bold">太字</label>
+      </div>
+    </div>
+    <div id="cf-bar" style="display:none">
+      <label>バーの色</label><input type="color" id="cf-barcolor" value="#9cc3ea" style="width:40px;padding:0"></div>
+    </div>
+    <div class="modal-btns"><button class="m-cancel" id="m-cancel">閉じる</button>
+    <button class="m-save" id="m-go">規則を追加</button></div>`);
+  const kind=$('cf-kind'),op=$('cf-op');
+  const syncKind=()=>{ const b=kind.value==='databar';
+    $('cf-bar').style.display=b?'block':'none'; $('cf-cell').style.display=b?'none':'block'; };
+  const syncOp=()=>{ const o=op.value;
+    $('cf-v1').style.display=(o==='contains'||o==='empty')?'none':'block';
+    $('cf-v2').style.display=o==='between'?'block':'none';
+    $('cf-text').style.display=o==='contains'?'block':'none'; };
+  kind.onchange=syncKind; op.onchange=syncOp; syncKind(); syncOp();
+  document.querySelectorAll('#modal [data-del]').forEach(b=>b.onclick=()=>{ removeCondRule(+b.dataset.del); showCondModal(); });
+  $('m-go').onclick=()=>{
+    const rg=parseRangeStr($('cf-range').value); if(!rg){ alert('範囲の形が正しくありません（例 A1:B5）'); return; }
+    if(kind.value==='databar'){ addCondRule({kind:'databar',range:rg,barColor:$('cf-barcolor').value}); }
+    else{
+      const r={kind:'cell',range:rg,op:op.value};
+      if(op.value==='between'){ r.v1=$('cf-v1').value; r.v2=$('cf-v2').value; }
+      else if(op.value==='contains'){ r.text=$('cf-text').value; }
+      else if(op.value!=='empty'){ r.v1=$('cf-v1').value; }
+      if($('cf-bgon').checked) r.bg=$('cf-bg').value;
+      if($('cf-fgon').checked) r.color=$('cf-fg').value;
+      if($('cf-bold').checked) r.bold=1;
+      if(!r.bg&&!r.color&&!r.bold){ alert('塗り・文字色・太字のどれかを選んでください'); return; }
+      addCondRule(r);
+    }
+    showCondModal();   // 一覧を更新して開いたまま
+  };
+}
+
+// ==== 簡易ピボット（選んだ範囲→新しいシートに集計表）====
+function pivotNum(x){ return (typeof x==='number'&&!Number.isInteger(x))? +x.toFixed(4) : x; }
+function pivotAgg(agg,list){
+  if(agg==='count'){ let n=0; for(const x of list) if(x!=null&&x!=='') n++; return n; }
+  let sum=0,cnt=0; for(const x of list){ const n=(typeof x==='number')?x:parseFloat(x); if(isFinite(n)){ sum+=n; cnt++; } }
+  if(agg==='avg') return cnt? sum/cnt : 0;
+  return sum;
+}
+function computePivot(meta){
+  const si=sheetIdx(meta.srcSheetName); if(si<0) return null;
+  const rowAbs=meta.c1+meta.rowField;
+  const colAbs=meta.colField>=0? meta.c1+meta.colField : -1;
+  const valAbs=meta.c1+meta.valField;
+  const dsp=(r,c)=> displayOfIn(si,addrOf(r,c));
+  const rawV=(r,c)=> vals[si+'!'+addrOf(r,c)];
+  const rowKeys=[],colKeys=[],seenR={},seenC={},recs=[];
+  for(let r=meta.r1+1;r<=meta.r2;r++){
+    const rk=dsp(r,rowAbs);
+    const ck=colAbs>=0? dsp(r,colAbs) : '値';
+    const vv=rawV(r,valAbs);
+    if(rk===''&&(vv==null||vv==='')) continue;   // 完全に空の行は飛ばす
+    if(!(rk in seenR)){ seenR[rk]=1; rowKeys.push(rk); }
+    if(!(ck in seenC)){ seenC[ck]=1; colKeys.push(ck); }
+    recs.push({rk,ck,v:vv});
+  }
+  const agg=(rk,ck)=> pivotAgg(meta.agg, recs.filter(x=>(rk==null||x.rk===rk)&&(ck==null||x.ck===ck)).map(x=>x.v));
+  const grid={},rowTot={},colTot={};
+  for(const rk of rowKeys){ grid[rk]={}; for(const ck of colKeys) grid[rk][ck]=agg(rk,ck); rowTot[rk]=agg(rk,null); }
+  for(const ck of colKeys) colTot[ck]=agg(null,ck);
+  return {rowName:dsp(meta.r1,rowAbs)||'行', hasCol:colAbs>=0, colName:colAbs>=0?(dsp(meta.r1,colAbs)||'列'):null,
+    valHeader:dsp(meta.r1,valAbs)||'値', rowKeys,colKeys,grid,rowTot,colTot,grand:agg(null,null),agg:meta.agg};
+}
+function writePivot(sh,meta){
+  sh.cells={};
+  const P=computePivot(meta);
+  sh.colW={0:160};
+  if(!P){ sh.cells['A1']={v:'（元の範囲が見つかりません）'}; sh.rows=20; sh.cols=10; sh.pivot=meta; return; }
+  const aggL={sum:'合計',count:'件数',avg:'平均'}[meta.agg]||'';
+  sh.cells['A1']={v:P.rowName,bold:1,bg:'#EEF3F8'};
+  let lastCol;
+  if(P.hasCol){
+    for(let j=0;j<P.colKeys.length;j++) sh.cells[addrOf(0,1+j)]={v:String(P.colKeys[j]),bold:1,bg:'#EEF3F8',align:'r'};
+    const totCol=1+P.colKeys.length; lastCol=totCol;
+    sh.cells[addrOf(0,totCol)]={v:'総計',bold:1,bg:'#EEF3F8',align:'r'};
+    for(let i=0;i<P.rowKeys.length;i++){ const rk=P.rowKeys[i], r=1+i;
+      sh.cells[addrOf(r,0)]={v:String(rk)};
+      for(let j=0;j<P.colKeys.length;j++) sh.cells[addrOf(r,1+j)]={v:String(pivotNum(P.grid[rk][P.colKeys[j]]))};
+      sh.cells[addrOf(r,totCol)]={v:String(pivotNum(P.rowTot[rk])),bold:1};
+    }
+    const tr=1+P.rowKeys.length;
+    sh.cells[addrOf(tr,0)]={v:'総計',bold:1};
+    for(let j=0;j<P.colKeys.length;j++) sh.cells[addrOf(tr,1+j)]={v:String(pivotNum(P.colTot[P.colKeys[j]])),bold:1};
+    sh.cells[addrOf(tr,totCol)]={v:String(pivotNum(P.grand)),bold:1};
+    sh.rows=Math.max(30,tr+8);
+  }else{
+    sh.cells['B1']={v:aggL+'：'+P.valHeader,bold:1,bg:'#EEF3F8',align:'r'}; lastCol=1;
+    for(let i=0;i<P.rowKeys.length;i++){ const rk=P.rowKeys[i], r=1+i;
+      sh.cells[addrOf(r,0)]={v:String(rk)};
+      sh.cells[addrOf(r,1)]={v:String(pivotNum(P.rowTot[rk]))};
+    }
+    const tr=1+P.rowKeys.length;
+    sh.cells[addrOf(tr,0)]={v:'総計',bold:1};
+    sh.cells[addrOf(tr,1)]={v:String(pivotNum(P.grand)),bold:1};
+    sh.rows=Math.max(30,tr+8);
+  }
+  sh.cols=Math.max(12,lastCol+4);
+  sh.pivot=meta;
+}
+function createPivot(meta){
+  if(READONLY)return 'READONLY';
+  if(meta.rowField==null||meta.rowField<0) return '行の軸を選んでください';
+  if(meta.valField==null||meta.valField<0) return '値の列を選んでください';
+  pushUndo();
+  const sh=newSheet(uniqueSheetName('ピボット'));
+  writePivot(sh,meta);
+  doc.sheets.push(sh); doc.active=doc.sheets.length-1; cur={r:0,c:0}; selA=null;
+  recalc(); buildGrid(); markDirty();
+  return null;
+}
+function refreshPivot(i){
+  if(READONLY)return false;
+  const sh=doc.sheets[i]; if(!sh||!sh.pivot) return false;
+  pushUndo(); writePivot(sh,sh.pivot);
+  if(i===doc.active){ recalc(); buildGrid(); } else recalc();
+  markDirty(); return true;
+}
+function pivotFields(rg){ const h=[]; for(let c=rg.c1;c<=rg.c2;c++) h.push(displayOf(addrOf(rg.r1,c))||colName(c)); return h; }
+function showPivotModal(){
+  if(READONLY||REVIEW)return false;
+  if(sheet().pivot){
+    const m=sheet().pivot;
+    openModal(`<h3>ピボット</h3>
+      <div class="note">このシートは「${escHtml(m.srcSheetName)}」の ${escHtml(rangeToStr(m))} から作った集計表です。<br>
+      もとの範囲を直したら「更新」で作り直せます。</div>
+      <div class="modal-btns"><button class="m-cancel" id="m-cancel">閉じる</button>
+      <button class="m-save" id="m-go">更新</button></div>`);
+    $('m-go').onclick=()=>{ refreshPivot(doc.active); closeModal(); toast('ピボットを更新した'); };
+    return;
+  }
+  const rg=normRange(selRange());
+  if(rg.r1===rg.r2){ alert('ピボットのもとにする範囲（先頭行が見出し）を選んでください'); return; }
+  const h=pivotFields(rg);
+  const opt=(sel,none)=> (none?'<option value="-1">（なし）</option>':'')
+    +h.map((x,i)=>`<option value="${i}"${i===sel?' selected':''}>${escHtml(x)}</option>`).join('');
+  openModal(`<h3>ピボット集計表を作る</h3>
+    <div class="note">選んだ範囲 ${escHtml(rangeToStr(rg))}（先頭行が見出し）から、行の軸・列の軸・値を選んで新しいシートに集計します。</div>
+    <label>行の軸</label><select id="pv-row">${opt(0)}</select>
+    <label>列の軸（任意）</label><select id="pv-col">${opt(-1,true)}</select>
+    <label>値</label><select id="pv-val">${opt(h.length>1?1:0)}</select>
+    <label>集計</label><select id="pv-agg">
+      <option value="sum">合計</option><option value="count">件数</option><option value="avg">平均</option></select>
+    <div class="modal-btns"><button class="m-cancel" id="m-cancel">キャンセル</button>
+    <button class="m-save" id="m-go">作成</button></div>`);
+  $('m-go').onclick=()=>{
+    const meta={srcSheetName:sheet().name,r1:rg.r1,c1:rg.c1,r2:rg.r2,c2:rg.c2,
+      rowField:+$('pv-row').value,colField:+$('pv-col').value,valField:+$('pv-val').value,agg:$('pv-agg').value};
+    const err=createPivot(meta); if(err){ alert(err); return; }
+    closeModal(); toast('ピボット集計表を作った');
+  };
+}
+
+// ==== .xlsx の見た目（太字・文字色・横位置）を zip から補う ====
+//   SheetJS無料版は塗り色と書式(z)は読めるが、太字・文字色・横位置は落とす。そこで xlsx(=zip)の
+//   styles.xml とシートXMLを自前で読み、値のあるセルに足す。DecompressionStreamで file:// でも動く。
+function rgbHex(rgb){ if(!rgb||typeof rgb!=='string')return null; let h=rgb.replace('#','').trim();
+  if(h.length===8)h=h.slice(2); if(!/^[0-9a-fA-F]{6}$/.test(h))return null; return '#'+h.toUpperCase(); }
+function fillHexOf(cell){ const s=cell.s; if(!s||s.patternType!=='solid')return null;
+  return rgbHex(s.fgColor&&s.fgColor.rgb); }
+function xlsxFmtOf(cell){
+  if(cell.t!=='n') return null;
+  const z=cell.z; if(!z||typeof z!=='string'||z==='General') return null;
+  try{ if(window.XLSX&&XLSX.SSF&&XLSX.SSF.is_date&&XLSX.SSF.is_date(z)) return 'date'; }catch(_){}
+  if(z.indexOf('%')>=0) return 'pct';
+  if(/[¥￥$€£]/.test(z)) return 'yen';
+  if(/0\.0/.test(z)) return 'dec2';
+  if(z.indexOf('#,##0')>=0) return 'num';
+  return null;
+}
+async function inflateRaw(bytes){
+  const ds=new DecompressionStream('deflate-raw');
+  const ab=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
+  return new Uint8Array(ab);
+}
+async function unzipEntries(buf,want){
+  const u=new Uint8Array(buf);
+  const dv=new DataView(u.buffer,u.byteOffset,u.byteLength);
+  let eo=-1;
+  for(let i=u.length-22;i>=0&&i>u.length-22-65536;i--){ if(dv.getUint32(i,true)===0x06054b50){ eo=i; break; } }
+  if(eo<0) return {};
+  const cnt=dv.getUint16(eo+10,true); let off=dv.getUint32(eo+16,true);
+  const out={},pend=[];
+  for(let k=0;k<cnt;k++){
+    if(off+46>u.length||dv.getUint32(off,true)!==0x02014b50) break;
+    const method=dv.getUint16(off+10,true);
+    const csize=dv.getUint32(off+20,true);
+    const fnl=dv.getUint16(off+28,true), efl=dv.getUint16(off+30,true), cml=dv.getUint16(off+32,true);
+    const lho=dv.getUint32(off+42,true);
+    const name=new TextDecoder().decode(u.subarray(off+46,off+46+fnl));
+    off+=46+fnl+efl+cml;
+    if(!want(name)) continue;
+    const lfnl=dv.getUint16(lho+26,true), lefl=dv.getUint16(lho+28,true);
+    const ds=lho+30+lfnl+lefl, data=u.subarray(ds,ds+csize);
+    if(method===0) out[name]=data.slice();
+    else if(method===8) pend.push(inflateRaw(data).then(r=>{ out[name]=r; }));
+  }
+  await Promise.all(pend);
+  return out;
+}
+function colorAttrHex(el){ return el&&el.getAttribute? rgbHex(el.getAttribute('rgb')) : null; }
+function parseStylesXml(xml){
+  const d=new DOMParser().parseFromString(xml,'application/xml');
+  const first=t=>d.getElementsByTagName(t)[0];
+  const numFmts={}; const nfp=first('numFmts');
+  if(nfp) for(const n of nfp.getElementsByTagName('numFmt')) numFmts[n.getAttribute('numFmtId')]=n.getAttribute('formatCode');
+  const fonts=[]; const fp=first('fonts');
+  if(fp) for(const f of fp.getElementsByTagName('font')){
+    const b=f.getElementsByTagName('b')[0];
+    const bold=!!b&&b.getAttribute('val')!=='0'&&b.getAttribute('val')!=='false';
+    fonts.push({bold,color:colorAttrHex(f.getElementsByTagName('color')[0])});
+  }
+  const fills=[]; const fl=first('fills');
+  if(fl) for(const f of fl.getElementsByTagName('fill')){
+    const pf=f.getElementsByTagName('patternFill')[0];
+    const solid=pf&&pf.getAttribute('patternType')==='solid';
+    fills.push({color: solid? colorAttrHex(pf.getElementsByTagName('fgColor')[0]) : null});
+  }
+  const xfs=[]; const cx=first('cellXfs');
+  if(cx) for(const x of cx.getElementsByTagName('xf')){
+    const al=x.getElementsByTagName('alignment')[0];
+    xfs.push({numFmtId:x.getAttribute('numFmtId'),fontId:+x.getAttribute('fontId')||0,
+      fillId:+x.getAttribute('fillId')||0,align:al?al.getAttribute('horizontal'):null});
+  }
+  return {numFmts,fonts,fills,xfs};
+}
+function sheetFileOrder(wbXml,relsXml,files){
+  const order=[];
+  if(wbXml&&relsXml){
+    const rd=new DOMParser().parseFromString(relsXml,'application/xml');
+    const rel={}; for(const r of rd.getElementsByTagName('Relationship')) rel[r.getAttribute('Id')]=r.getAttribute('Target');
+    const wd=new DOMParser().parseFromString(wbXml,'application/xml');
+    for(const s of wd.getElementsByTagName('sheet')){
+      const rid=s.getAttribute('r:id')||s.getAttribute('id'); let tgt=rel[rid]; if(!tgt)continue;
+      if(tgt[0]==='/') tgt=tgt.slice(1); else tgt='xl/'+tgt.replace(/^\.\//,'');
+      tgt=tgt.replace(/^xl\/xl\//,'xl/');
+      order.push(tgt);
+    }
+  }
+  if(!order.length) return Object.keys(files).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k))
+    .sort((a,b)=>(+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]));
+  return order;
+}
+function applyStylesToSheet(sh,xml,styles){
+  const d=new DOMParser().parseFromString(xml,'application/xml');
+  const cells=d.getElementsByTagName('c'); let n=0;
+  for(const c of cells){
+    const ref=c.getAttribute('r'); if(!ref) continue;
+    const sIdx=c.getAttribute('s'); if(sIdx==null) continue;
+    const xf=styles.xfs[+sIdx]; if(!xf) continue;
+    const cl=sh.cells[ref]; if(!cl) continue;        // 値のあるセルだけに足す
+    const font=styles.fonts[xf.fontId];
+    if(font){ if(font.bold&&!cl.bold){ cl.bold=1; n++; } if(font.color&&!cl.color){ cl.color=font.color; n++; } }
+    const fill=styles.fills[xf.fillId];
+    if(fill&&fill.color&&!cl.bg){ cl.bg=fill.color; n++; }
+    if(xf.align){ const m={left:'l',center:'c',right:'r'}[xf.align]; if(m&&!cl.align){ cl.align=m; n++; } }
+  }
+  return n;
+}
+async function enrichXlsxStyles(buf){
+  try{
+    if(typeof DecompressionStream==='undefined') return;
+    const files=await unzipEntries(buf,n=>n==='xl/styles.xml'||n==='xl/workbook.xml'
+      ||n==='xl/_rels/workbook.xml.rels'||/^xl\/worksheets\/sheet\d+\.xml$/.test(n));
+    if(!files['xl/styles.xml']) return;
+    const dec=new TextDecoder('utf-8');
+    const styles=parseStylesXml(dec.decode(files['xl/styles.xml']));
+    const order=sheetFileOrder(files['xl/workbook.xml']&&dec.decode(files['xl/workbook.xml']),
+      files['xl/_rels/workbook.xml.rels']&&dec.decode(files['xl/_rels/workbook.xml.rels']),files);
+    let changed=0;
+    for(let si=0;si<doc.sheets.length&&si<order.length;si++){
+      const x=files[order[si]]; if(!x) continue;
+      changed+=applyStylesToSheet(doc.sheets[si],dec.decode(x),styles);
+    }
+    if(lastImport) lastImport.styled=changed;
+    if(changed){ recalc(); refreshCells(); }
+  }catch(e){ /* 見た目は任意。失敗しても値は入っている */ }
+}
+
 // ==== 公開API（検証・Kiro操作用） ====
 window.CalcKit={
-  get doc(){ return doc; },
-  setCell(a,v){ setCellAndRecalc(a.toUpperCase(),v); },
+  get doc(){ return READONLY?JSON.parse(JSON.stringify(doc)):doc; },
+  get readonly(){ return READONLY; },
+  loadDocument,
+  importXlsx(buf,name){ return importXlsxArrayBuffer(name||'book.xlsx',buf); },
+  get lastImport(){ return lastImport; },
+  setCell(a,v){ return setCellAndRecalc(a.toUpperCase(),v); },
   getRaw(a){ return rawOf(a.toUpperCase()); },
   val(a){ return V(a.toUpperCase()); },
   valOn(sheetName,a){ const i=sheetIdx(sheetName); return i<0? undefined : vals[i+'!'+a.toUpperCase()]; },
@@ -1616,12 +2734,32 @@ window.CalcKit={
   insertRow,deleteRow,insertCol,deleteCol,undo,redo,
   fill(dir,count,alt){ return performFill(selRange(),dir,count,alt); },
   sort(byCol,asc){ return sortRange(byCol,asc); },
+  addFilter(range){ return setFilterRange(range); },
+  clearFilter,
+  get filter(){ return sheet().filter||null; },
+  filterCol(col,values){ // values=表示する値の配列（displayOf基準）／null・undefinedで解除
+    const f=sheet().filter; if(!f) return false;
+    const c=typeof col==='string'? colIndex(col.toUpperCase()) : col;
+    if(values==null) delete f.sel[String(c)]; else f.sel[String(c)]=values.map(String);
+    refreshCells(); applyFilterView();
+    return true;
+  },
+  filterValues(col){ const c=typeof col==='string'? colIndex(col.toUpperCase()) : col; return colValues(c); },
+  visibleRows(){ const f=sheet().filter; if(!f) return null;
+    const out=[]; for(let r=f.r+1;r<=f.r2;r++) if(rowVisible(r)) out.push(r+1); return out; },
   align(prop,val){ applyAlign(prop,val); },
   setOpts(list){ setOpts(list); },
   copySel(){ copySel(null); }, pasteText(t){ pasteAt(t); },
   buildCSV,buildSlideHtml,buildChartSlideHtml,buildGanttData,buildGanttPayload,buildChartData,buildPieData,
   loadTemplate,usedRange,
-  setName(n){ setName(n); markDirty(); },
+  addCondRule,removeCondRule,clearCondRules,
+  get condRules(){ return sheet().condfmt||[]; },
+  condStyle(a){ const u=a.toUpperCase(); const p=parseAddr(u); return p? cfStyleAt(u,p.r,p.c,V(u)) : null; },
+  createPivot,refreshPivot,
+  get pivotMeta(){ return sheet().pivot||null; },
+  importXlsxAsync(buf,name){ const ok=importXlsxArrayBuffer(name||'book.xlsx',buf,true);
+    return ok? enrichXlsxStyles(buf).then(()=>lastImport) : Promise.resolve(false); },
+  setName(n){ if(READONLY)return false; setName(n); markDirty(); },
   recalcAll(){ astCache.clear(); recalc(); refreshCells(); }
 };
 
@@ -1678,8 +2816,13 @@ function buildChartSlideHtml(type){
       });
     }
     const editJs=new URL('../SlideKit/slide-edit.js',location.href).href;
+    // 決定: data-palette="custom" を宣言する。凡例の●はDashboardKitの系列色と揃える必要がある。
+    // 既定テーマ(seiryoku)の6色は slidekit-defs.js の chartPalette に登録したので宣言なしでも
+    // 通るが、**テーマを切り替えると別の6色になる**ので宣言は残す（pastel等はカタログ外）。
+    // 凡例は .tb のままにしてPPTXで編集できる形を保つ（SVGに焼き込まない）。2026-08-21
+    // 根拠=.kiro/steering/slide-contract-detail.md のカラートークン表
     return `<!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-palette="custom">
 <head><meta charset="utf-8"><title>${escHtml(doc.name)}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -1688,7 +2831,7 @@ body{font-family:'Yu Gothic','游ゴシック','Noto Sans JP',sans-serif;backgro
 .tb{position:absolute;overflow:hidden;line-height:1.5}
 </style></head>
 <body>
-<!-- SLIDE: ${escHtml(doc.name)}（グラフ） -->
+<!-- SLIDE: ${escHtml(doc.name)}（グラフ） [D09] -->
 <div class="slide" data-bg="#fafafa" style="background:#fafafa">
   <div class="tb" data-x="64" data-y="48" data-w="1152" data-h="44" data-font-size="28" data-bold="1" data-color="#183251"
        style="left:64px;top:48px;width:1152px;height:44px;font-size:28px;font-weight:700;color:#183251">${escHtml(doc.name)}</div>
@@ -1714,7 +2857,9 @@ function initSlideKitReturn(){
   let ret=null;
   try{
     const r=JSON.parse(localStorage.getItem('skCalcReturn')||'null');
-    if(r&&r.deck&&Date.now()-r.ts<6*3600*1000) ret=r;
+    // 30分。デッキ側がスライドを受け取るたびに ts を更新して延命する（放置すれば消えて
+    // ボタンが出なくなる＝古いデッキ宛に飛ぶ事故を防ぐ。2026-08-21修正）
+    if(r&&r.deck&&Date.now()-r.ts<30*60*1000) ret=r;
   }catch(e){}
   if(!ret) return;
   const hdr=document.querySelector('header'); if(!hdr) return;
@@ -1771,14 +2916,16 @@ function initGanttImport(){
 
 // ==== 起動 ====
 function init(){
-  const fromGantt=initGanttImport();
-  if(!fromGantt){
+  const fromGantt=READONLY?false:initGanttImport();
+  if(!fromGantt&&!READONLY){
     const saved=localStorage.getItem(STORAGE_KEY);
-    if(saved){ try{ const d=JSON.parse(saved); if(d&&(d.cells||d.sheets)) doc=normalizeDoc(d); }catch(_){ doc=null; } }
+    if(saved){ try{ const d=JSON.parse(saved); if(d&&(d.cells||d.sheets)){doc=normalizeDoc(d);restoredDocument=true;} }catch(_){ doc=null; } }
   }
-  if(!doc) doc=tmplPL();
+  if(!doc) doc=READONLY?newDoc('読み込み待ち',20,10):tmplPL();
   recalc(); buildGrid(); setName(doc.name);
-  wireEvents(); paintSel(); initSlideKitReturn();
+  READONLY?wireReadonlyEvents():wireEvents();
+  wireFilter();
+  paintSel(); applyReadonlyUi(); applyReviewUi(); initSlideKitReturn(); initExternalBridge();
   if(fromGantt){ markDirty(); toast('GanttKitの計画を表として開いた（日数はF列の式。ガントに戻すには「ガント書き出し」）'); }
 }
 init();

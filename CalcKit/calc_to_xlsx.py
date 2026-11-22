@@ -11,7 +11,7 @@
 #   ・値のみ欲しい時は従来のCSV/.xls書き出し（アプリ内）を使う
 import json, re, sys, datetime, os
 from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font, Alignment
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
@@ -22,6 +22,54 @@ NUM_RE = re.compile(r'^-?[\d,]+(\.\d+)?$')
 ALIGN_H = {'l': 'left', 'c': 'center', 'r': 'right'}
 ALIGN_V = {'t': 'top', 'm': 'center', 'b': 'bottom'}
 ADDR_RE = re.compile(r'^([A-Z]+)(\d+)$')
+
+# CalcKit の式エンジンが持つ関数名（calc.js の FUNCS＋SPECIAL_FUNCS＋特殊処理 IF/SUMIF/COUNTIF/VLOOKUP/HLOOKUP と対応・2026-11-15）
+# 🚫 以前はここに照らさず、=UNKNOWNFN(1) のような未知関数もそのまま生きた式で xlsx に書いていた。
+CK_FUNCS = {
+    'SUM', 'AVERAGE', 'MIN', 'MAX', 'COUNT', 'COUNTA', 'ABS', 'INT', 'SQRT',
+    'ROUND', 'ROUNDUP', 'ROUNDDOWN', 'TODAY', 'DATE', 'IF', 'SUMIF', 'COUNTIF',
+    'VLOOKUP', 'HLOOKUP', 'NOT', 'TRUE', 'FALSE', 'ISBLANK', 'ISNUMBER', 'ISTEXT',
+    'ISERROR', 'YEAR', 'MONTH', 'DAY', 'EOMONTH', 'EDATE', 'DAYS', 'WEEKDAY',
+    'NETWORKDAYS', 'MOD', 'POWER', 'PRODUCT', 'CEILING', 'FLOOR', 'LEN', 'LEFT',
+    'RIGHT', 'MID', 'UPPER', 'LOWER', 'TRIM', 'CONCATENATE', 'CONCAT', 'VALUE',
+    'TEXT', 'IFERROR', 'IFS', 'AND', 'OR', 'SUMIFS', 'COUNTIFS', 'AVERAGEIF',
+    'INDEX', 'MATCH', 'SUMPRODUCT', 'RANK',
+}
+FUNC_RE = re.compile(r'[A-Za-z][A-Za-z0-9_.]*(?=\s*\()')
+
+def formula_issue(formula):
+    """壊れた式なら理由（日本語）、正しければ None を返す（2026-11-15）。
+    括弧の対応・文字列の閉じ・末尾の演算子・CalcKit が知らない関数名を見る。
+    CalcKit が評価できない式を xlsx に生きた式のまま書かないための番人。"""
+    body = formula[1:] if formula.startswith('=') else formula
+    depth, in_str, i, n = 0, False, 0, len(body)
+    while i < n:
+        ch = body[i]
+        if in_str:
+            if ch == '"':
+                if i + 1 < n and body[i + 1] == '"':  # "" はエスケープされた "
+                    i += 2; continue
+                in_str = False
+        elif ch == '"':
+            in_str = True
+        elif ch == '(':
+            depth += 1
+        elif ch == ')':
+            depth -= 1
+            if depth < 0:
+                return '括弧が閉じすぎ（) が多い）'
+        i += 1
+    if in_str:
+        return '文字列の " が閉じていない'
+    if depth > 0:
+        return '括弧が閉じていない（( が多い）'
+    stripped = body.rstrip()
+    if stripped and not stripped.endswith('"') and stripped[-1] in '+-*/^&,<>=(':
+        return f'式が演算子・記号で終わっている（…{stripped[-1]}）'
+    for name in FUNC_RE.findall(body):
+        if name.upper() not in CK_FUNCS:
+            return f'CalcKit が知らない関数 {name}()'
+    return None
 
 def sheet_title(name, used):
     t = re.sub(r'[\[\]:*?/\\]', '_', name or 'シート')[:31] or 'シート'
@@ -89,6 +137,10 @@ def validate(doc):
                 issues.append(f"{where}: 未知のfmt '{fmt}'（許可: {'/'.join(FMT)}）→ 表示形式が付かない")
             v = str(c.get('v', ''))
             if v.startswith('='):
+                bad = formula_issue(v)
+                if bad:
+                    issues.append(f'{where}: 壊れた式（{bad}）→ 文字として書き出す（Excel で評価させない）')
+                    continue
                 for n in vlookup_arg_counts(v):
                     if n < 4:
                         issues.append(f'{where}: VLOOKUPに第4引数がない（完全一致は `,0` 必須。省略は近似一致で誤値）')
@@ -103,8 +155,10 @@ def pct_format(value):
 def convert(doc, out_path):
     wb = Workbook(); wb.remove(wb.active)
     used = set()
+    broken = []   # (シート名!セル, 理由, 元の式) 変換で文字に落とした壊れた式
     for s in doc['sheets']:
         ws = wb.create_sheet(sheet_title(s.get('name'), used))
+        label = s.get('name') or ws.title
         for k, w in (s.get('colW') or {}).items():
             ws.column_dimensions[get_column_letter(int(k) + 1)].width = round(int(w) / 7.0, 1)
         for k, h in (s.get('rowH') or {}).items():
@@ -116,11 +170,17 @@ def convert(doc, out_path):
             raw = str(c.get('v', ''))
             value, fmt = parse_value(raw, c.get('fmt'))
             cell = ws[addr]
-            cell.value = value
-            if fmt == 'pct' and not raw.startswith('='):
-                cell.number_format = pct_format(value)
-            elif fmt in FMT:
-                cell.number_format = FMT[fmt]
+            # 壊れた式は生きた式にせず、先頭に ' を付けた文字として書く（Excel で評価させない・2026-11-15）
+            bad = formula_issue(raw) if raw.startswith('=') else None
+            if bad:
+                cell.value = "'" + raw
+                broken.append((f'{label}!{addr}', bad, raw))
+            else:
+                cell.value = value
+                if fmt == 'pct' and not raw.startswith('='):
+                    cell.number_format = pct_format(value)
+                elif fmt in FMT:
+                    cell.number_format = FMT[fmt]
             if c.get('bold'):
                 cell.font = Font(bold=True)
             if c.get('align') or c.get('valign') or c.get('wrap'):
@@ -128,6 +188,13 @@ def convert(doc, out_path):
                     horizontal=ALIGN_H.get(c.get('align')),
                     vertical=ALIGN_V.get(c.get('valign')),
                     wrap_text=bool(c.get('wrap')) or None)
+            if c.get('fill'):
+                color = 'DBE7F3' if c.get('fill') == 'section' else 'EEF3F8'
+                cell.fill = PatternFill(fill_type='solid', fgColor=color)
+            if c.get('borderTop'):
+                major = c.get('borderTop') == 'major'
+                cell.border = Border(top=Side(style='medium' if major else 'thin',
+                                              color='21537F' if major else '718096'))
             opts = c.get('opts')
             if opts:
                 key = '\x00'.join(opts)
@@ -137,7 +204,13 @@ def convert(doc, out_path):
                     ws.add_data_validation(dv)
                     dvs[key] = dv
                 dvs[key].add(cell)
+        f = s.get('filter')  # 見出し行のフィルタ → Excelのオートフィルタ（絞り込み状態は持ち越さない）
+        if isinstance(f, dict) and all(isinstance(f.get(k), int) for k in ('r', 'r2', 'c1', 'c2')):
+            ws.auto_filter.ref = '%s%d:%s%d' % (get_column_letter(f['c1'] + 1), f['r'] + 1,
+                                                get_column_letter(f['c2'] + 1), f['r2'] + 1)
     wb.save(out_path)
+    for where, reason, raw in broken:
+        print(f'文字にした式: {where}（{reason}）: {raw}', file=sys.stderr)
     return out_path
 
 def selftest():
@@ -181,7 +254,28 @@ def selftest():
     assert len(msgs) == 3 and 'a1' in msgs[0] and 'money' in msgs[1] and 'VLOOKUP' in msgs[2], msgs
     assert validate({'foo': 1}) == ["'sheets' が無いか空（旧単一シート形式はトップレベル 'cells' が必要）"]
     assert vlookup_arg_counts('=VLOOKUP(A1,B:C,2,0)') == [4]
-    print('CALC2XLSX_OK（式・シート間参照・¥/%数値化・日付・書式・プルダウン・列幅・validate検査）')
+
+    # 壊れた式は文字に落とす（2026-11-15・C3）: =SUM( ・=1+ ・未知関数は ' 付きの文字、正しい式は生きたまま
+    assert formula_issue('=SUM(') and formula_issue('=1+') and formula_issue('=UNKNOWNFN(1)')
+    assert formula_issue('=SUM(A1:A2)') is None and formula_issue('=IF(A1>1,"(x)",SUM(A1:A2))') is None
+    assert formula_issue('=工数!E5/1600000') is None and formula_issue('=50%') is None
+    bdoc = {'name': '壊れ式', 'active': 0, 'sheets': [{'name': 'S', 'rows': 5, 'cols': 5, 'cells': {
+        'A1': {'v': '=SUM('},                 # 括弧が閉じない
+        'A2': {'v': '=1+'},                    # 末尾が演算子
+        'A3': {'v': '=UNKNOWNFN(1)'},          # 未知関数
+        'B1': {'v': '=SUM(A1:A2)'},            # 正しい → 生きた式のまま
+        'B2': {'v': '=工数!E5/2'},             # シート間参照 → 生きたまま
+    }}]}
+    msgs = validate(bdoc)
+    assert len(msgs) == 3 and all('壊れた式' in m for m in msgs), msgs
+    bout = convert(bdoc, '/tmp/calckit-selftest-broken.xlsx')   # 壊れ式は stderr に『文字にした式』も出る
+    wb2 = load_workbook(bout)
+    ws3 = wb2['S']
+    assert ws3['A1'].value == "'=SUM(" and ws3['A1'].data_type == 's', ('壊れ式を文字に', ws3['A1'].value, ws3['A1'].data_type)
+    assert ws3['A2'].value == "'=1+" and ws3['A3'].value == "'=UNKNOWNFN(1)", (ws3['A2'].value, ws3['A3'].value)
+    assert ws3['B1'].value == '=SUM(A1:A2)' and ws3['B2'].value == '=工数!E5/2', ('正しい式は生きたまま', ws3['B1'].value, ws3['B2'].value)
+    os.remove(bout)
+    print('CALC2XLSX_OK（式・シート間参照・¥/%数値化・日付・書式・プルダウン・列幅・validate検査・壊れ式を文字に落とす）')
 
 if __name__ == '__main__':
     strict = '--strict' in sys.argv[1:]

@@ -11,6 +11,8 @@
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Hiragino Sans','Noto Sans JP',sans-serif;overflow:hidden;height:100vh}
 /* キット共通ヘッダー（48px・丸に井桁） */
 header{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid var(--border);background:#ffffff}
+/* 狭い幅（2026-11-15・kit-common-header.md）: 帯は48pxの1行のまま。ブランドは縮めず、入らない分は帯の中で横に動かす */
+header{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;white-space:nowrap}header>.brand{flex:none}
 .brand{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;margin-right:14px;color:var(--text)}
 .brand .kit-mark{width:22px;height:22px;display:block;flex:none}
 .hsub{font-size:14px;color:var(--muted);margin-right:auto;cursor:pointer;padding:4px 8px;border-radius:6px}
@@ -37,13 +39,50 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;display:flex;
 #grid-t tbody th.rh{position:sticky;left:0;z-index:2;background:#f1f5f9;color:var(--muted);font-size:14px;width:48px;min-width:48px;text-align:center;user-select:none;cursor:pointer}
 .rowgrip{position:absolute;bottom:-4px;left:0;width:100%;height:8px;cursor:row-resize;z-index:5}
 #grid-t thead th.ch{position:relative;cursor:pointer}
+#grid-t thead th.ch.fcol{background:#e6eef7;color:var(--accent)}
+#grid-wrap:focus{outline:none}
+</style>
+<style>
+/* 見出し行のフィルタ／ソート */
+#grid-t td.fhd{padding-right:26px}
+#grid-t td.fhd .fh-cap{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.fh-btn{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:22px;height:20px;
+  border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--muted);
+  font-size:11px;line-height:1;cursor:pointer;padding:0;z-index:4;font-family:inherit}
+.fh-btn:hover{background:#eef3f8;color:var(--accent)}
+.fh-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#fltp{position:fixed;z-index:520;width:268px;background:#fff;border:1px solid var(--border);
+  border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.15);padding:6px 0;font-size:14px}
+#fltp[hidden]{display:none}
+#fltp .fp-ttl{padding:4px 12px 6px;font-size:13px;color:var(--muted)}
+#fltp .fp-b{display:block;width:100%;text-align:left;background:none;border:none;
+  padding:7px 12px;font-size:14px;color:var(--text);cursor:pointer;font-family:inherit}
+#fltp .fp-b:hover{background:rgba(43,108,176,.08)}
+#fltp .fp-b:disabled{color:#a0aec0;cursor:default;background:none}
+#fltp .fp-sep{height:1px;background:var(--border);margin:4px 0}
+#fltp #fp-q{width:calc(100% - 24px);margin:2px 12px 6px;padding:5px 8px;font-size:14px;
+  border:1px solid var(--border);border-radius:4px;font-family:inherit}
+#fltp .fp-list{max-height:232px;overflow:auto;padding:0 6px}
+#fltp .fp-row{display:flex;align-items:center;gap:7px;padding:4px 6px;cursor:pointer;border-radius:4px}
+#fltp .fp-row:hover{background:rgba(43,108,176,.08)}
+#fltp .fp-row input{margin:0;width:15px;height:15px}
+#fltp .fp-row .fp-v{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#fltp .fp-row .fp-n{color:var(--muted);font-size:13px}
+#fltp .fp-note{padding:6px 12px;color:var(--muted);font-size:13px}
 </style>
 <style>
 #grid-t tbody tr{height:30px}
-#grid-t td{padding:0 8px;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;cursor:cell;background:#fff;vertical-align:middle}
+#grid-t td{padding:0 8px;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;cursor:cell;background:#fff;vertical-align:middle;position:relative}
+#grid-t td.spill{overflow:visible;z-index:1;background:transparent}
+#grid-t td.spill-stop{z-index:2;background:#fff}
+#grid-t td.bt-major{border-top:3px solid var(--accent)!important}
+#grid-t td.bt-middle{border-top:2px solid var(--muted)!important}
+#grid-t td.fill-section{background:#dbe7f3!important;font-weight:700}
+#grid-t td.fill-header{background:#eef3f8!important;font-weight:700}
 #grid-t td.num{text-align:right;font-variant-numeric:tabular-nums}
 #grid-t td.bold{font-weight:700}
 #grid-t td.err{color:#c53030;font-size:13px}
+#grid-t td.ovf{color:var(--muted)}/* C2: 幅に入らない数の ###。ホバー(title)と数式バーで全体値を読める（2026-11-15）*/
 #grid-t td.al{text-align:left}
 #grid-t td.ac{text-align:center}
 #grid-t td.ar{text-align:right}
@@ -70,6 +109,9 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;display:flex;
 /* ステータスバー */
 .status{position:fixed;bottom:0;left:0;right:0;height:36px;z-index:100;background:#ffffff;border-top:1px solid var(--border);display:flex;align-items:center;gap:18px;padding:0 16px;font-size:14px;color:var(--muted)}
 .status b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.status>span{white-space:nowrap;flex:none}
+#st-flt{color:var(--accent)}
+.ck-readonly #st-flt,.ck-review #st-flt{display:inline;margin-left:12px}
 /* シートタブ */
 #tabs{display:flex;align-items:center;gap:2px;margin-right:8px;max-width:45vw;overflow-x:auto}
 #tabs .tab{border:1px solid var(--border);border-bottom:none;background:#f1f5f9;color:var(--muted);padding:5px 14px;font-size:14px;font-family:inherit;cursor:pointer;white-space:nowrap;border-radius:0}
@@ -98,6 +140,17 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;display:flex;
 #ctx button{display:block;width:100%;text-align:left;background:none;border:none;padding:7px 16px;font-size:14px;color:var(--text);cursor:pointer;font-family:inherit}
 #ctx button:hover{background:rgba(43,108,176,.08)}
 #ctx .cx-sep{height:1px;background:var(--border);margin:4px 0}
+</style>
+<style>
+.ck-readonly #grid-t td{font-size:16px;cursor:default}
+.ck-readonly #cell-ed,.ck-readonly #fill-handle,.ck-readonly #dd-btn{display:none!important}
+.ck-readonly .hsub{font-size:16px;font-weight:700}
+.ck-readonly #tabs,.ck-review #tabs{width:100%;max-width:none;margin:0;overflow:visible;display:flex}
+.ck-readonly #tabs .tab,.ck-review #tabs .tab{font-size:14px;flex:1 1 0;min-width:0;padding:5px 3px;white-space:normal;line-height:1.2;height:48px}
+.ck-readonly .status,.ck-review .status{height:50px;padding:0 8px;gap:0}
+.ck-readonly .status>span,.ck-review .status>span{display:none}
+.ck-embed header{padding:0 12px}
+.ck-embed .brand{font-size:14px;margin-right:10px}
 </style>
 </head>
 <body>
@@ -143,11 +196,14 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;display:flex;
   <button class="fbtn" id="fwrap" title="折り返して全体を表示">折返</button>
   <span class="sep"></span>
   <button class="fbtn" id="fdd" title="プルダウンの選択肢を設定">選択肢▾</button>
+  <button class="fbtn" id="fflt" title="選択範囲の先頭行を見出しにしてフィルタを付ける／外す">フィルタ</button>
+  <button class="fbtn" id="fcond" title="条件付き書式（値で塗り色・文字色・太字・データバーを付ける規則）">条件付き</button>
+  <button class="fbtn" id="fpivot" title="選んだ範囲（先頭行が見出し）からピボット集計表を作る／更新する">ピボット</button>
   <span class="sep"></span>
   <button class="fbtn" id="frowa" title="行を下に追加">＋行</button>
   <button class="fbtn" id="fcola" title="列を右に追加">＋列</button>
 </div>
-<div id="grid-wrap"><div id="grid-inner">
+<div id="grid-wrap" tabindex="-1"><div id="grid-inner">
   <table id="grid-t"><thead></thead><tbody></tbody></table>
   <div id="sel-box"><div id="fill-handle" title="ドラッグでフィル（式コピー・連番・日付）"></div></div>
   <div id="fill-box"></div>
@@ -160,13 +216,27 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;display:flex;
   <span>合計 <b id="st-sum">-</b></span>
   <span>平均 <b id="st-avg">-</b></span>
   <span>個数 <b id="st-cnt">-</b></span>
+  <span id="st-flt"></span>
   <span id="save-status" title="localStorageには自動復旧用データを保存">復旧: ブラウザ内</span>
-  <span class="hint"><kbd>=</kbd> 式　<kbd>⌘C/⌘V</kbd> Excelと相互コピペ　<kbd>右下■ドラッグ</kbd> フィル　<kbd>列ヘッダ右クリック</kbd> 並べ替え/挿入　<kbd>⌘Z</kbd> 戻す</span>
+  <span class="hint"><kbd>=</kbd> 式　<kbd>⌘C/⌘V</kbd> Excelと相互コピペ　<kbd>右下■ドラッグ</kbd> フィル　<kbd>見出しの▽</kbd> 絞り込み/並べ替え　<kbd>⌘Z</kbd> 戻す</span>
 </div>
 <div id="ctx"></div>
+<div id="fltp" hidden>
+  <div class="fp-ttl" id="fp-ttl">列</div>
+  <button class="fp-b" id="fp-asc">↑ 昇順に並べ替え</button>
+  <button class="fp-b" id="fp-desc">↓ 降順に並べ替え</button>
+  <div class="fp-sep"></div>
+  <input id="fp-q" placeholder="値をしぼる" spellcheck="false" autocomplete="off">
+  <div class="fp-list" id="fp-list"></div>
+  <div class="fp-sep"></div>
+  <button class="fp-b" id="fp-clear">この列の絞り込みを消す</button>
+  <button class="fp-b" id="fp-off">フィルタを外す</button>
+</div>
 <div class="modal-bg" id="modal-bg"><div class="modal" id="modal"></div></div>
 <!-- DashboardKit連携（任意）。無い環境でもグラフ以外は全部動く -->
 <script src="../DashboardKit/dashboard-kit.js"></script>
-<script src="calc.js"></script>
+<!-- .xlsx 読み込み用（SheetJS 0.20.3・同梱・CDNなし・file://で動く） -->
+<script src="xlsx.full.min.js"></script>
+<script src="calc.js?v=20260918-1"></script>
 </body>
 </html>

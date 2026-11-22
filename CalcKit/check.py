@@ -72,6 +72,77 @@ def main():
         assert fx["cc"] == "合計:5" and fx["pc"] == 0.5 and fx["sif"] == 3 and fx["nm"] == "#NAME?", f"式3: {fx}"
         print("OK 式エンジン 四則/SUM/IF/ROUND/AVERAGE/SUMIF/連結/%・#DIV/0!・#CYCLE!・#NAME?")
 
+        # IME の確定 Enter で確定しない（2026-11-15）: isComposing の Enter はセル編集を閉じない。通常の Enter で閉じる
+        im = ev(sock, "(function(){var K=window.CalcKit;K.select('P28');"
+                      "var ed=document.getElementById('cell-ed');"
+                      "document.dispatchEvent(new KeyboardEvent('keydown',{key:'F2',bubbles:true,cancelable:true}));"
+                      "ed.value='売上'; var disp0=getComputedStyle(ed).display;"
+                      "ed.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',isComposing:true,bubbles:true,cancelable:true}));"
+                      "var still=getComputedStyle(ed).display!=='none';"
+                      "ed.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',isComposing:false,bubbles:true,cancelable:true}));"
+                      "var closed=getComputedStyle(ed).display==='none';"
+                      "return {disp0:disp0,still:still,closed:closed,v:K.val('P28')};})()")
+        assert im["disp0"] != "none" and im["still"] and im["closed"] and im["v"] == "売上", f"IME Enter: {im}"
+        print("OK IME 変換確定の Enter（isComposing）では編集を閉じず、通常の Enter で確定（P28=売上）")
+
+        # 関数の追加（2026-11-14）: 論理・条件集計・INDEX/MATCH・日付・数値・文字
+        f2 = ev(sock, "(function(){var K=window.CalcKit;"
+                      # 小さな表: U1:W4 = 部署/区分/金額
+                      "K.select('U1');K.pasteText('営業\\tA\\t100\\n営業\\tB\\t200\\n開発\\tA\\t300\\n開発\\tB\\t400');"
+                      "K.setCell('X1','=IFERROR(1/0,\\\"x\\\")');K.setCell('X2','=IFERROR(2*3,\\\"x\\\")');"
+                      "K.setCell('X3','=AND(1,2>1,TRUE)');K.setCell('X4','=OR(0,FALSE,1=2)');K.setCell('X5','=NOT(0)');"
+                      "K.setCell('X6','=IFS(1>2,\\\"a\\\",2>1,\\\"b\\\")');"
+                      "K.setCell('X7','=SUMIFS(W1:W4,U1:U4,\\\"営業\\\",V1:V4,\\\"B\\\")');"
+                      "K.setCell('X8','=COUNTIFS(U1:U4,\\\"開発\\\",W1:W4,\\\">300\\\")');"
+                      "K.setCell('X9','=AVERAGEIF(U1:U4,\\\"開発\\\",W1:W4)');"
+                      "K.setCell('X10','=INDEX(W1:W4,MATCH(\\\"開発\\\",U1:U4,0))');"
+                      "K.setCell('X11','=INDEX(U1:W4,2,3)');K.setCell('X12','=MATCH(250,W1:W4,1)');"
+                      "K.setCell('X13','=SUMPRODUCT(W1:W2,W3:W4)');K.setCell('X14','=RANK(300,W1:W4)');"
+                      "K.setCell('Y1','=YEAR(DATE(2026,11,14))');K.setCell('Y2','=MONTH(\\\"2026-11-14\\\")');K.setCell('Y3','=DAY(DATE(2026,11,14))');"
+                      "K.setCell('Y4','=EOMONTH(DATE(2026,1,31),1)-DATE(2026,2,28)');"
+                      "K.setCell('Y5','=EDATE(DATE(2026,1,31),1)-DATE(2026,2,28)');"
+                      "K.setCell('Y6','=NETWORKDAYS(DATE(2026,11,2),DATE(2026,11,6))');"
+                      "K.setCell('Y7','=WEEKDAY(DATE(2026,11,14))');K.setCell('Y8','=DAYS(DATE(2026,12,1),DATE(2026,11,1))');"
+                      "K.setCell('Y9','=MOD(-7,3)');K.setCell('Y10','=POWER(2,10)');K.setCell('Y11','=CEILING(123,10)');K.setCell('Y12','=FLOOR(127,10)');K.setCell('Y13','=PRODUCT(W1:W2)');"
+                      "K.setCell('Z1','=LEN(\\\"あいうえお\\\")');K.setCell('Z2','=MID(\\\"あいうえお\\\",2,3)');K.setCell('Z3','=LEFT(\\\"abc\\\",2)&RIGHT(\\\"abc\\\",1)');"
+                      "K.setCell('Z4','=TEXT(1234.5,\\\"#,##0\\\")');K.setCell('Z5','=TEXT(0.256,\\\"0.0%\\\")');K.setCell('Z6','=TEXT(DATE(2026,3,5),\\\"yyyy/m/d\\\")');"
+                      "K.setCell('Z7','=UPPER(TRIM(\\\"  ab  c \\\"))');K.setCell('Z8','=CONCATENATE(\\\"a\\\",1,\\\"b\\\")');K.setCell('Z9','=VALUE(\\\"1,200\\\")');"
+                      "K.setCell('Z10','=ISBLANK(Z20)+ISNUMBER(W1)*10+ISTEXT(U1)*100');"
+                      "var o={};['X1','X2','X3','X4','X5','X6','X7','X8','X9','X10','X11','X12','X13','X14',"
+                      "'Y1','Y2','Y3','Y4','Y5','Y6','Y7','Y8','Y9','Y10','Y11','Y12','Y13','Z1','Z2','Z3','Z4','Z5','Z6','Z7','Z8','Z9','Z10']"
+                      ".forEach(function(a){o[a]=K.val(a);}); return o;})()")
+        exp = {"X1": "x", "X2": 6, "X3": 1, "X4": 0, "X5": 1, "X6": "b", "X7": 200, "X8": 1, "X9": 350, "X10": 300, "X11": 200,
+               "X12": 2, "X13": 100*300+200*400, "X14": 2,
+               "Y1": 2026, "Y2": 11, "Y3": 14, "Y4": 0, "Y5": 0, "Y6": 5, "Y7": 7, "Y8": 30, "Y9": 2, "Y10": 1024, "Y11": 130, "Y12": 120, "Y13": 20000,
+               "Z1": 5, "Z2": "いうえ", "Z3": "abc", "Z4": "1,235", "Z5": "25.6%", "Z6": "2026/3/5", "Z7": "AB C", "Z8": "a1b", "Z9": 1200, "Z10": 111}
+        bad = {k: (f2.get(k), v) for k, v in exp.items() if f2.get(k) != v}
+        assert not bad, f"追加関数（セル: (実際, 期待)）: {bad}"
+        print(f"OK 追加関数 {len(exp)}式（IFERROR/AND/OR/NOT/IFS・SUMIFS/COUNTIFS/AVERAGEIF・INDEX/MATCH・SUMPRODUCT/RANK・"
+              "YEAR/MONTH/DAY/EOMONTH/EDATE/NETWORKDAYS/WEEKDAY/DAYS・MOD/POWER/CEILING/FLOOR/PRODUCT・LEN/MID/LEFT/RIGHT/TEXT/UPPER/TRIM/CONCATENATE/VALUE/IS*）")
+
+        # C2: 幅に入らない数は「###」（2026-11-15）。全体値は title（ホバー）と数式バー(getRaw)で読める。文字セルはスピルのまま
+        c2 = ev(sock, "(function(){var K=window.CalcKit;"
+                      "K.addSheet();var ni=K.activeSheet;"            # 空の新シート（colW 既定104）
+                      "K.setCell('A1','¥1000000000');"                # 10億円は既定幅104pxに入らない
+                      "var disp=K.display('A1');"
+                      "var td=document.getElementById('c-0-0');"
+                      "var clipped=td.textContent,title=td.title,ovf=td.classList.contains('ovf'),raw=K.getRaw('A1');"
+                      "K.doc.sheets[ni].colW[0]=360;K.switchSheet(0);K.switchSheet(ni);"   # 列を広げて再描画→元に戻る
+                      "var td2=document.getElementById('c-0-0');"
+                      "var wide=td2.textContent,wideOvf=td2.classList.contains('ovf'),wideTitle=td2.title;"
+                      "K.setCell('A2','これはとても長い日本語の文字列でセル幅をはみ出します');"
+                      "var txtTd=document.getElementById('c-1-0');"
+                      "K.switchSheet(0);"                             # 後続テストのため元の収支シートへ戻す
+                      "return {disp:disp,clipped:clipped,title:title,ovf:ovf,raw:raw,"
+                      "wide:wide,wideOvf:wideOvf,wideTitle:wideTitle,"
+                      "txt:txtTd.textContent,txtSpill:txtTd.classList.contains('spill')};})()")
+        assert "1,000,000,000" in c2["disp"], f"10億の表示: {c2}"
+        assert c2["clipped"] == "###" and c2["ovf"] and c2["title"] == c2["disp"], f"入らない数が###になっていない: {c2}"
+        assert c2["raw"] == "¥1000000000", f"数式バー(getRaw)で全体値が読める: {c2}"
+        assert c2["wide"] == c2["disp"] and not c2["wideOvf"] and c2["wideTitle"] == "", f"列を広げたら元の数に戻る: {c2}"
+        assert c2["txt"].startswith("これは") and c2["txtSpill"], f"文字セルは###にせずスピルのまま: {c2}"
+        print("OK C2 幅に入らない数は###（ホバーと数式バーで全体値・列を広げれば復帰・文字セルはスピル維持）")
+
         # コピペの相対参照シフト: R3(=R1*R2+1)をT3に貼る→=T1*T2+1
         cp = ev(sock, "(function(){var K=window.CalcKit;"
                       "K.setCell('T1','10');K.setCell('T2','20');"
@@ -279,6 +350,44 @@ def main():
         assert so["h"] == "名前" and so["r1"] == "りんご" and so["v1"] == 90, f"ソート: {so}"
         assert so["r3"] == "すいか" and so["f1"] == 180 and so["fr"] == "=AN2*2", f"ソート式: {so}"
         print("OK 並べ替え 降順90/60/30・ヘッダ固定・行内の式が追従（=AN2*2→180）")
+
+        # フィルタ: 見出しの▽で絞り込み（行を隠すだけ・式の値は動かない）→並べ替え→解除
+        fl = ev(sock, "(function(){var K=window.CalcKit;"
+                      "K.select('AQ1');"
+                      "K.pasteText('担当\\t件数\\n井内\\t3\\n西田\\t1\\n井内\\t5\\n山本\\t2\\n西田\\t4');"
+                      "K.setCell('AS2','=SUM(AR2:AR6)');"
+                      "K.select('AQ1','AR6');K.addFilter();"
+                      "var btn=function(c){return [...document.querySelectorAll('.fh-btn')]"
+                      ".find(function(b){return b.dataset.fc===String(c);});};"
+                      "btn(42).click();"                     # AQ列=index42
+                      "var rows=[...document.querySelectorAll('#fp-list .fp-row')];"
+                      "var names=rows.map(function(e){return e.textContent;});"
+                      "rows.find(function(e){return e.textContent.indexOf('西田')===0;})"
+                      ".querySelector('input').click();"
+                      "var tb=document.querySelector('#grid-t tbody');"
+                      "var vis=[...tb.rows].slice(0,6).map(function(tr){return tr.style.display!=='none';});"
+                      "return {btns:document.querySelectorAll('.fh-btn').length,names:names,vis:vis,"
+                      "sum:K.val('AS2'),left:K.visibleRows(),hid:document.getElementById('st-flt').textContent};})()")
+        assert fl["btns"] == 2 and len(fl["names"]) == 4, f"フィルタの▽とパネル: {fl}"
+        assert fl["vis"] == [True, True, False, True, True, False], f"隠れる行: {fl}"
+        assert fl["sum"] == 15 and fl["left"] == [2, 4, 5], f"式は絞り込みで動かない: {fl}"
+        assert "2行" in fl["hid"], f"絞り込みの件数表示: {fl}"
+        fl2 = ev(sock, "(function(){var K=window.CalcKit;"
+                       "var btn=[...document.querySelectorAll('.fh-btn')]"
+                       ".find(function(b){return b.dataset.fc==='43';});btn.click();"
+                       "document.getElementById('fp-desc').click();"
+                       "var col=[];for(var r=2;r<=6;r++)col.push(K.val('AR'+r));"
+                       "var head=K.display('AQ1');"
+                       "K.clearFilter();"
+                       "var tb=document.querySelector('#grid-t tbody');"
+                       "return {head:head,col:col,btns:document.querySelectorAll('.fh-btn').length,"
+                       "hidden:[...tb.rows].filter(function(tr){return tr.style.display==='none';}).length,"
+                       "cap:document.getElementById('c-0-42').textContent,"
+                       "st:document.getElementById('st-flt').textContent};})()")
+        assert fl2["head"] == "担当" and fl2["col"] == [5, 4, 3, 2, 1], f"フィルタ列の並べ替え: {fl2}"
+        assert fl2["btns"] == 0 and fl2["hidden"] == 0, f"フィルタ解除: {fl2}"
+        assert fl2["cap"] == "担当" and fl2["st"] == "", f"解除後の後片付け: {fl2}"
+        print("OK フィルタ 見出しの▽で2行を隠す（SUM=15は不変）・その列で降順・解除で全表示に戻る")
 
         # VLOOKUP: 完全一致・見つからない→#N/A・近似（既定・昇順前提）・HLOOKUP
         vk = ev(sock, "(function(){var K=window.CalcKit;"
@@ -648,7 +757,199 @@ def gantt_roundtrip():
         assert ck["b4"] == "現場調査" and ck["days"] == 92, f"表として開く: {ck}"   # 8/1〜10/31=92日
         assert ck["left"] is None and ck["hash"] == "", f"二重取り込み対策: {ck}"
         print(f"OK GanttKit往復（CalcKit側）#fromGanttで表化（{ck['b4']}・日数{ck['days']}日・シート {ck['sheets']}）")
+
+        # 進捗%・控え開始/終了も往復で落とさない（2026-11-14）: 表に I〜L 相当の列 → ペイロードに progress・baselines
+        pl2 = ev(sock, "(function(){var K=window.CalcKit;K.loadTemplate('blank');K.select('A1');"
+                       "K.pasteText('項目\\t開始\\t終了\\tグループ\\t進捗%\\t控え開始\\t控え終了\\n"
+                       "現場調査\\t2026-08-01\\t2026-11-15\\t探索\\t60\\t2026-08-01\\t2026-10-31\\n"
+                       "PoC構築\\t2026-10-15\\t2027-01-31\\t実装\\t\\t\\t');"
+                       "K.select('A1','G3');"
+                       "var d=K.buildGanttPayload({name:0,start:1,end:2,group:3,label:-1,desc:-1,assignee:-1,progress:4,bstart:5,bend:6});"
+                       "localStorage.setItem('ckGanttData',JSON.stringify({data:d,ts:Date.now()}));"
+                       "var js=K.buildGanttData({name:0,start:1,end:2,group:3,label:-1,desc:-1,assignee:-1,progress:4,bstart:5,bend:6});"
+                       "return {p0:d.items[0].versions[0].progress,p1:(d.items[1].versions[0].progress===undefined?null:d.items[1].versions[0].progress),"
+                       "bl:d.baselines.length,b0:d.baselines[0]&&d.baselines[0].items.ck1[0].end,"
+                       "b1:!!(d.baselines[0]&&d.baselines[0].items.ck2),js:js.indexOf('TL_BASELINES')>0};})()")
+        assert pl2["p0"] == 60 and pl2["p1"] is None, f"進捗の読み: {pl2}"
+        assert pl2["bl"] == 1 and pl2["b0"] == "2026-10-31" and pl2["b1"] is False and pl2["js"], f"控えの読み: {pl2}"
+        print(f"OK GanttKit往復（CalcKit側）進捗%→progress・控え開始/終了→baselines（控え終了 {pl2['b0']}・データjsにも TL_BASELINES）")
+        call(sock, "Page.navigate", {"url": gantt + "#fromCalc"})
+        time.sleep(4)
+        gk2 = ev(sock, "(function(){var cs=window.GanttKit.buildCalcSheet().sheets[0].cells;"
+                       "return {bl:window.TL_BASELINES.length,prog:window.TL_ITEMS[0].versions[0].progress,"
+                       "hdrK:cs['K3'].v,k4:cs['K4'].v,l4:cs['L4'].v,i4:cs['I4'].v};})()")
+        assert gk2["bl"] == 1 and gk2["prog"] == 60, f"ガント側の控え・進捗: {gk2}"
+        assert gk2["hdrK"] == "遅れ日数" and gk2["k4"] == "15" and gk2["l4"] == "60" and gk2["i4"] == "2026-08-01", f"表に戻した控え列: {gk2}"
+        print(f"OK GanttKit往復（Gantt側）控え1本・進捗60 → 表に戻すと 遅れ日数 +{gk2['k4']}・進捗% {gk2['l4']}")
         print("GANTT_ROUNDTRIP_OK 表⇄ガントの往復通過")
+    finally:
+        chrome.terminate()
+
+
+# --- .xlsx 読み込み: SheetJSで書いて読む往復（複数シート・式・日付・列幅） ---
+def xlsx_import():
+    subprocess.run(["pkill", "-f", "calckit-xlsx-profile"], capture_output=True)
+    time.sleep(0.4)
+    prof = "/tmp/calckit-xlsx-profile"
+    subprocess.run(["rm", "-rf", prof])
+    port6 = PORT + 28
+    old = cdpkit.PORT; cdpkit.PORT = port6
+    chrome = subprocess.Popen([cdpkit.CHROME, "--headless=new", f"--remote-debugging-port={port6}",
+                               f"--user-data-dir={prof}", "--no-first-run", "--mute-audio",
+                               "--window-size=1600,900", PAGE],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        sock = cdpkit.connect(); cdpkit.PORT = old
+        call, ev = cdpkit.call, cdpkit.ev
+        call(sock, "Runtime.enable")
+        deadline = time.time() + 15
+        while time.time() < deadline:
+            if ev(sock, "!!(window.CalcKit && window.XLSX && window.XLSX.utils)"):
+                break
+            time.sleep(0.3)
+        assert ev(sock, "!!window.XLSX"), "SheetJS(xlsx.full.min.js)が読み込めていない"
+
+        # SheetJSで複数シート・式（対応/非対応）・日付・列幅を持つxlsxを書き、importXlsxで取り込む
+        r = ev(sock, "(function(){var X=window.XLSX,K=window.CalcKit;"
+                     "var ws1=X.utils.aoa_to_sheet([['月','額'],['4月',100],['5月',200]]);"
+                     "ws1['B4']={t:'n',f:'SUM(B2:B3)'};"                           # 対応関数→生きた式
+                     "var ser=Math.round(Date.UTC(2026,7,14)/86400000)+25569;"     # 2026-08-14のExcelシリアル
+                     "ws1['A5']={t:'n',v:ser,z:'yyyy-mm-dd'};"                     # 日付書式→日付型へ
+                     "ws1['B5']={t:'s',f:'CONCATENATE(\"x\",B4)',v:'x300',w:'x300'};"  # 非対応関数→値に落ちる
+                     "ws1['!ref']='A1:B5';ws1['!cols']=[{wpx:123},{wpx:77}];"
+                     "var ws2=X.utils.aoa_to_sheet([[10]]);"
+                     "ws2['A2']={t:'n',f:'A1*2'};ws2['!ref']='A1:A2';"             # 対応（四則）→生きた式
+                     "var wb=X.utils.book_new();"
+                     "X.utils.book_append_sheet(wb,ws1,'売上');"
+                     "X.utils.book_append_sheet(wb,ws2,'原価');"
+                     "var out=X.write(wb,{type:'array',bookType:'xlsx'});"
+                     "var ok=K.importXlsx(out,'テスト.xlsx');"
+                     "return {ok:ok,names:K.sheetNames().join('|'),name:K.doc.name,"
+                     "imp:K.lastImport,"
+                     "sum:K.val('B4'),sumRaw:K.getRaw('B4'),"
+                     "dateDisp:K.display('A5'),dateRaw:K.getRaw('A5'),dateNum:typeof K.val('A5'),"
+                     "b5Raw:K.getRaw('B5'),b5Val:K.val('B5'),"
+                     "cw0:K.doc.sheets[0].colW[0],cw1:K.doc.sheets[0].colW[1],"
+                     "status:document.getElementById('save-status').textContent};})()")
+        assert r["ok"] and r["names"] == "売上|原価" and r["name"] == "テスト", f"取り込み基本: {r}"
+        assert r["imp"]["sheets"]==2 and r["imp"]["formulas"]==2 and r["imp"]["valued"]==1, f"要約: {r['imp']}"
+        assert r["sumRaw"] == "=SUM(B2:B3)" and r["sum"] == 300, f"対応関数は生きた式: {r}"
+        assert r["dateRaw"] == "2026-08-14" and r["dateDisp"] == "2026-08-14" and r["dateNum"] == "number", f"日付型: {r}"
+        assert r["b5Raw"] == "x300" and "=" not in r["b5Raw"] and r["b5Val"] == "x300", f"非対応式→値: {r}"
+        assert r["cw0"] == 123 and r["cw1"] == 77, f"列幅: {r}"
+        assert "xlsxから取り込んだ" in r["status"], f"状態欄: {r['status']}"
+        print(f"OK xlsx読み込み 2シート・式{r['imp']['formulas']}（SUM=300生きた式）・"
+              f"値に落ちた式{r['imp']['valued']}・日付2026-08-14・列幅{r['cw0']}/{r['cw1']}px・状態欄表示")
+
+        # 2枚目のシートに切替→四則の式も生きている
+        r2 = ev(sock, "(function(){var K=window.CalcKit;K.switchSheet(1);"
+                      "return {raw:K.getRaw('A2'),v:K.val('A2')};})()")
+        assert r2["raw"] == "=A1*2" and r2["v"] == 20, f"2枚目の式: {r2}"
+        print(f"OK xlsx読み込み 2枚目 =A1*2=20（シート越しに式が生きる）")
+
+        # --- 書式つき（%・¥・小数・桁区切り＋太字/塗り/文字色/横位置＋結合）を openpyxl で作って取り込む ---
+        #   SheetJS write は塗り/太字を書けないので、実物の様式は openpyxl で作りbase64で流し込む。
+        #   太字・文字色・横位置は importXlsxAsync が zip の styles.xml を自前で読んで補う。
+        import base64, io, openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        wbk=openpyxl.Workbook(); wsx=wbk.active; wsx.title="様式"
+        wsx["A1"]="見出し"; wsx["A1"].font=Font(bold=True,color="FF0000")
+        wsx["A1"].fill=PatternFill("solid",fgColor="FFFF00"); wsx["A1"].alignment=Alignment(horizontal="right")
+        wsx["B2"]=0.5;      wsx["B2"].number_format="0%"
+        wsx["C2"]=1234;     wsx["C2"].number_format='"¥"#,##0'
+        wsx["D2"]=1234.5;   wsx["D2"].number_format="#,##0.00"
+        wsx["E2"]=1000000;  wsx["E2"].number_format="#,##0"
+        wsx["A4"]="結合セル"; wsx.merge_cells("A4:C4")
+        bio=io.BytesIO(); wbk.save(bio)
+        b64=base64.b64encode(bio.getvalue()).decode()
+        js=("(async()=>{var b=atob('"+b64+"');var u=new Uint8Array(b.length);"
+            "for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);"
+            "var imp=await window.CalcKit.importXlsxAsync(u.buffer,'様式.xlsx');"
+            "var K=window.CalcKit,cs=K.doc.sheets[0].cells;"
+            "return {imp:imp,name:K.doc.name,"
+            "pb2:K.display('B2'),pc2:K.display('C2'),pd2:K.display('D2'),pe2:K.display('E2'),"
+            "fb2:cs['B2'].fmt,fc2:cs['C2'].fmt,fd2:cs['D2'].fmt,fe2:cs['E2'].fmt,"
+            "bold:!!cs['A1'].bold,bg:cs['A1'].bg,color:cs['A1'].color,align:cs['A1'].align,"
+            "a4:K.display('A4')};})()")
+        st=ev(sock,js,await_promise=True)
+        assert st["name"]=="様式", f"様式ファイル名: {st}"
+        assert st["fb2"]=="pct" and st["pb2"]=="50%", f"%書式: {st}"
+        assert st["fc2"]=="yen" and st["pc2"]=="¥1,234", f"¥書式: {st}"
+        assert st["fd2"]=="dec2" and st["pd2"]=="1,234.50", f"小数書式: {st}"
+        assert st["fe2"]=="num" and st["pe2"]=="1,000,000", f"桁区切り書式: {st}"
+        assert st["bold"] and st["bg"]=="#FFFF00" and st["color"]=="#FF0000" and st["align"]=="r", f"太字/塗り/文字色/横位置: {st}"
+        assert st["imp"]["merges"]==1 and st["a4"]=="結合セル", f"結合セルの注記: {st}"
+        assert st["imp"].get("styled",0)>=3, f"様式の取り込み件数: {st}"
+        print(f"OK xlsx書式 %={st['pb2']}・¥={st['pc2']}・小数={st['pd2']}・桁区切り={st['pe2']}"
+              f"＋太字/黄塗り/赤字/右寄せ＋結合1件（見た目補完{st['imp']['styled']}件）")
+        print("XLSX_IMPORT_OK .xlsx取り込み通過")
+    finally:
+        chrome.terminate()
+
+def condfmt_pivot():
+    """条件付き書式（規則→色の付くセルの数・データバー）とピボット（3×2の集計値・更新）の検査"""
+    subprocess.run(["pkill", "-f", "calckit-cfpv-profile"], capture_output=True)
+    time.sleep(0.4)
+    prof = "/tmp/calckit-cfpv-profile"
+    subprocess.run(["rm", "-rf", prof])
+    port7 = PORT + 29
+    old = cdpkit.PORT; cdpkit.PORT = port7
+    chrome = subprocess.Popen([cdpkit.CHROME, "--headless=new", f"--remote-debugging-port={port7}",
+                               f"--user-data-dir={prof}", "--no-first-run", "--mute-audio",
+                               "--window-size=1600,900", PAGE],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        sock = cdpkit.connect(); cdpkit.PORT = old
+        call, ev = cdpkit.call, cdpkit.ev
+        call(sock, "Runtime.enable")
+        deadline = time.time() + 15
+        while time.time() < deadline:
+            if ev(sock, "!!(window.CalcKit && window.CalcKit.addCondRule && window.CalcKit.createPivot)"):
+                break
+            time.sleep(0.3)
+        # 新しいシートに 6行の表を置く: 地域/品/額
+        ev(sock, "(function(){var K=window.CalcKit;K.addSheet();"
+                 "var rows=[['地域','品','額'],['東','りんご',100],['東','みかん',50],['西','りんご',70],['西','みかん',20],['西','りんご',30]];"
+                 "rows.forEach(function(r,i){r.forEach(function(v,j){K.setCell(String.fromCharCode(65+j)+(i+1),String(v));});});return true;})()")
+        # 条件付き書式: 額>=50 を黄塗り・太字、品に「りんご」を含む→赤字、額にデータバー
+        st = ev(sock, "(function(){var K=window.CalcKit;"
+                      "K.addCondRule({range:{r1:1,c1:2,r2:5,c2:2},op:'>=',v1:50,bg:'#FFF59D',bold:1});"
+                      "K.addCondRule({range:{r1:1,c1:1,r2:5,c2:1},op:'contains',text:'りんご',color:'#C62828'});"
+                      "K.addCondRule({range:{r1:1,c1:2,r2:5,c2:2},kind:'databar',barColor:'#9cc3ea'});"
+                      "var yellow=0,bold=0,red=0,bars=[];"
+                      "for(var r=2;r<=6;r++){var s=K.condStyle('C'+r);if(s&&s.bg==='#FFF59D')yellow++;if(s&&s.bold)bold++;if(s&&s.bar!=null)bars.push(s.bar);"
+                      " var t=K.condStyle('B'+r);if(t&&t.color==='#C62828')red++;}"
+                      "return {rules:K.condRules.length,yellow:yellow,bold:bold,red:red,bars:bars,"
+                      "td:(function(){var td=document.querySelector('td[data-a=\"C2\"],td[data-addr=\"C2\"]');return td?td.style.background:null;})()};})()")
+        assert st["rules"] == 3, f"規則の数: {st}"
+        assert st["yellow"] == 3 and st["bold"] == 3, f"額>=50 は 100/50/70 の3セルのはず: {st}"
+        assert st["red"] == 3, f"りんご は3セルのはず: {st}"
+        assert st["bars"] == [100, 50, 70, 20, 30], f"データバー（最大=100%・0から）: {st}"
+        print(f"OK 条件付き書式 規則3→黄塗り太字{st['yellow']}セル・赤字{st['red']}セル・データバー{st['bars']}")
+        # 規則を1つ外す→色が減る
+        st2 = ev(sock, "(function(){var K=window.CalcKit;K.removeCondRule(0);var y=0;for(var r=2;r<=6;r++){var s=K.condStyle('C'+r);if(s&&s.bg==='#FFF59D')y++;}return {rules:K.condRules.length,yellow:y};})()")
+        assert st2["rules"] == 2 and st2["yellow"] == 0, f"規則を外した後: {st2}"
+        print("OK 条件付き書式 規則を外すと色が消える")
+        # ピボット: 行=地域・列=品・値=合計(額) → 2×2
+        pv = ev(sock, "(function(){var K=window.CalcKit;var src=K.sheetNames()[K.sheetNames().length-1];"
+                      "var err=K.createPivot({srcSheetName:src,r1:0,c1:0,r2:5,c2:2,rowField:0,colField:1,valField:2,agg:'sum'});"
+                      "if(err)return {err:err};var names=K.sheetNames();var g={};"
+                      "for(var r=1;r<=6;r++)for(var c=0;c<5;c++){var a=String.fromCharCode(65+c)+r;var d=K.display(a);if(d!=='')g[a]=d;}"
+                      "return {sheet:names[names.length-1],g:g};})()")
+        assert "err" not in pv, f"ピボット作成: {pv}"
+        g = pv["g"]; vals = list(g.values())
+        # 東×りんご=100, 東×みかん=50, 西×りんご=100, 西×みかん=20, 行計 150/120, 列計 200/70, 総計 270
+        for want in ("100", "50", "20", "150", "120", "200", "70", "270"):
+            assert want in vals, f"ピボットに {want} がない: {g}"
+        assert "東" in vals and "西" in vals and "りんご" in vals and "みかん" in vals, f"軸の見出し: {g}"
+        print(f"OK ピボット 行=地域×列=品×合計(額)→ 東りんご100・西りんご100・総計270（{pv['sheet']}）")
+        # 元を変えて更新 → 総計が変わる
+        up = ev(sock, "(function(){var K=window.CalcKit;var names=K.sheetNames();var pi=names.length-1,si=pi-1;"
+                      "K.switchSheet(si);K.setCell('C2','200');K.refreshPivot(pi);K.switchSheet(pi);"
+                      "var found=null;for(var r=1;r<=6;r++)for(var c=0;c<5;c++){var d=K.display(String.fromCharCode(65+c)+r);if(d==='370')found=String.fromCharCode(65+c)+r;}return {found:found};})()")
+        assert up["found"], f"更新後の総計370が無い: {up}"
+        print("OK ピボット 元の表を変えて「更新」→総計 270→370")
+        print("CONDFMT_PIVOT_OK 条件付き書式・ピボット通過")
     finally:
         chrome.terminate()
 
@@ -657,3 +958,5 @@ if __name__ == "__main__":
     slidekit_roundtrip()
     scenarios()
     gantt_roundtrip()
+    xlsx_import()
+    condfmt_pivot()

@@ -17,13 +17,29 @@ Shift+クリックで別名保存。保存先選択に未対応のブラウザ�
   （引き算で日数、`=DATE(y,m,d)` `=TODAY()`、書式ボタン「日付」）。`2026-08` は文字列のまま
 - **並べ替え**: 列ヘッダ右クリック→昇順/降順。選択範囲（単一セルなら使用範囲）を対象に、
   先頭行がヘッダなら固定・行内の式は行移動に追従・空セルは常に最後
+- **フィルタ（見出しごとの絞り込み・並べ替え）**: ツールバー「フィルタ」または列ヘッダ右クリック
+  →見出し行の各セルに `▽` が付く。範囲は選択範囲（単一セルなら周辺の連続データ塊）の先頭行を見出しとする。
+  `▽` を押すとその列のパネル：昇順/降順・値の検索・値ごとのチェック（件数つき・`（空白）`あり）・
+  この列の絞り込みを消す・フィルタを外す。**絞り込みは行を隠すだけで値・式は触らない**
+  （合計などの式は隠れた行も含めた全体の値のまま。Excelの SUBTOTAL 相当はしない）。
+  隠れた行は矢印キーで飛ばす。絞り込み中は列ヘッダに色が付き、下のバーに「絞り込み N行を非表示」。
+  状態は `sheet.filter = {r, r2, c1, c2, sel:{"列": [表示する値...]}}` として `.calc.json` に残るので、
+  Kiroが生成する表に最初から仕込める。`readonly=1` / `review=1` の閲覧でも絞り込みは使える（並べ替えは編集時のみ）。
+  Excel書き出し時は同じ範囲にオートフィルタが付く（絞り込み状態は持ち越さない）
 - **式**: `=B4*40*D4*C4*E4` のようなセル参照・四則・比較・`&`連結・`%`・`$A$1`絶対参照。
-  関数: SUM / AVERAGE / MIN / MAX / COUNT / COUNTA / IF / SUMIF / COUNTIF /
-  ROUND / ROUNDUP / ROUNDDOWN / ABS / INT / SQRT / VLOOKUP / HLOOKUP / DATE / TODAY
-  （evalは使わない自前パーサ。#DIV/0! #REF! #CYCLE! #NAME? #N/A を検出）
+  関数（62）: SUM / AVERAGE / MIN / MAX / COUNT / COUNTA / PRODUCT / SUMPRODUCT /
+  IF / IFS / IFERROR / AND / OR / NOT / SUMIF / COUNTIF / SUMIFS / COUNTIFS / AVERAGEIF /
+  ROUND / ROUNDUP / ROUNDDOWN / CEILING / FLOOR / ABS / INT / MOD / POWER / SQRT / RANK /
+  VLOOKUP / HLOOKUP / INDEX / MATCH /
+  DATE / TODAY / YEAR / MONTH / DAY / EOMONTH / EDATE / DAYS / WEEKDAY / NETWORKDAYS（土日のみ除く・祝日引数なし）/
+  LEN / LEFT / RIGHT / MID / UPPER / LOWER / TRIM / CONCATENATE / CONCAT / TEXT（0・0.00・#,##0・0%・yyyy-mm-dd・yyyy/m/d）/ VALUE /
+  ISBLANK / ISNUMBER / ISTEXT / ISERROR / TRUE / FALSE
+  （evalは使わない自前パーサ。#DIV/0! #REF! #CYCLE! #NAME? #N/A #VALUE! を検出。
+  .xlsx 取り込みで式がそのまま入るので、ここに無い関数は #NAME? になる）
 - **表引き**: `=VLOOKUP(キー, 範囲, 何列目, [近似])`。第4引数省略はExcel互換の近似一致
   （昇順前提）。**完全一致は `,0` を付ける**（単価表引きは通常こちら）
-- **揃え・折り返し**: 左/中/右×上/中/下（同じボタンをもう一度で解除）、
+- **揃え・折り返し**: 左/中/右×上/中/下（同じボタンをもう一度で解除）。
+  折返しオフの文字はExcelと同様、右隣の空セルへ表示し、値のあるセルの手前で隠れる。
   「折返」で長文をセル内改行（行の高さは中身に合わせて伸びる）。行高は行番号の下端ドラッグでも変更可
 - **プルダウン**: セルを選んで「選択肢▾」→1行1候補。セル右の▾クリックで選べる（手入力も可）
 - **シート（タブ）**: 画面下部のタブで複数シート。＋で追加、ダブルクリックで名前変更、
@@ -62,7 +78,12 @@ Shift+クリックで別名保存。保存先選択に未対応のブラウザ�
   表⇄ガントを行き来できる（表で一気に入力→ガントでドラッグ調整→表に戻して集計）
 - **グラフ** → DashboardKit（`../DashboardKit/dashboard-kit.js` 読込時のみ）で
   棒/折れ線/曲線/円/ドーナツをプレビュー。範囲の短い方の次元を系列に自動判定
-- **CSV / Excel(.xls)**: 値で書き出し。CSV/TSVの読み込みも「開く」から
+- **CSV**: 選択範囲（単一セルなら使用範囲全体）を値で書き出し。CSV/TSVの読み込みも「開く」から
+- **Excel(.xls)**: 「Excel」ボタンで**全シートを1ファイルに**書き出す。塗り（見出し/セクション）・
+  階層罫線（太線/細線）・太字・揃え・折り返し・列幅を、画面（viewer）の見た目のまま反映する。
+  形式は SpreadsheetML 2003（各タブを正式な `<Worksheet>` として定義するので、タブを押すと中身が出る）。
+  外部ライブラリなし。開くとき Excel が形式の確認を出すことがあるが「はい」で開ける。
+  値のみ・式は表示値で入る（生きた式で渡したい時は下の .xlsx）
 - **Excel(.xlsx)・式ごと納品用**: `python3 CalcKit/calc_to_xlsx.py 対象.calc.json [出力.xlsx]`。
   式（SUM/IF/VLOOKUP・シート間参照）が生きた式のままExcel化され、¥/%/日付書式・bold・
   揃え・折り返し・プルダウン・列幅/行高も反映。顧客にExcelで渡す時はこちら。
@@ -73,11 +94,13 @@ Shift+クリックで別名保存。保存先選択に未対応のブラウザ�
 ## Kiroに頼むとき
 
 `.calc.json`（保存ファイル）を渡して「この表を◯◯にして」でよい。
-構造: `{name, active, sheets:[{name, rows, cols, colW, rowH, cells:{"A1":{v:"値 or =式", fmt, bold, align, valign, wrap, opts}}}]}`
-（align: l/c/r、valign: t/m/b、wrap: 1=折り返し、opts: プルダウン候補の配列。
-旧形式の単一シートJSONも読み込み時に自動移行）。
+構造: `{name, active, sheets:[{name, rows, cols, colW, rowH, filter, cells:{"A1":{v:"値 or =式", fmt, bold, align, valign, wrap, opts}}}]}`
+（align: l/c/r、valign: t/m/b、wrap: 1=折り返し、opts: プルダウン候補の配列、
+filter: `{r, r2, c1, c2, sel}`＝見出し行のフィルタ。旧形式の単一シートJSONも読み込み時に自動移行）。
 ブラウザ側APIは `window.CalcKit`（setCell/val/display/select/buildSlideHtml/
 buildGanttData/buildChartData/loadTemplate 等・check.py参照）。
+フィルタ系API: `addFilter([range])` / `clearFilter()` / `filterCol(列, [表示する値]|null)` /
+`filterValues(列)`（値と件数）/ `visibleRows()`（1始まりの行番号）/ `filter`（現在の設定）/ `sort(列,昇順)`。
 
 ## 検証
 
@@ -86,3 +109,23 @@ python3 CalcKit/check.py
 # main=式・VLOOKUP・フィル・日付・ソート・揃え/折返/プルダウン・書き出し30項目
 # ＋SlideKit往復E2E ＋実運用シナリオ（単価改定・返済感度・性能・PPTX変換パイプライン全通し）
 ```
+
+## 読取専用の埋め込み
+
+viewer等へCalcKitを埋め込む場合は、次のURLでiframeを開く。
+
+```html
+<iframe src="../../CalcKit/index.html?readonly=1&embed=1"></iframe>
+```
+
+iframeの準備後、親画面から文書を渡す。
+
+```js
+frame.contentWindow.postMessage({type:'calckit:load', doc:calcDocument}, '*');
+```
+
+・`readonly=1`ではタブ切替、スクロール、セル選択、コピーだけ可能
+・セル編集、貼付、書式、行列・シート操作、保存、書き出しは無効
+・読取専用文書は`calckit_v1`へ保存せず、通常利用の復旧データを汚さない
+・読込完了時は親へ`{type:'calckit:loaded', name, sheets}`、失敗時は`calckit:error`を返す
+・公開API `CalcKit.loadDocument(doc)`でも同じ文書を読み込める
