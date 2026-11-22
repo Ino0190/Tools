@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" data-bezierkit-artboard="1">
+  <!-- 外から持ち込むSVGの切り抜き・マスクの見本（BezierKitで読むとクリッピングマスクになるか）。cdp-check.py の clip-import で使う -->
+  <defs>
+    <clipPath id="circle"><circle cx="150" cy="150" r="100"/></clipPath>
+    <clipPath id="obb" clipPathUnits="objectBoundingBox"><polygon points="0.5,0 1,1 0,1"/></clipPath>
+    <clipPath id="band"><rect x="0" y="300" width="800" height="70"/></clipPath>
+    <clipPath id="star"><path d="M650 290 L670 340 L720 345 L682 375 L695 425 L650 398 L605 425 L618 375 L580 345 L630 340 Z"/></clipPath>
+    <mask id="white"><ellipse cx="450" cy="150" rx="110" ry="70" fill="#ffffff"/></mask>
+    <mask id="gray"><rect x="600" y="60" width="160" height="160" fill="#808080"/></mask>
+    <linearGradient id="fade"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#000000"/></linearGradient>
+    <mask id="grad"><rect x="40" y="380" width="300" height="60" fill="url(#fade)"/></mask>
+  </defs>
+  <rect x="0" y="0" width="800" height="450" fill="#eef3f8"/>
+  <!-- 円で切り抜いた縞（線も切れる） -->
+  <g clip-path="url(#circle)">
+    <rect x="40" y="40" width="220" height="220" fill="#21537f"/>
+    <path d="M40 90 H260 M40 150 H260 M40 210 H260" stroke="#9fc0dd" stroke-width="20" fill="none"/>
+  </g>
+  <!-- 図形の大きさに対する三角の切り抜き -->
+  <rect x="300" y="270" width="160" height="120" fill="#c62828" clip-path="url(#obb)"/>
+  <!-- 白い楕円のマスク＝楕円で切り抜く -->
+  <rect x="320" y="60" width="260" height="180" fill="#10b981" mask="url(#white)"/>
+  <!-- 灰色のマスク＝半透明 -->
+  <rect x="620" y="80" width="120" height="120" fill="#162a42" mask="url(#gray)"/>
+  <!-- 切り抜きの入れ子: 横帯 × 星 -->
+  <g clip-path="url(#band)"><circle cx="650" cy="360" r="70" fill="#7a471a" clip-path="url(#star)"/></g>
+  <!-- グラデのマスク（表せないので外す） -->
+  <rect x="40" y="380" width="300" height="60" fill="#121212" mask="url(#grad)"/>
+</svg>

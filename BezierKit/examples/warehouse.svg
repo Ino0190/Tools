@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" data-bezierkit-artboard="1">
+  <!-- 伝えたいこと: 倉庫からトラックで荷物が出ていく（物流の入口の挿絵）。pptx-illust Skill の見本 -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef3f8"/><stop offset="1" stop-color="#ffffff"/></linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#21537f"/><stop offset="1" stop-color="#162a42"/></linearGradient>
+  </defs>
+  <g data-layer="背景">
+    <rect x="0" y="0" width="800" height="450" fill="url(#sky)"/>
+    <rect x="0" y="360" width="800" height="90" fill="#d4dde7"/>
+    <rect x="0" y="392" width="800" height="6" fill="#ffffff"/>
+  </g>
+  <g data-layer="倉庫">
+    <rect x="70" y="232" width="330" height="134" fill="#121212" opacity="0.12"/>
+    <rect x="60" y="222" width="330" height="140" fill="#edf2f4" stroke="#162a42" stroke-width="3"/>
+    <path d="M40 228 L225 150 L410 228 Z" fill="url(#roof)" stroke="#162a42" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="98" y="262" width="110" height="100" fill="#9fc0dd" stroke="#162a42" stroke-width="3"/>
+    <path d="M98 282 H208 M98 302 H208 M98 322 H208 M98 342 H208" fill="none" stroke="#21537f" stroke-width="3"/>
+    <rect x="240" y="262" width="110" height="100" fill="#9fc0dd" stroke="#162a42" stroke-width="3"/>
+    <path d="M240 282 H350 M240 302 H350 M240 322 H350 M240 342 H350" fill="none" stroke="#21537f" stroke-width="3"/>
+    <circle cx="225" cy="196" r="14" fill="#fafafa" stroke="#162a42" stroke-width="3"/>
+  </g>
+  <g data-layer="荷物">
+    <rect x="300" y="322" width="38" height="38" fill="#7a471a" stroke="#162a42" stroke-width="3"/>
+    <path d="M300 336 H338" fill="none" stroke="#162a42" stroke-width="3"/>
+    <rect x="252" y="330" width="30" height="30" fill="#7a471a" stroke="#162a42" stroke-width="3"/>
+  </g>
+  <g data-layer="トラック">
+    <rect x="474" y="268" width="196" height="102" fill="#121212" opacity="0.12"/>
+    <rect x="464" y="258" width="190" height="100" rx="4" fill="#fafafa" stroke="#162a42" stroke-width="3"/>
+    <path d="M654 290 H708 Q722 290 728 304 L744 334 V358 H654 Z" fill="#21537f" stroke="#162a42" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M668 300 H704 Q712 300 716 308 L726 326 H668 Z" fill="#9fc0dd" stroke="#162a42" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="484" y="278" width="150" height="34" fill="#c62828"/>
+    <circle cx="512" cy="362" r="22" fill="#121212"/>
+    <circle cx="512" cy="362" r="9" fill="#a0aec0"/>
+    <circle cx="700" cy="362" r="22" fill="#121212"/>
+    <circle cx="700" cy="362" r="9" fill="#a0aec0"/>
+  </g>
+  <g data-layer="矢印">
+    <path d="M430 210 C 500 170, 580 175, 640 215" fill="none" stroke="#c62828" stroke-width="5" stroke-linecap="round"/>
+    <polygon points="652,226 628,224 642,204" fill="#c62828"/>
+  </g>
+</svg>
