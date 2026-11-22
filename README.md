@@ -6,17 +6,12 @@
 | キット | 用途 |
 |---|---|
 | SlideKit | HTMLスライドの作成・編集・発表・PPTX変換（PPTXの取り込みも） |
-| DashboardKit | グラフ24種とダッシュボード（データファイルを差し替えて量産） |
-| ArchKit | AWS構成図（概算料金・Well-Architectedの自己点検・IaCからの起こし） |
-| GanttKit | 工程表（担当・祝日・計画の控えと遅れ・PPTX書き出し） |
 | CalcKit | 式・複数シート・Excel相互コピペ・xlsxの読み書きに対応した表計算 |
 | BezierKit | 画像トレース・可変線幅に対応したベジェ描画・資料用アイコン178個 |
 | CadKit | スケッチ拘束・押し出し・回転・STEP入出力・三面図に対応したブラウザ3D CAD |
-| CaptureKit | スクリーンショットの保存・検索（文字の読み取り）・画像編集 |
 | PictureKit | RAW現像・非破壊補正・JPEG書き出し |
 | DocKit | 手元のMarkdown文書の索引・検索・参照切れ・決定と宿題の台帳 |
-| ResearchKit | 調査の依頼・受け取り・主張の採否を案件ごとに記録 |
-| ClassroomKit | 授業の出席・くじ・班分け・座席表・投票・進行表 |
+
 
 ## 使い方
 
